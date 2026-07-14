@@ -1,34 +1,16 @@
 # MSAIB Wingman
 # Main application entry point
 
-import json
+from interface import get_mission, show_header, show_result
+from knowledge import load_topics
 
-print("=" * 40)
-print("        MSAIB WINGMAN")
-print("=" * 40)
-print()
 
-print("Welcome aboard, Maverick.")
-print()
+show_header()
 
-mission = input("What is today's mission? ")
+mission = get_mission()
 normalized_mission = mission.lower()
 
-with open("data/topics.json", "r") as file:
-    topics = json.load(file)
+topics = load_topics()
+course = topics.get(normalized_mission)
 
-print()
-
-print(f"Topic identified: {mission}")
-
-if normalized_mission in topics:
-    print(f"Likely course: {topics[normalized_mission]}")
-else:
-    print("Course unknown.")
-    print("Future versions of Wingman will search all course materials.")
-
-print()
-print(f"Mission '{mission}' acknowledged.")
-print(f"Preparing for: {mission}")
-print()
-print("Wingman standing by.")
+show_result(mission, course)
