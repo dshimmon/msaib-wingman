@@ -12,16 +12,13 @@ print()
 mission = input("What is today's mission? ")
 normalized_mission = mission.lower()
 
+topics = {"python": "Programming", "regression": "Managerial Statistics"}
+
 print()
 
-if normalized_mission == "python":
-    print("Topic identified: Python")
-    print("Likely course: Programming")
-
-elif normalized_mission == "regression":
-    print("Topic identified: Regression")
-    print("Likely course: Managerial Statistics")
-
+if normalized_mission in topics:
+    print(f"Topic identified: {mission}")
+    print(f"Likely course: {topics[normalized_mission]}")
 else:
     print(f"Topic identified: {mission}")
     print("Course unknown.")
