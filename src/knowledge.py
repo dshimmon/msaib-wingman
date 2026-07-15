@@ -1,11 +1,5 @@
-import json
+
 from pathlib import Path
-
-
-def load_topics():
-    with open("data/topics.json", "r") as file:
-        return json.load(file)
-
 
 def search_notes(topic):
     results = []

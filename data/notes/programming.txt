@@ -7,3 +7,4 @@ Functions group reusable instructions.
 APIs allow different software systems to communicate with one another.
 
 JSON is a common format for storing and exchanging structured data.
+

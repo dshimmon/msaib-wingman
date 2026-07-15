@@ -11,18 +11,12 @@ def get_mission():
     return input("What is today's mission? ")
 
 
-def show_result(mission, course):
+def show_topic(mission):
     print()
-    print(f"Topic identified: {mission}")
+    print(f"Topic confirmed: {mission}")
 
-    if course:
-        print(f"Likely course: {course}")
-    else:
-        print("Course unknown.")
-        print("Future versions of Wingman will search all course materials.")
 
+def show_completion(mission):
     print()
-    print(f"Mission '{mission}' acknowledged.")
-    print(f"Preparing for: {mission}")
-    print()
+    print(f"Mission '{mission}' complete.")
     print("Wingman standing by.")
