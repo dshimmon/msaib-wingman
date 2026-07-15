@@ -4,3 +4,28 @@ src/
 ├── knowledge.py     ← Knowledge retrieval
 ├── reasoning.py     ← Response generation
 └── llm.py           ← OpenAI communication
+
+
+
+
+Question
+
+↓
+
+Retrieve Evidence
+
+↓
+
+Organize Evidence
+
+↓
+
+LLM
+
+↓
+
+Summary
+
+↓
+
+Supporting Sources

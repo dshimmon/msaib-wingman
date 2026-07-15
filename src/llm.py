@@ -11,14 +11,26 @@ client = OpenAI(
 )
 
 
-def summarize_with_ai(topic, results):
-    if not results:
+def summarize_with_ai(topic, evidence):
+    if not evidence:
         return (
             f"I couldn't find any notes related to '{topic}'. "
             "Try another topic or expand the knowledge base."
         )
 
-    notes = "\n".join([result for _, result in results])
+    evidence_by_domain = {}
+
+    for item in evidence:
+        domain = item["domain"]
+        evidence_by_domain.setdefault(domain, []).append(item["text"])
+
+    domain_sections = []
+
+    for domain, texts in evidence_by_domain.items():
+        section = f"Course/Domain: {domain}\n" + "\n".join(texts)
+        domain_sections.append(section)
+
+    notes = "\n\n".join(domain_sections)
 
     prompt = f"""
 You are MSAIB Wingman.

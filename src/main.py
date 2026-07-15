@@ -2,7 +2,7 @@
 # Main application entry point
 
 from interface import get_mission, show_completion, show_header, show_topic
-from knowledge import search_notes
+from knowledge import retrieve_evidence
 from reasoning import summarize_results
 
 
@@ -13,20 +13,24 @@ normalized_mission = mission.lower()
 
 show_topic(mission)
 
-results = search_notes(normalized_mission)
-summary = summarize_results(mission, results)
+evidence = retrieve_evidence(normalized_mission)
+summary = summarize_results(mission, evidence)
 
 print()
 print("Wingman's Summary")
 print(summary)
 
-if results:
+if evidence:
     print()
-    print("Sources")
+    print("Supporting Sources")
 
-    for source, result in results:
-        print(f"[{source}]")
-        print(f"- {result}")
+    for item in evidence:
+        print(f"[{item['source']}]")
+
+        if item["location"]:
+            print(item["location"])
+
+        print(f"- {item['text']}")
         print()
 
 show_completion(mission)
