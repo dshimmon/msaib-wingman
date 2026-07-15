@@ -1,0 +1,6 @@
+src/
+├── main.py          ← Coordinator
+├── interface.py     ← User interaction
+├── knowledge.py     ← Knowledge retrieval
+├── reasoning.py     ← Response generation
+└── llm.py           ← OpenAI communication
