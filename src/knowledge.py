@@ -20,6 +20,9 @@ def retrieve_evidence(topic):
                         "source": note_file.stem,
                         "location": None,
                         "text": line.strip(),
+                        "id": None,
+                        "section": None,
+                        "concepts": [],
                     }
                 )
 
@@ -35,8 +38,11 @@ def retrieve_evidence(topic):
                     {
                         "domain": note_file.stem,
                         "source": chunk["document"],
-                        "location": f"Slide {chunk['slide']}",
+                        "location": chunk["location"],
                         "text": chunk["text"],
+                        "id": chunk["id"],
+                        "section": chunk["section"],
+                        "concepts": chunk["concepts"],
                     }
                 )
 

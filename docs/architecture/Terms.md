@@ -1,0 +1,1 @@
+Chunk: The smallest self-contained unit of knowledge that another AI—or another engineer—can understand without needing the original document.
