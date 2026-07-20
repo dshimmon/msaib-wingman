@@ -1,0 +1,15 @@
+🛫 Goose, let's begin Mission XX.
+
+Mission status:
+- Previous mission committed and pushed
+- Journal completed
+- Architecture up to date
+
+Before we write any code:
+
+1. Brief me on where we left off.
+2. Remind me of our architectural north star.
+3. Tell me what success looks like for today's mission.
+4. Challenge any assumptions that have changed since the previous mission.
+
+Then we'll fly.
