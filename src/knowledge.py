@@ -23,6 +23,7 @@ def retrieve_evidence(topic):
                         "id": None,
                         "section": None,
                         "concepts": [],
+                        "records": [],
                     }
                 )
 
@@ -43,6 +44,7 @@ def retrieve_evidence(topic):
                         "id": chunk["id"],
                         "section": chunk["section"],
                         "concepts": chunk["concepts"],
+                        "records": [],
                     }
                 )
 

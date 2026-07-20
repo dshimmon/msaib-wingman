@@ -1,0 +1,238 @@
+{
+    "welcome to cox!": {
+        "id": "concept_c898c53e1a9b",
+        "canonical": "Welcome to COX!",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "Welcome to COX!",
+                "location": "Slide 1"
+            }
+        ]
+    },
+    "who are we?": {
+        "id": "concept_6b0c5af1e5ef",
+        "canonical": "Who are we?",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "Who are we?",
+                "location": "Slide 2"
+            }
+        ]
+    },
+    "other msba resources": {
+        "id": "concept_545031fed09a",
+        "canonical": "Other MSBA Resources",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "Other MSBA Resources",
+                "location": "Slide 3"
+            }
+        ]
+    },
+    "summer work": {
+        "id": "concept_643b39560e11",
+        "canonical": "Summer Work",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "Summer Work",
+                "location": "Slide 4"
+            }
+        ]
+    },
+    "laptop recommendations": {
+        "id": "concept_49c5469c8ef2",
+        "canonical": "Laptop Recommendations",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "Laptop Recommendations",
+                "location": "Slide 5"
+            }
+        ]
+    },
+    "enrollment info": {
+        "id": "concept_b553cf8f9c97",
+        "canonical": "Enrollment Info",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "Enrollment Info",
+                "location": "Slide 6"
+            }
+        ]
+    },
+    "orientation": {
+        "id": "concept_c59cf32b132c",
+        "canonical": "ORIENTATION",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "ORIENTATION",
+                "location": "Slide 7"
+            }
+        ]
+    },
+    "msaib curriculum": {
+        "id": "concept_3343cdd8da9a",
+        "canonical": "MSAIB Curriculum",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "MSAIB Curriculum (32 credits)\nFall 2026",
+                "location": "Slide 8"
+            },
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "MSAIB Curriculum (32 credits) Spring 2027",
+                "location": "Slide 9"
+            }
+        ]
+    },
+    "msaib curriculum part-time over 2 years , year 1:": {
+        "id": "concept_b0610b334cc0",
+        "canonical": "MSAIB Curriculum Part-time over 2 years , year 1:",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "MSAIB Curriculum (32 credits)\nPart-time over 2 years , year 1:",
+                "location": "Slide 10"
+            }
+        ]
+    },
+    "course times **subject to change**": {
+        "id": "concept_4079603b0f13",
+        "canonical": "Course Times **Subject to change**",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "Course Times **Subject to change**",
+                "location": "Slide 11"
+            }
+        ]
+    },
+    "data visualization and communication": {
+        "id": "concept_e81263f029ae",
+        "canonical": "Data Visualization and Communication",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "Course Times **Subject to change**",
+                "location": "Slide 11"
+            }
+        ]
+    },
+    "decision models": {
+        "id": "concept_3478a9c8307e",
+        "canonical": "Decision Models",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "Course Times **Subject to change**",
+                "location": "Slide 11"
+            }
+        ]
+    },
+    "programming for analytics": {
+        "id": "concept_23d824102038",
+        "canonical": "Programming for Analytics",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "Course Times **Subject to change**",
+                "location": "Slide 11"
+            }
+        ]
+    },
+    "managerial statistics": {
+        "id": "concept_1ac998a06bcf",
+        "canonical": "Managerial Statistics",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "Course Times **Subject to change**",
+                "location": "Slide 11"
+            }
+        ]
+    },
+    "managing your career, part 1": {
+        "id": "concept_de97ad5b5a85",
+        "canonical": "Managing Your Career, Part 1",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "Course Times **Subject to change**",
+                "location": "Slide 11"
+            }
+        ]
+    },
+    "did you activate?": {
+        "id": "concept_445022ff2d1e",
+        "canonical": "Did you activate?",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "Did you activate?",
+                "location": "Slide 13"
+            }
+        ]
+    },
+    "cox policies": {
+        "id": "concept_df3ec4e6a055",
+        "canonical": "Cox Policies",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "Cox Policies",
+                "location": "Slide 15"
+            }
+        ]
+    },
+    "cox/ university resources": {
+        "id": "concept_e42155a17ca6",
+        "canonical": "Cox/ University Resources",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "Cox/ University Resources",
+                "location": "Slide 18"
+            }
+        ]
+    },
+    "disability accommodations & success strategies": {
+        "id": "concept_80eb534f7ab4",
+        "canonical": "Disability Accommodations & Success Strategies",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "Disability Accommodations & Success Strategies",
+                "location": "Slide 19"
+            }
+        ]
+    },
+    "financial services": {
+        "id": "concept_13425bd9e339",
+        "canonical": "Financial Services",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "Financial\nServices",
+                "location": "Slide 20"
+            }
+        ]
+    },
+    "student health insurance": {
+        "id": "concept_17ec26fbc37e",
+        "canonical": "Student Health Insurance",
+        "occurrences": [
+            {
+                "document": "msaib-onboarding-2026",
+                "heading": "Student Health Insurance",
+                "location": "Slide 21"
+            }
+        ]
+    }
+}

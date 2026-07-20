@@ -5,7 +5,14 @@
     "domain": "Onboarding",
     "heading": "Welcome to COX!",
     "section": "Welcome to COX!",
-    "concepts": [],
+    "concepts": [
+      {
+        "name": "Welcome to COX!",
+        "canonical": "Welcome to COX!",
+        "id": "concept_c898c53e1a9b"
+      }
+    ],
+    "records": [],
     "location": "Slide 1",
     "text": "Welcome to COX!\nCOX MS AI BUSINESS PROGRAM"
   },
@@ -15,7 +22,14 @@
     "domain": "Onboarding",
     "heading": "Who are we?",
     "section": "Who are we?",
-    "concepts": [],
+    "concepts": [
+      {
+        "name": "Who are we?",
+        "canonical": "Who are we?",
+        "id": "concept_6b0c5af1e5ef"
+      }
+    ],
+    "records": [],
     "location": "Slide 2",
     "text": "Christa Rohan \u2013 Office of GSEE (Graduate Student Enrollment and Engagement)\nAcademic Advisor/ Counselor MSAIB Program\nEmail: crohan@smu.edu\n\nDr. Aren Cambre\nYour MSAIB Faculty Program Director \nacambre@smu.edu\nWho are we?"
   },
@@ -25,7 +39,14 @@
     "domain": "Onboarding",
     "heading": "Other MSBA Resources",
     "section": "Other MSBA Resources",
-    "concepts": [],
+    "concepts": [
+      {
+        "name": "Other MSBA Resources",
+        "canonical": "Other MSBA Resources",
+        "id": "concept_545031fed09a"
+      }
+    ],
+    "records": [],
     "location": "Slide 3",
     "text": "Other MSBA Resources\nIan O'Neil\nMSAIB Career Coach \nioniel@smu.edu\n\nSarah Francisco \nDirector, Grad Cox Residential\u00a0Programs (GSEE)\nEmail: sfrancisco@smu.edu"
   },
@@ -35,7 +56,14 @@
     "domain": "Onboarding",
     "heading": "Summer Work",
     "section": "Summer Work",
-    "concepts": [],
+    "concepts": [
+      {
+        "name": "Summer Work",
+        "canonical": "Summer Work",
+        "id": "concept_643b39560e11"
+      }
+    ],
+    "records": [],
     "location": "Slide 4",
     "text": "You will receive more info on recommended LinkedIn Learning courses to prepare for fall.\nStrongly recommended unless you're confident you have mastery.\nCovers:\nBasic statistics\nDescriptive statistics\nBasic Excel\nExcel Data Analysis ToolPak\nIntroduction to generative AI\nSummer Work"
   },
@@ -45,7 +73,14 @@
     "domain": "Onboarding",
     "heading": "Laptop Recommendations",
     "section": "Laptop Recommendations",
-    "concepts": [],
+    "concepts": [
+      {
+        "name": "Laptop Recommendations",
+        "canonical": "Laptop Recommendations",
+        "id": "concept_49c5469c8ef2"
+      }
+    ],
+    "records": [],
     "location": "Slide 5",
     "text": "Laptop Recommendations\nOperating system: Windows 11 or macOS 26\nProcessor:\nWindows: Intel i7 or AMD Ryzen 7, released in the past 3 years\nApple: Apple M3\nMemory: 16 GB RAM\nStorage: 1TB SSD\nDisplay: HD (1920x1080)\nSupport for virtualization (Mac users): Some applications used in coursework are Windows only."
   },
@@ -55,7 +90,14 @@
     "domain": "Onboarding",
     "heading": "Enrollment Info",
     "section": "Enrollment Info",
-    "concepts": [],
+    "concepts": [
+      {
+        "name": "Enrollment Info",
+        "canonical": "Enrollment Info",
+        "id": "concept_b553cf8f9c97"
+      }
+    ],
+    "records": [],
     "location": "Slide 6",
     "text": "Fall Enrollment: \nYou will be enrolled by me on or around July 9th \nI will block enroll you as we only have a few sections of your core courses. \n\nSpring Enrollment \nYou will be enrolled in your core classes, you will enroll in your electives\nThis takes place mid-fall, October usually.\nEnrollment Info"
   },
@@ -65,7 +107,14 @@
     "domain": "Onboarding",
     "heading": "ORIENTATION",
     "section": "ORIENTATION",
-    "concepts": [],
+    "concepts": [
+      {
+        "name": "ORIENTATION",
+        "canonical": "ORIENTATION",
+        "id": "concept_c59cf32b132c"
+      }
+    ],
+    "records": [],
     "location": "Slide 7",
     "text": "MSAIB required new student orientation: \n\nMonday and Tuesday August 17th\u00a0and 18th \nProgram orientation\nMonday and Tuesday will be full, 8:30-5pm days.\nHeadshots, faculty presentations, workshops, program info, CMC presentation\nWednesday and Thursday the 19th\u00a0and 20th\u00a0for international students \nThrough the International Office\nRequired, you will receive info directly from them\nORIENTATION"
   },
@@ -75,7 +124,14 @@
     "domain": "Onboarding",
     "heading": "MSAIB Curriculum (32 credits)\nFall 2026",
     "section": "MSAIB Curriculum (32 credits)\nFall 2026",
-    "concepts": [],
+    "concepts": [
+      {
+        "name": "MSAIB Curriculum (32 credits)\nFall 2026",
+        "canonical": "MSAIB Curriculum",
+        "id": "concept_3343cdd8da9a"
+      }
+    ],
+    "records": [],
     "location": "Slide 8",
     "text": "MSAIB Curriculum (32 credits)\nFall 2026\nFall Module A\nITOM 6212 | Data Visualization and Communication | 2\nITOM 6252 | Decision Models | 2\nITOM 6253 | Programming for Analytics | 2\nMAST 6201 | Managerial Statistics | 2\nMNGT 6001 | Managing Your Career, Part 1 | 0\nFall Mod B\nITOM 6216 | Generative AI for Business | 2\nITOM 6268 | Business Process Consulting | 2\nITOM 6267 | Predictive AI and Machine Learning | 2\nMKTG 6247 | AI Applications in Marketing | 2"
   },
@@ -85,7 +141,14 @@
     "domain": "Onboarding",
     "heading": "MSAIB Curriculum (32 credits) Spring 2027",
     "section": "MSAIB Curriculum (32 credits) Spring 2027",
-    "concepts": [],
+    "concepts": [
+      {
+        "name": "MSAIB Curriculum (32 credits) Spring 2027",
+        "canonical": "MSAIB Curriculum",
+        "id": "concept_3343cdd8da9a"
+      }
+    ],
+    "records": [],
     "location": "Slide 9",
     "text": "MSAIB Curriculum (32 credits) Spring 2027\nSpring Mod A\nITOM 6229 | Agentic AI | 2\nSTRA 6231 | AI Strategy | 2\nITOM 6264 | Advanced Decision Models | 2\nSelect 1 of the required classes below: | 2\nITOM 6227 | FinTech: Blockchain and Beyond | -\nor ITOM 6256 | Business Intelligence | -\nMNGT 6001 | Managing Your Career, Part 2 | 0\nSpring Mod B\nITOM 6219 | Web and Social Media Analytics | 2\nITOM 6223 | Ethical and Trust Issues in AI | 2\nITOM 6258 | Big Data Platforms | 2\nSelect 1 of the required classes below: | 2\nITOM 6240 | Practicum | -\nor Elective | ITOM 6225 Project Management | -"
   },
@@ -95,7 +158,14 @@
     "domain": "Onboarding",
     "heading": "MSAIB Curriculum (32 credits)\nPart-time over 2 years , year 1:",
     "section": "MSAIB Curriculum (32 credits)\nPart-time over 2 years , year 1:",
-    "concepts": [],
+    "concepts": [
+      {
+        "name": "MSAIB Curriculum (32 credits)\nPart-time over 2 years , year 1:",
+        "canonical": "MSAIB Curriculum Part-time over 2 years , year 1:",
+        "id": "concept_b0610b334cc0"
+      }
+    ],
+    "records": [],
     "location": "Slide 10",
     "text": "MSAIB Curriculum (32 credits)\nPart-time over 2 years , year 1:\nYear 1 Fall - 10 Credit Hours\nModule A\nITOM 6252 | Decision Models | 2\nITOM 6253 | Programming for Analytics | 2\nMAST 6201 | Managerial Statistics | 2\nModule B\nITOM 6216 | Generative AI for Business | 2\nITOM 6267 | Predictive AI and Machine Learning | 2\nYear 1 Spring - 8 Credit Hours\nModule A\nITOM 6264* | Advanced Decision Models | 2\nSelect 1 of the required classes below: | 2\nITOM 6227 | FinTech: Blockchain and Beyond | -\nor ITOM 6256 | Business Intelligence | -"
   },
@@ -105,7 +175,143 @@
     "domain": "Onboarding",
     "heading": "Course Times **Subject to change**",
     "section": "Course Times **Subject to change**",
-    "concepts": [],
+    "concepts": [
+      {
+        "name": "Course Times **Subject to change**",
+        "canonical": "Course Times **Subject to change**",
+        "id": "concept_4079603b0f13"
+      },
+      {
+        "name": "Data Visualization and Communication",
+        "canonical": "Data Visualization and Communication",
+        "id": "concept_e81263f029ae"
+      },
+      {
+        "name": "Decision Models",
+        "canonical": "Decision Models",
+        "id": "concept_3478a9c8307e"
+      },
+      {
+        "name": "Decision Models",
+        "canonical": "Decision Models",
+        "id": "concept_3478a9c8307e"
+      },
+      {
+        "name": "Programming for Analytics",
+        "canonical": "Programming for Analytics",
+        "id": "concept_23d824102038"
+      },
+      {
+        "name": "Programming for Analytics",
+        "canonical": "Programming for Analytics",
+        "id": "concept_23d824102038"
+      },
+      {
+        "name": "Managerial Statistics",
+        "canonical": "Managerial Statistics",
+        "id": "concept_1ac998a06bcf"
+      },
+      {
+        "name": "Managerial Statistics",
+        "canonical": "Managerial Statistics",
+        "id": "concept_1ac998a06bcf"
+      },
+      {
+        "name": "Managing Your Career, Part 1",
+        "canonical": "Managing Your Career, Part 1",
+        "id": "concept_de97ad5b5a85"
+      }
+    ],
+    "records": [
+      {
+        "type": "course_schedule",
+        "module": "Mod A",
+        "subject": "ITOM",
+        "course_number": "6212",
+        "course_name": "Data Visualization and Communication",
+        "concept_id": "concept_e81263f029ae",
+        "day": "Monday",
+        "start_time": "6:30 PM",
+        "end_time": "9:45 PM"
+      },
+      {
+        "type": "course_schedule",
+        "module": "Mod A",
+        "subject": "ITOM",
+        "course_number": "6252",
+        "course_name": "Decision Models",
+        "concept_id": "concept_3478a9c8307e",
+        "day": "Tuesday",
+        "start_time": "6:30 PM",
+        "end_time": "9:45 PM"
+      },
+      {
+        "type": "course_schedule",
+        "module": "Mod A",
+        "subject": "ITOM",
+        "course_number": "6252",
+        "course_name": "Decision Models",
+        "concept_id": "concept_3478a9c8307e",
+        "day": "Tuesday",
+        "start_time": "2:00 PM",
+        "end_time": "5:15 PM"
+      },
+      {
+        "type": "course_schedule",
+        "module": "Mod A",
+        "subject": "ITOM",
+        "course_number": "6253",
+        "course_name": "Programming for Analytics",
+        "concept_id": "concept_23d824102038",
+        "day": "Thursday",
+        "start_time": "2:00 PM",
+        "end_time": "5:15 PM"
+      },
+      {
+        "type": "course_schedule",
+        "module": "Mod A",
+        "subject": "ITOM",
+        "course_number": "6253",
+        "course_name": "Programming for Analytics",
+        "concept_id": "concept_23d824102038",
+        "day": "Thursday",
+        "start_time": "6:30 PM",
+        "end_time": "9:45 PM"
+      },
+      {
+        "type": "course_schedule",
+        "module": "Mod A",
+        "subject": "MAST",
+        "course_number": "6201",
+        "course_name": "Managerial Statistics",
+        "concept_id": "concept_1ac998a06bcf",
+        "day": "Wednesday",
+        "start_time": "2:00 PM",
+        "end_time": "5:15 PM"
+      },
+      {
+        "type": "course_schedule",
+        "module": "Mod A",
+        "subject": "MAST",
+        "course_number": "6201",
+        "course_name": "Managerial Statistics",
+        "concept_id": "concept_1ac998a06bcf",
+        "day": "Wednesday",
+        "start_time": "6:30 PM",
+        "end_time": "9:45 PM"
+      },
+      {
+        "type": "course_schedule",
+        "module": "Mod A",
+        "subject": "MNGT",
+        "course_number": "6001",
+        "course_name": "Managing Your Career, Part 1",
+        "concept_id": "concept_de97ad5b5a85",
+        "day": "Monday",
+        "start_time": "5:00 PM",
+        "end_time": "6:15 PM"
+      }
+    ],
     "location": "Slide 11",
     "text": "Course Times **Subject to change**\nMod A\nITOM | 6212 | Data Visualization and Communication | MONDAY | 6:30 PM | 9:45 PM\nITOM | 6252 | Decision Models | TUESDAY | 6:30 PM | 9:45 PM\nITOM | 6252 | Decision Models | TUESDAY | 2:00 PM | 5:15 PM\nITOM | 6253 | Programming for Analytics | THURSDAY | 2:00 PM | 5:15 PM\nITOM | 6253 | Programming for Analytics | THURSDAY | 6:30 PM | 9:45 PM\nMAST | 6201 | Managerial Statistics | WEDNESDAY | 2:00 PM | 5:15 PM\nMAST | 6201 | Managerial Statistics | WEDNESDAY | 6:30 PM | 9:45 PM\nMNGT | 6001 | Managing Your Career, Part 1 | MONDAY | 5:00 PM | 6:15 PM"
   },
@@ -116,6 +322,7 @@
     "heading": null,
     "section": "Course Times **Subject to change**",
     "concepts": [],
+    "records": [],
     "location": "Slide 12",
     "text": "Cox Academic Schedule\nTerm Structure\nEach GCOX Term (Spring, Summer or Fall) is divided into two seven-week modules (mod A and mod B)\nThere is a 1-week break between modules\nSchedules:\nYou will have a regular class schedule, plus:\nHoliday Make-Up Schedule (if you have a course that falls on a national holiday, there will be a make-up session communicated\nFinal Exam Schedule \u2013 there is a separate week 7 schedule for each mod; final exams may meet at a different day and time then the regular class\nFirst day of fall module A is August 24; first day of fall module B is October 19!\n\n2026-2027 Cox Academic Calendar\nhttps://smu.box.com/s/uxioa74y72ltx8dbwlmyadwpk4is6yrl"
   },
@@ -125,7 +332,14 @@
     "domain": "Onboarding",
     "heading": "Did you activate?",
     "section": "Did you activate?",
-    "concepts": [],
+    "concepts": [
+      {
+        "name": "Did you activate?",
+        "canonical": "Did you activate?",
+        "id": "concept_445022ff2d1e"
+      }
+    ],
+    "records": [],
     "location": "Slide 13",
     "text": "Did you activate?\nStep 1: My.smu activation (need your ID #)\nActivates my.smu, SMU email, Box, Microsoft 365\nhttps://www.smu.edu/OIT/Services/Accounts \n\nStep 2: Review the main IT page, which links to resources and other activations. Make sure to click on CANVAS and activate:\nhttps://www.smu.edu/OIT"
   },
@@ -136,6 +350,7 @@
     "heading": null,
     "section": "Did you activate?",
     "concepts": [],
+    "records": [],
     "location": "Slide 14",
     "text": "my.SMU | SMU Email | Zoom | Canvas | SMU360 | Microsoft 365 | Other...\nSchedule of Classes \nCourse Catalog\nCourse Registration - You must clear all holds in my.smu.edu before you can register for any term\nRequest Transcript\nSMU Pay | SMU email will be your primary email during the program\nProfessors will only send emails to your SMU email | Each student has an account\nMake sure to update your profile, headshot, name | SMU's Learning Management System\nAccess to courses syllabi, assignments, chats, grades\nFaculty must Publish it | GCOX Student Organizations (Clubs)\nEvents\nEmails | Download includes the Microsoft Office products (Excel, Powerpoint, Outlook, etc.) | Slack \nMicrosoft Teams\nLinkedin Learning\nHandshake"
   },
@@ -145,7 +360,14 @@
     "domain": "Onboarding",
     "heading": "Cox Policies",
     "section": "Cox Policies",
-    "concepts": [],
+    "concepts": [
+      {
+        "name": "Cox Policies",
+        "canonical": "Cox Policies",
+        "id": "concept_df3ec4e6a055"
+      }
+    ],
+    "records": [],
     "location": "Slide 15",
     "text": "Cox Policies\nOther polices can be found in our Cox Catalog\nMust maintain full-time status (over 9 hours) | Must maintain cumulative GPA 3.0 or higher\nMust have cumulative GPA of 3.5 or higher to overload registration (over 16 hours) | Grade Forgiveness (Core or elective, maximum of 1)\nMust be in good academic standing to run for leadership (clubs, SLG,...) | Professional Conduct/Honor Code"
   },
@@ -156,6 +378,7 @@
     "heading": null,
     "section": "Cox Policies",
     "concepts": [],
+    "records": [],
     "location": "Slide 16",
     "text": "Cox Honor Code\n\nAll incoming Graduate Cox students must read and acknowledge the Honor Code: Read Here\n\nThen please E-Sign the GCOX Honor Code, link coming via email\n*This must be complete before you can start classes"
   },
@@ -166,8 +389,26 @@
     "heading": null,
     "section": "Cox Policies",
     "concepts": [],
+    "records": [],
     "location": "Slide 17",
     "text": "YOUR NAME\u00a0\nMSAIB Candidate, Class of (2026 or 2027)\nAny designations, i.e. SLG President \nCox School of Business | Southern Methodist University\nemail@smu.edu |Cell (if desired) | Link to LinkedIn"
+  },
+  {
+    "id": "msaib-onboarding-2026_018",
+    "document": "msaib-onboarding-2026",
+    "domain": "Onboarding",
+    "heading": "Cox/ University Resources",
+    "section": "Cox/ University Resources",
+    "concepts": [
+      {
+        "name": "Cox/ University Resources",
+        "canonical": "Cox/ University Resources",
+        "id": "concept_e42155a17ca6"
+      }
+    ],
+    "records": [],
+    "location": "Slide 18",
+    "text": "Cox/ University Resources"
   },
   {
     "id": "msaib-onboarding-2026_019",
@@ -175,7 +416,14 @@
     "domain": "Onboarding",
     "heading": "Disability Accommodations & Success Strategies",
     "section": "Disability Accommodations & Success Strategies",
-    "concepts": [],
+    "concepts": [
+      {
+        "name": "Disability Accommodations & Success Strategies",
+        "canonical": "Disability Accommodations & Success Strategies",
+        "id": "concept_80eb534f7ab4"
+      }
+    ],
+    "records": [],
     "location": "Slide 19",
     "text": "Disability Accommodations & Success Strategies\nExtended Time\nLimited Distraction Rooms\nAssistive Technology\nApply Early, process takes couple weeks"
   },
@@ -185,7 +433,14 @@
     "domain": "Onboarding",
     "heading": "Financial\nServices",
     "section": "Financial\nServices",
-    "concepts": [],
+    "concepts": [
+      {
+        "name": "Financial\nServices",
+        "canonical": "Financial Services",
+        "id": "concept_13425bd9e339"
+      }
+    ],
+    "records": [],
     "location": "Slide 20",
     "text": "Financial\nServices\nBURSAR\n\nPAYMENT PLANS, BILLING QUESTIONS\nFINANCIAL AID\n\nLOAN QUESTIONS\nstudentaccounts@smu.edu\nGradFinAid@SMU.edu"
   },
@@ -195,7 +450,14 @@
     "domain": "Onboarding",
     "heading": "Student Health Insurance",
     "section": "Student Health Insurance",
-    "concepts": [],
+    "concepts": [
+      {
+        "name": "Student Health Insurance",
+        "canonical": "Student Health Insurance",
+        "id": "concept_17ec26fbc37e"
+      }
+    ],
+    "records": [],
     "location": "Slide 21",
     "text": "Must waive or elect for the academic year via my.SMU.\n\nhttps://www.smu.edu/studentaffairs/health-center/insurance\nStudent Health Insurance"
   },
@@ -206,6 +468,7 @@
     "heading": null,
     "section": "Student Health Insurance",
     "concepts": [],
+    "records": [],
     "location": "Slide 22",
     "text": "Please Complete Before Classes Start:\n\nEmail Signature Template\nRead & E-Sign Cox Honor Code\nGet your SMU ID Card\nIf needed, get your Parking Pass *Can do this 24 hours after enrollment\nApply for DASS Accommodations, if needed"
   },
@@ -216,6 +479,7 @@
     "heading": null,
     "section": "Student Health Insurance",
     "concepts": [],
+    "records": [],
     "location": "Slide 23",
     "text": "Upcoming Topics: \n\u2022Canvas Page for communication and orientation details\n\u2022Student Leadership Group\nContact Me:\n\u2022Email: crohan@smu.edu\n\u2022Available to Zoom \u2013 just email or Teams me!\nWhen you email me, please include your ID number and program \u2013 especially pertaining to enrollment!\nCommunication Channel, any volunteers? \n\nAny Questions?"
   }

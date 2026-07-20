@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from section_resolver import resolve_section
+from concept_enrichment import enrich_concepts
 
 from pptx import Presentation
 
@@ -101,21 +102,23 @@ def extract_powerpoint_chunks(file_path, domain):
             and combined_text.strip() == detected_heading.strip()
         )
 
-        if combined_text and not is_heading_only:
-            chunks.append(
-                 {
-                    "id": f"{Path(file_path).stem}_{slide_number:03}",
-                    "document": Path(file_path).stem,
-                    "domain": domain,
-                    "heading": detected_heading,
-                    "section": current_section,
-                    "concepts": [],
-                    "location": f"Slide {slide_number}",
-                    "text": combined_text,
-                }
-            )
+        if combined_text:
+            knowledge_object = {
+                "id": f"{Path(file_path).stem}_{slide_number:03}",
+                "document": Path(file_path).stem,
+                "domain": domain,
+                "heading": detected_heading,
+                "section": current_section,
+                "concepts": [],
+                "records": [],
+                "location": f"Slide {slide_number}",
+                "text": combined_text,
+            }
+            knowledge_object = enrich_concepts(knowledge_object)
+            
+            chunks.append(knowledge_object)
 
-    return chunks
+    return (chunks)
 
 
 def save_chunks(chunks, output_path):

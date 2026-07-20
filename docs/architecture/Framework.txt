@@ -1,0 +1,34 @@
+Raw Document
+      │
+      ▼
+Document Ingestion
+      │
+      ▼
+Knowledge Object
+      │
+      ▼
+Section Resolution
+      │
+      ▼
+Concept Extraction
+      │
+      ▼
+Canonicalization
+      │
+      ▼
+Concept Registry
+      │
+      ▼
+Persistent Memory
+      │
+      ▼
+Record Extraction
+      │
+      ▼
+Evidence Retrieval
+      │
+      ▼
+OpenAI
+      │
+      ▼
+Answer

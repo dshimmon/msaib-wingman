@@ -29,3 +29,48 @@ Summary
 ↓
 
 Supporting Sources
+
+
+Organizing ingested docs:::::::::
+Professor's structure
+
+↓
+
+LLM improves it
+
+↓
+
+Human can override
+
+
+
+#####Ingestion pipeline:
+PowerPoint
+
+↓
+
+Document Ingestion
+
+↓
+
+Heading Detection
+
+↓
+
+Section Resolution
+
+↓
+
+Concept Extraction
+
+↓
+
+Canonicalization
+
+↓
+
+Record Extraction
+
+↓
+
+Knowledge Object
