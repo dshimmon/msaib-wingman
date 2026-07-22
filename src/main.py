@@ -4,16 +4,30 @@
 from interface import get_mission, show_completion, show_header, show_topic
 from knowledge import retrieve_evidence
 from reasoning import summarize_results
+from query_interpreter import interpret_query
+from concept_retrieval import retrieve_concept_occurrences
 
 
 show_header()
 
 mission = get_mission()
-normalized_mission = mission.lower()
 
 show_topic(mission)
 
-evidence = retrieve_evidence(normalized_mission)
+query_plan = interpret_query(mission)
+evidence = retrieve_evidence(query_plan)
+
+memory_search_terms = query_plan.get(
+    "memory_search_terms",
+    [],
+)
+
+if memory_search_terms:
+    memory_evidence = retrieve_concept_occurrences(
+        memory_search_terms
+    )
+    evidence.extend(memory_evidence)
+
 summary = summarize_results(mission, evidence)
 
 print()

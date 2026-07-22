@@ -1,14 +1,5 @@
-import os
-
-from dotenv import load_dotenv
-from openai import OpenAI
-
-
-load_dotenv()
-
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY")
-)
+from context_builder import build_context
+from openai_client import client
 
 
 def summarize_with_ai(topic, evidence):
@@ -18,19 +9,7 @@ def summarize_with_ai(topic, evidence):
             "Try another topic or expand the knowledge base."
         )
 
-    evidence_by_domain = {}
-
-    for item in evidence:
-        domain = item["domain"]
-        evidence_by_domain.setdefault(domain, []).append(item["text"])
-
-    domain_sections = []
-
-    for domain, texts in evidence_by_domain.items():
-        section = f"Course/Domain: {domain}\n" + "\n".join(texts)
-        domain_sections.append(section)
-
-    notes = "\n\n".join(domain_sections)
+    notes = build_context(evidence)
 
     prompt = f"""
 You are MSAIB Wingman.
