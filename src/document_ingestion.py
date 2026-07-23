@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from section_resolver import resolve_section
 from concept_enrichment import enrich_concepts
-
+from embedding_indexer import index_knowledge_objects
 from pptx import Presentation
 
 current_section = "General"
@@ -97,11 +97,6 @@ def extract_powerpoint_chunks(file_path, domain):
 
         combined_text = "\n".join(slide_text)
         
-        is_heading_only = (
-            detected_heading is not None
-            and combined_text.strip() == detected_heading.strip()
-        )
-
         if combined_text:
             knowledge_object = {
                 "id": f"{Path(file_path).stem}_{slide_number:03}",
@@ -136,5 +131,7 @@ if __name__ == "__main__":
         chunks,
         "data/documents/onboarding/msaib-onboarding-2026.json"
     )
+
+    index_knowledge_objects(chunks)
 
     print(f"Saved {len(chunks)} chunks.")

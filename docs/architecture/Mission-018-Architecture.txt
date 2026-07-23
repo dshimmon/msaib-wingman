@@ -1,5 +1,4 @@
-MSAIB WINGMAN —  CURRENT ARCHITECTURE
-========================================
+# WINGMAN OS — MISSION 018 ARCHITECTURE
 
 NORTH STAR
 
