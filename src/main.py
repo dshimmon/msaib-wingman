@@ -6,6 +6,7 @@ from knowledge import retrieve_evidence
 from reasoning import summarize_results
 from query_interpreter import interpret_query
 from concept_retrieval import retrieve_concept_occurrences
+from evidence_ranker import rank_evidence
 
 
 show_header()
@@ -27,6 +28,15 @@ if memory_search_terms:
         memory_search_terms
     )
     evidence.extend(memory_evidence)
+
+ranking_terms = query_plan.get(
+    "text_search_terms",
+    [],
+)
+evidence = rank_evidence(
+    evidence,
+    ranking_terms
+)
 
 summary = summarize_results(mission, evidence)
 
