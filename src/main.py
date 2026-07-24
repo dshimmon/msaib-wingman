@@ -1,9 +1,13 @@
 # MSAIB Wingman
 # Main application entry point
 
-from interface import get_mission, show_completion, show_header, show_topic
-from reasoning import summarize_results
-from retrieval_pipeline import retrieve_question_evidence
+from interface import (
+    get_mission,
+    show_completion,
+    show_header,
+    show_topic,
+)
+from wingman_service import ask_wingman
 
 
 show_header()
@@ -12,19 +16,17 @@ mission = get_mission()
 
 show_topic(mission)
 
-query_plan, evidence = retrieve_question_evidence(mission)
-
-summary = summarize_results(mission, evidence)
+result = ask_wingman(mission)
 
 print()
 print("Wingman's Summary")
-print(summary)
+print(result["answer"])
 
-if evidence:
+if result["evidence"]:
     print()
     print("Supporting Sources")
 
-    for item in evidence:
+    for item in result["evidence"]:
         print(f"[{item['source']}]")
 
         if item["location"]:
