@@ -54,5 +54,27 @@
     "expected_top_location": null,
     "allow_additional_locations": false,
     "expect_no_evidence": true
-  }
+  },
+  {
+  "id": "fall_curriculum_first_person",
+  "question": "What classes will I take in the fall?",
+  "expected_source": "msaib-onboarding-2026",
+  "expected_locations": [
+    "Slide 8"
+  ],
+  "expected_top_location": "Slide 8",
+  "allow_additional_locations": false,
+  "expect_no_evidence": false
+},
+{
+  "id": "fall_curriculum_general",
+  "question": "What classes are taken in the fall?",
+  "expected_source": "msaib-onboarding-2026",
+  "expected_locations": [
+    "Slide 8"
+  ],
+  "expected_top_location": "Slide 8",
+  "allow_additional_locations": false,
+  "expect_no_evidence": false
+}
 ]

@@ -82,7 +82,17 @@ Do not answer the question.
 User question:
 {user_question}
 
-Available structured record type:
+Available structured record types:
+
+curriculum_course:
+- program_format
+- term
+- module
+- subject
+- course_number
+- course_name
+- credit_hours
+- is_alternative
 
 course_schedule:
 - module
@@ -95,10 +105,56 @@ course_schedule:
 
 Use exact normalized record values when possible.
 
+Normalized curriculum values:
+- Full-time program becomes program_format = "Full-time"
+- Part-time program becomes program_format = "Part-time"
+- Fall for the current full-time cohort becomes term = "Fall 2026"
+- Spring for the current full-time cohort becomes term = "Spring 2027"
+- Fall Module A becomes module = "Mod A"
+- Fall Module B becomes module = "Mod B"
+
+Use curriculum_course records when the user asks:
+- Which courses or classes are part of the curriculum
+- What classes they will take
+- Which courses belong to a term or module
+- Course names or credit hours
+- Fall or spring course listings
+
 Examples:
-- "Fall Module A" becomes module = "Mod A"
-- "Fall Module B" becomes module = "Mod B"
-- "Tuesday classes" becomes day = "Tuesday"
+- "What classes will I take in the fall?"
+  uses curriculum_course with:
+  program_format = "Full-time"
+  term = "Fall 2026"
+
+- "What classes are taken in the fall?"
+  uses curriculum_course with:
+  program_format = "Full-time"
+  term = "Fall 2026"
+
+- "Which courses are in Fall Module B?"
+  uses curriculum_course with:
+  program_format = "Full-time"
+  term = "Fall 2026"
+  module = "Mod B"
+
+Use course_schedule records only when the user asks:
+- When a class meets
+- Which day a class meets
+- Start or end times
+- Meeting schedules
+- Schedule options
+
+Examples:
+- "When is Decision Models?"
+  uses course_schedule records.
+
+- "What are the Fall Module A courses and times?"
+  uses course_schedule with:
+  module = "Mod A"
+
+Do not use course_schedule merely because the user says
+"class" or "course." A curriculum listing and a meeting
+schedule are different kinds of knowledge.
 
 Text search terms should be short phrases likely to appear
 verbatim in source documents.
@@ -110,14 +166,10 @@ the user's question, return an empty text_search_terms list.
 
 Only request document text when the question also requires
 explanation, background, curriculum context, or other
-information not contained in the structured records.
+information not contained in structured records.
 
-Use course_schedule records only when the user explicitly
-asks for course listings, modules, class days, class times,
-meeting times, or schedule details.
-
-Do not use course_schedule records for a bare topic or for
-an explanatory question such as "What is Decision Models?"
+Do not use structured records for a bare topic or for an
+explanatory question such as "What is Decision Models?"
 
 If the user provides only a short topic or noun phrase,
 place that phrase in text_search_terms exactly as written.
@@ -126,7 +178,6 @@ Examples:
 - "Orientation" becomes text_search_terms = ["Orientation"]
 - "What is Orientation?" becomes text_search_terms = ["Orientation"]
 - "What is Decision Models?" becomes text_search_terms = ["Decision Models"]
-- "When is Decision Models?" uses course_schedule records
 
 Use memory_search_terms when the user asks where,
 when, or in which documents a concept has appeared.

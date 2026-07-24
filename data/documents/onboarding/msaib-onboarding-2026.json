@@ -131,7 +131,116 @@
         "id": "concept_3343cdd8da9a"
       }
     ],
-    "records": [],
+    "records": [
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Fall 2026",
+        "module": "Mod A",
+        "subject": "ITOM",
+        "course_number": "6212",
+        "course_name": "Data Visualization and Communication",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Fall 2026",
+        "module": "Mod A",
+        "subject": "ITOM",
+        "course_number": "6252",
+        "course_name": "Decision Models",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Fall 2026",
+        "module": "Mod A",
+        "subject": "ITOM",
+        "course_number": "6253",
+        "course_name": "Programming for Analytics",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Fall 2026",
+        "module": "Mod A",
+        "subject": "MAST",
+        "course_number": "6201",
+        "course_name": "Managerial Statistics",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Fall 2026",
+        "module": "Mod A",
+        "subject": "MNGT",
+        "course_number": "6001",
+        "course_name": "Managing Your Career, Part 1",
+        "concept_id": null,
+        "credit_hours": "0",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Fall 2026",
+        "module": "Mod B",
+        "subject": "ITOM",
+        "course_number": "6216",
+        "course_name": "Generative AI for Business",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Fall 2026",
+        "module": "Mod B",
+        "subject": "ITOM",
+        "course_number": "6268",
+        "course_name": "Business Process Consulting",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Fall 2026",
+        "module": "Mod B",
+        "subject": "ITOM",
+        "course_number": "6267",
+        "course_name": "Predictive AI and Machine Learning",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Fall 2026",
+        "module": "Mod B",
+        "subject": "MKTG",
+        "course_number": "6247",
+        "course_name": "AI Applications in Marketing",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      }
+    ],
     "location": "Slide 8",
     "text": "MSAIB Curriculum (32 credits)\nFall 2026\nFall Module A\nITOM 6212 | Data Visualization and Communication | 2\nITOM 6252 | Decision Models | 2\nITOM 6253 | Programming for Analytics | 2\nMAST 6201 | Managerial Statistics | 2\nMNGT 6001 | Managing Your Career, Part 1 | 0\nFall Mod B\nITOM 6216 | Generative AI for Business | 2\nITOM 6268 | Business Process Consulting | 2\nITOM 6267 | Predictive AI and Machine Learning | 2\nMKTG 6247 | AI Applications in Marketing | 2"
   },
@@ -148,7 +257,128 @@
         "id": "concept_3343cdd8da9a"
       }
     ],
-    "records": [],
+    "records": [
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Spring 2027",
+        "module": "Mod A",
+        "subject": "ITOM",
+        "course_number": "6229",
+        "course_name": "Agentic AI",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Spring 2027",
+        "module": "Mod A",
+        "subject": "STRA",
+        "course_number": "6231",
+        "course_name": "AI Strategy",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Spring 2027",
+        "module": "Mod A",
+        "subject": "ITOM",
+        "course_number": "6264",
+        "course_name": "Advanced Decision Models",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Spring 2027",
+        "module": "Mod A",
+        "subject": "ITOM",
+        "course_number": "6227",
+        "course_name": "FinTech: Blockchain and Beyond",
+        "concept_id": null,
+        "credit_hours": "-",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Spring 2027",
+        "module": "Mod A",
+        "subject": "ITOM",
+        "course_number": "6256",
+        "course_name": "Business Intelligence",
+        "concept_id": null,
+        "credit_hours": "-",
+        "is_alternative": true
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Spring 2027",
+        "module": "Mod A",
+        "subject": "MNGT",
+        "course_number": "6001",
+        "course_name": "Managing Your Career, Part 2",
+        "concept_id": null,
+        "credit_hours": "0",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Spring 2027",
+        "module": "Mod B",
+        "subject": "ITOM",
+        "course_number": "6219",
+        "course_name": "Web and Social Media Analytics",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Spring 2027",
+        "module": "Mod B",
+        "subject": "ITOM",
+        "course_number": "6223",
+        "course_name": "Ethical and Trust Issues in AI",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Spring 2027",
+        "module": "Mod B",
+        "subject": "ITOM",
+        "course_number": "6258",
+        "course_name": "Big Data Platforms",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Full-time",
+        "term": "Spring 2027",
+        "module": "Mod B",
+        "subject": "ITOM",
+        "course_number": "6240",
+        "course_name": "Practicum",
+        "concept_id": null,
+        "credit_hours": "-",
+        "is_alternative": false
+      }
+    ],
     "location": "Slide 9",
     "text": "MSAIB Curriculum (32 credits) Spring 2027\nSpring Mod A\nITOM 6229 | Agentic AI | 2\nSTRA 6231 | AI Strategy | 2\nITOM 6264 | Advanced Decision Models | 2\nSelect 1 of the required classes below: | 2\nITOM 6227 | FinTech: Blockchain and Beyond | -\nor ITOM 6256 | Business Intelligence | -\nMNGT 6001 | Managing Your Career, Part 2 | 0\nSpring Mod B\nITOM 6219 | Web and Social Media Analytics | 2\nITOM 6223 | Ethical and Trust Issues in AI | 2\nITOM 6258 | Big Data Platforms | 2\nSelect 1 of the required classes below: | 2\nITOM 6240 | Practicum | -\nor Elective | ITOM 6225 Project Management | -"
   },
@@ -165,7 +395,104 @@
         "id": "concept_b0610b334cc0"
       }
     ],
-    "records": [],
+    "records": [
+      {
+        "type": "curriculum_course",
+        "program_format": "Part-time",
+        "term": "Year 1 Fall",
+        "module": "Mod A",
+        "subject": "ITOM",
+        "course_number": "6252",
+        "course_name": "Decision Models",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Part-time",
+        "term": "Year 1 Fall",
+        "module": "Mod A",
+        "subject": "ITOM",
+        "course_number": "6253",
+        "course_name": "Programming for Analytics",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Part-time",
+        "term": "Year 1 Fall",
+        "module": "Mod A",
+        "subject": "MAST",
+        "course_number": "6201",
+        "course_name": "Managerial Statistics",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Part-time",
+        "term": "Year 1 Fall",
+        "module": "Mod B",
+        "subject": "ITOM",
+        "course_number": "6216",
+        "course_name": "Generative AI for Business",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Part-time",
+        "term": "Year 1 Fall",
+        "module": "Mod B",
+        "subject": "ITOM",
+        "course_number": "6267",
+        "course_name": "Predictive AI and Machine Learning",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Part-time",
+        "term": "Year 1 Spring",
+        "module": "Mod A",
+        "subject": "ITOM",
+        "course_number": "6264",
+        "course_name": "Advanced Decision Models",
+        "concept_id": null,
+        "credit_hours": "2",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Part-time",
+        "term": "Year 1 Spring",
+        "module": "Mod A",
+        "subject": "ITOM",
+        "course_number": "6227",
+        "course_name": "FinTech: Blockchain and Beyond",
+        "concept_id": null,
+        "credit_hours": "-",
+        "is_alternative": false
+      },
+      {
+        "type": "curriculum_course",
+        "program_format": "Part-time",
+        "term": "Year 1 Spring",
+        "module": "Mod A",
+        "subject": "ITOM",
+        "course_number": "6256",
+        "course_name": "Business Intelligence",
+        "concept_id": null,
+        "credit_hours": "-",
+        "is_alternative": true
+      }
+    ],
     "location": "Slide 10",
     "text": "MSAIB Curriculum (32 credits)\nPart-time over 2 years , year 1:\nYear 1 Fall - 10 Credit Hours\nModule A\nITOM 6252 | Decision Models | 2\nITOM 6253 | Programming for Analytics | 2\nMAST 6201 | Managerial Statistics | 2\nModule B\nITOM 6216 | Generative AI for Business | 2\nITOM 6267 | Predictive AI and Machine Learning | 2\nYear 1 Spring - 8 Credit Hours\nModule A\nITOM 6264* | Advanced Decision Models | 2\nSelect 1 of the required classes below: | 2\nITOM 6227 | FinTech: Blockchain and Beyond | -\nor ITOM 6256 | Business Intelligence | -"
   },

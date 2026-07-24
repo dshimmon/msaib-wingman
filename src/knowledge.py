@@ -2,6 +2,29 @@
 import json
 from pathlib import Path
 
+def record_matches_filters(record, record_filters):
+    """
+    Match all requested fields while allowing multiple
+    accepted values for the same field.
+    """
+    accepted_values_by_field = {}
+
+    for filter_item in record_filters:
+        field = filter_item["field"]
+        value = str(filter_item["value"]).lower().strip()
+
+        accepted_values_by_field.setdefault(
+            field,
+            set(),
+        ).add(value)
+
+    return all(
+        str(record.get(field, "")).lower().strip()
+        in accepted_values
+        for field, accepted_values
+        in accepted_values_by_field.items()
+    )
+
 
 def retrieve_evidence(query):
     results = []
@@ -46,9 +69,9 @@ def retrieve_evidence(query):
     ]
     
     records_requested = bool(
-    record_types
-    or record_filters
-    or normalized_record_terms
+        record_types
+        or record_filters
+        or normalized_record_terms
     )
 
     notes_folder = Path("data/notes")
@@ -108,10 +131,9 @@ def retrieve_evidence(query):
             matching_records = []
 
             for record in eligible_records:
-                filters_match = all(
-                    str(record.get(filter_item["field"], "")).lower()
-                    == filter_item["value"].lower()
-                    for filter_item in record_filters
+                filters_match = record_matches_filters(
+                    record,
+                    record_filters,
                 )
 
                 searchable_record = " ".join(
