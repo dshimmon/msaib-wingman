@@ -2,12 +2,8 @@
 # Main application entry point
 
 from interface import get_mission, show_completion, show_header, show_topic
-from knowledge import retrieve_evidence
 from reasoning import summarize_results
-from query_interpreter import interpret_query
-from concept_retrieval import retrieve_concept_occurrences
-from evidence_ranker import rank_evidence
-from semantic_retriever import retrieve_semantic_evidence
+from retrieval_pipeline import retrieve_question_evidence
 
 
 show_header()
@@ -16,53 +12,7 @@ mission = get_mission()
 
 show_topic(mission)
 
-query_plan = interpret_query(mission)
-evidence = retrieve_evidence(query_plan)
-
-text_search_terms = query_plan.get(
-    "text_search_terms",
-    [],
-)
-
-records_requested = bool(
-    query_plan.get("record_types")
-    or query_plan.get("record_filters")
-)
-
-memory_requested = bool(
-    query_plan.get("memory_search_terms")
-)
-
-if (
-    not evidence
-    and text_search_terms
-    and not records_requested
-    and not memory_requested
-):
-    evidence = retrieve_semantic_evidence(
-        mission,
-        top_k=3,
-    )
-
-memory_search_terms = query_plan.get(
-    "memory_search_terms",
-    [],
-)
-
-if memory_search_terms:
-    memory_evidence = retrieve_concept_occurrences(
-        memory_search_terms
-    )
-    evidence.extend(memory_evidence)
-
-ranking_terms = query_plan.get(
-    "text_search_terms",
-    [],
-)
-evidence = rank_evidence(
-    evidence,
-    ranking_terms
-)
+query_plan, evidence = retrieve_question_evidence(mission)
 
 summary = summarize_results(mission, evidence)
 

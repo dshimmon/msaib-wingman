@@ -1,0 +1,58 @@
+[
+  {
+    "id": "orientation_text_retrieval",
+    "question": "Orientation",
+    "expected_source": "msaib-onboarding-2026",
+    "expected_locations": [
+      "Slide 7",
+      "Slide 23"
+    ],
+    "expected_top_location": "Slide 7",
+    "allow_additional_locations": false,
+    "expect_no_evidence": false
+  },
+  {
+    "id": "fall_module_a_schedule",
+    "question": "What are the Fall Module A courses and times?",
+    "expected_source": "msaib-onboarding-2026",
+    "expected_locations": [
+      "Slide 11"
+    ],
+    "expected_top_location": "Slide 11",
+    "allow_additional_locations": false,
+    "expect_no_evidence": false
+  },
+  {
+    "id": "curriculum_concept_memory",
+    "question": "Where has MSAIB Curriculum appeared?",
+    "expected_source": "msaib-onboarding-2026",
+    "expected_locations": [
+      "Slide 8",
+      "Slide 9",
+      "Slide 10"
+    ],
+    "expected_top_location": null,
+    "allow_additional_locations": false,
+    "expect_no_evidence": false
+  },
+  {
+    "id": "laptop_semantic_retrieval",
+    "question": "What kind of computer do I need for the program?",
+    "expected_source": "msaib-onboarding-2026",
+    "expected_locations": [
+      "Slide 5"
+    ],
+    "expected_top_location": "Slide 5",
+    "allow_additional_locations": false,
+    "expect_no_evidence": false
+  },
+  {
+    "id": "missing_dormitory_pet_rules",
+    "question": "What are the dormitory pet rules?",
+    "expected_source": null,
+    "expected_locations": [],
+    "expected_top_location": null,
+    "allow_additional_locations": false,
+    "expect_no_evidence": true
+  }
+]
