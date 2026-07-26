@@ -7,6 +7,65 @@ from query_interpreter import interpret_query
 from semantic_retriever import retrieve_semantic_evidence
 
 
+MINIMUM_DETERMINISTIC_TEXT_SCORE = 3
+
+def has_confident_deterministic_match(
+    evidence,
+    search_terms,
+):
+    """
+    Determine whether the best deterministic result
+    matches the user's intended topic strongly enough.
+    """
+    if not evidence:
+        return False
+
+    top_item = evidence[0]
+
+    if (
+        top_item.get("score", 0)
+        < MINIMUM_DETERMINISTIC_TEXT_SCORE
+    ):
+        return False
+
+    normalized_terms = [
+        term.lower().strip()
+        for term in search_terms
+        if term.strip()
+    ]
+
+    if len(normalized_terms) <= 1:
+        return True
+
+    searchable_text = " ".join(
+        [
+            top_item.get("heading") or "",
+            top_item.get("section") or "",
+            top_item.get("text") or "",
+        ]
+    ).lower()
+
+    matched_terms = {
+        term
+        for term in normalized_terms
+        if term in searchable_text
+    }
+
+    has_specific_phrase = any(
+        len(term.split()) >= 2
+        for term in matched_terms
+    )
+
+    has_multiple_matches = (
+        len(matched_terms) >= 2
+    )
+
+    return (
+        has_specific_phrase
+        or has_multiple_matches
+    )
+
+
 def retrieve_question_evidence(question):
     """
     Interpret a question and return its retrieval plan
@@ -29,16 +88,26 @@ def retrieve_question_evidence(question):
         query_plan.get("memory_search_terms")
     )
 
-    if (
-        not evidence
-        and text_search_terms
+    text_only_request = bool(
+        text_search_terms
         and not records_requested
         and not memory_requested
-    ):
-        evidence = retrieve_semantic_evidence(
-            question,
-            top_k=3,
+    )
+
+    if text_only_request:
+        evidence = rank_evidence(
+            evidence,
+            text_search_terms,
         )
+
+        if not has_confident_deterministic_match(
+            evidence,
+            text_search_terms,
+        ):
+            evidence = retrieve_semantic_evidence(
+                question,
+                top_k=3,
+            )
 
     memory_search_terms = query_plan.get(
         "memory_search_terms",

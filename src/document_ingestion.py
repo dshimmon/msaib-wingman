@@ -1,137 +1,139 @@
+# Converts normalized document units into enriched Wingman knowledge.
+
 import json
 from pathlib import Path
-from section_resolver import resolve_section
+
 from concept_enrichment import enrich_concepts
+from document_router import extract_document_units
 from embedding_indexer import index_knowledge_objects
-from pptx import Presentation
+from section_resolver import resolve_section
 
-current_section = "General"
 
-def detect_slide_heading(slide):
-    candidates = []
+def create_knowledge_objects(
+    file_path,
+    domain,
+    source_id=None,
+):
+    """
+    Convert a supported document into enriched
+    Wingman knowledge objects.
+    """
+    if source_id is None:
+        source_id = Path(file_path).stem
 
-    for shape in slide.shapes:
-        if not hasattr(shape, "text") or not shape.text.strip():
-            continue
+    document_units = extract_document_units(file_path)
 
-        font_sizes = []
-
-        if shape.has_text_frame:
-            for paragraph in shape.text_frame.paragraphs:
-                for run in paragraph.runs:
-                    if run.font.size:
-                        font_sizes.append(run.font.size.pt)
-
-        largest_font = max(font_sizes) if font_sizes else 0
-        text = shape.text.strip()
-
-        candidates.append(
-            {
-                "text": text,
-                "font_size": largest_font,
-                "top": shape.top.inches,
-                "word_count": len(text.split()),
-            }
-        )
-
-    if not candidates:
-        return None
-
-    largest_font = max(candidate["font_size"] for candidate in candidates)
-
-    heading_candidates = [
-        candidate
-        for candidate in candidates
-        if candidate["font_size"] == largest_font
-        and candidate["top"] <= 2.0
-        and candidate["word_count"] <= 12
-    ]
-
-    if not heading_candidates:
-        return None
-
-    best_candidate = min(
-        heading_candidates,
-        key=lambda candidate: (
-            candidate["word_count"],
-            candidate["top"],
-        ),
-    )
-
-    return best_candidate["text"]
-
-def extract_powerpoint_chunks(file_path, domain):
-    presentation = Presentation(file_path)
-    chunks = []
+    knowledge_objects = []
     current_section = "General"
 
-    for slide_number, slide in enumerate(presentation.slides, start=1):
-        detected_heading = detect_slide_heading(slide)
-        
+    for unit_number, unit in enumerate(
+        document_units,
+        start=1,
+    ):
+        heading = unit.get("heading")
+        text = unit.get("text", "").strip()
+        location = unit.get("location")
+
+        if not text:
+            continue
+
         current_section = resolve_section(
-            detected_heading,
+            heading,
             current_section,
         )
 
-        slide_text = []
+        knowledge_object = {
+            "id": f"{source_id}_{unit_number:03}",
+            "document": source_id,
+            "domain": domain,
+            "heading": heading,
+            "section": current_section,
+            "concepts": [],
+            "records": [],
+            "location": location,
+            "text": text,
+        }
 
-        for shape in slide.shapes:
-            if shape.has_table:
-                table_rows = []
+        enriched_object = enrich_concepts(
+            knowledge_object
+        )
 
-                for row in shape.table.rows:
-                    cell_values = [
-                        cell.text.strip()
-                        for cell in row.cells
-                        if cell.text.strip()
-                    ]
+        knowledge_objects.append(
+            enriched_object
+        )
 
-                    if cell_values:
-                        table_rows.append(" | ".join(cell_values))
-
-                if table_rows:
-                    slide_text.append("\n".join(table_rows))
-
-            elif hasattr(shape, "text") and shape.text.strip():
-                slide_text.append(shape.text.strip())
-
-        combined_text = "\n".join(slide_text)
-        
-        if combined_text:
-            knowledge_object = {
-                "id": f"{Path(file_path).stem}_{slide_number:03}",
-                "document": Path(file_path).stem,
-                "domain": domain,
-                "heading": detected_heading,
-                "section": current_section,
-                "concepts": [],
-                "records": [],
-                "location": f"Slide {slide_number}",
-                "text": combined_text,
-            }
-            knowledge_object = enrich_concepts(knowledge_object)
-            
-            chunks.append(knowledge_object)
-
-    return (chunks)
+    return knowledge_objects
 
 
-def save_chunks(chunks, output_path):
-    with open(output_path, "w") as file:
-        json.dump(chunks, file, indent=2)
+def save_knowledge_objects(
+    knowledge_objects,
+    output_path,
+):
+    """
+    Save completed knowledge objects as JSON.
+    """
+    output_file = Path(output_path)
+    output_file.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    with output_file.open(
+        "w",
+        encoding="utf-8",
+    ) as file:
+        json.dump(
+            knowledge_objects,
+            file,
+            indent=2,
+        )
+
+
+def ingest_document(
+    file_path,
+    domain,
+    output_path=None,
+    source_id=None,
+):
+    """
+    Run the complete ingestion pipeline for one document.
+    """
+    source_path = Path(file_path)
+
+    if source_id is None:
+        source_id = source_path.stem
+
+    if output_path is None:
+        output_path = (
+            source_path.parent
+            / f"{source_id}.json"
+        )
+
+    knowledge_objects = create_knowledge_objects(
+        source_path,
+        domain,
+        source_id=source_id,
+    )
+
+    save_knowledge_objects(
+        knowledge_objects,
+        output_path,
+    )
+
+    index_knowledge_objects(
+        knowledge_objects
+    )
+
+    return knowledge_objects
 
 
 if __name__ == "__main__":
-    chunks = extract_powerpoint_chunks(
-        "data/documents/onboarding/msaib-onboarding-2026.pptx",
-        "Onboarding"
+    chunks = ingest_document(
+        file_path=(
+            "data/documents/onboarding/"
+            "msaib-onboarding-2026.pptx"
+        ),
+        domain="Onboarding",
     )
-
-    save_chunks(
-        chunks,
-        "data/documents/onboarding/msaib-onboarding-2026.json"
-    )
-
-    index_knowledge_objects(chunks)
 
     print(f"Saved {len(chunks)} chunks.")

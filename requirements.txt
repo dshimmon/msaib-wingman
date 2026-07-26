@@ -2,3 +2,6 @@ openai
 python-dotenv
 python-pptx
 streamlit
+PyMuPDF
+python-docx
+openpyxl

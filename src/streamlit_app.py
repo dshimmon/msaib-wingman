@@ -3,11 +3,12 @@
 # Run with: python -m streamlit run src/streamlit_app.py
 
 from pathlib import Path
-
 import streamlit as st
-
 from wingman_service import ask_wingman
-
+from intake_service import (
+    create_display_name,
+    ingest_uploaded_document,
+)
 
 st.set_page_config(
     page_title="Atlas | Wingman",
@@ -17,6 +18,89 @@ st.set_page_config(
 st.title("Academic Wingman")
 st.caption("Call Sign: Atlas")
 
+with st.sidebar:
+    st.header("Add Knowledge")
+
+    uploaded_file = st.file_uploader(
+        "Upload a document",
+        type=[
+            "pptx",
+            "pdf",
+            "docx",
+            "xlsx",
+        ],
+    )
+
+    if uploaded_file:
+        default_display_name = (
+            create_display_name(
+                uploaded_file.name
+            )
+        )
+
+        display_name = st.text_input(
+            "Display name",
+            value=default_display_name,
+        )
+
+        domain = st.text_input(
+            "Domain",
+            value="General",
+        )
+
+        program = st.text_input(
+            "Program",
+            placeholder="Optional",
+        )
+
+        academic_year = st.text_input(
+            "Academic year",
+            placeholder="Optional",
+        )
+
+        if st.button(
+            "Add to Atlas",
+            type="primary",
+        ):
+            try:
+                with st.spinner(
+                    "Atlas is processing the document..."
+                ):
+                    intake_result = (
+                        ingest_uploaded_document(
+                            file_name=uploaded_file.name,
+                            file_bytes=(
+                                uploaded_file.getvalue()
+                            ),
+                            display_name=display_name,
+                            domain=domain,
+                            program=program,
+                            academic_year=academic_year,
+                        )
+                    )
+
+                if (
+                    intake_result["status"]
+                    == "already_exists"
+                ):
+                    st.info(
+                        "This document is already "
+                        "in Atlas as "
+                        f"“{intake_result['display_name']}”."
+                    )
+                else:
+                    st.success(
+                        "Added "
+                        f"{intake_result['knowledge_object_count']} "
+                        "knowledge units from "
+                        f"“{intake_result['display_name']}”."
+                    )
+
+            except Exception as error:
+                st.error(
+                    f"Atlas could not ingest this document: "
+                    f"{error}"
+                )
 
 def display_sources(evidence, key_prefix):
     """

@@ -1,4 +1,4 @@
-# Loads source metadata and attaches it to retrieved evidence.
+# Loads, saves, and applies persistent source metadata.
 
 import json
 from pathlib import Path
@@ -28,6 +28,63 @@ def load_source_registry():
         )
 
     return registry
+
+
+def save_source_registry(registry):
+    """
+    Save the source registry using an atomic replacement.
+    """
+    SOURCE_REGISTRY_PATH.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    temporary_path = Path(
+        f"{SOURCE_REGISTRY_PATH}.tmp"
+    )
+
+    with temporary_path.open(
+        "w",
+        encoding="utf-8",
+    ) as file:
+        json.dump(
+            registry,
+            file,
+            indent=2,
+        )
+
+    temporary_path.replace(
+        SOURCE_REGISTRY_PATH
+    )
+
+
+def register_source(source_id, metadata):
+    """
+    Create or update one source-registry entry.
+    """
+    registry = load_source_registry()
+
+    registry[source_id] = {
+        **registry.get(source_id, {}),
+        **metadata,
+    }
+
+    save_source_registry(registry)
+
+    return registry[source_id]
+
+
+def find_source_by_content_hash(content_hash):
+    """
+    Find an existing source with identical file content.
+    """
+    registry = load_source_registry()
+
+    for source_id, metadata in registry.items():
+        if metadata.get("content_hash") == content_hash:
+            return source_id, metadata
+
+    return None, None
 
 
 def enrich_evidence_sources(evidence):
@@ -76,6 +133,12 @@ def enrich_evidence_sources(evidence):
             ),
             "original_path": stored_metadata.get(
                 "original_path",
+            ),
+            "content_hash": stored_metadata.get(
+                "content_hash",
+            ),
+            "uploaded_at": stored_metadata.get(
+                "uploaded_at",
             ),
         }
 
