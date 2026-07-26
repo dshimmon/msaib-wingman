@@ -2,6 +2,7 @@
 
 from reasoning import summarize_results
 from retrieval_pipeline import retrieve_question_evidence
+from source_registry import enrich_evidence_sources
 
 
 def ask_wingman(question):
@@ -17,9 +18,13 @@ def ask_wingman(question):
         evidence,
     )
 
+    display_evidence = enrich_evidence_sources(
+        evidence
+    )
+
     return {
         "question": question,
         "query_plan": query_plan,
         "answer": answer,
-        "evidence": evidence,
+        "evidence": display_evidence,
     }
