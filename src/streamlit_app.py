@@ -2,6 +2,7 @@
 
 # Run with: python -m streamlit run src/streamlit_app.py
 
+from briefing_service import create_study_briefing
 from datetime import datetime
 from pathlib import Path
 from library_management_service import (
@@ -450,6 +451,128 @@ def display_library_workspace():
             source_index,
         )
 
+def display_briefing_workspace():
+    """
+    Generate and display a source-grounded study briefing.
+    """
+    st.title("Atlas Briefing")
+    st.caption(
+        "Turn Atlas knowledge into a practical, "
+        "source-grounded academic plan."
+    )
+
+    briefing_topic = st.text_input(
+        "What should Atlas prepare you for?",
+        placeholder=(
+            "Example: Prepare me for Fall Module A."
+        ),
+    )
+
+    if st.button(
+        "Create Briefing",
+        type="primary",
+        disabled=not briefing_topic.strip(),
+    ):
+        try:
+            with st.spinner(
+                "Atlas is gathering evidence "
+                "and preparing your briefing..."
+            ):
+                st.session_state.briefing_result = (
+                    create_study_briefing(
+                        briefing_topic
+                    )
+                )
+
+        except Exception as error:
+            st.error(
+                "Atlas could not create the briefing: "
+                f"{error}"
+            )
+
+    result = st.session_state.get(
+        "briefing_result"
+    )
+
+    if not result:
+        return
+
+    briefing = result["briefing"]
+
+    st.divider()
+    st.header(briefing["title"])
+    st.write(briefing["overview"])
+
+    st.subheader("Verified Facts")
+
+    for fact in briefing["verified_facts"]:
+        references = ", ".join(
+            fact["evidence_refs"]
+        )
+
+        st.markdown(
+            f"**{fact['category']}** — "
+            f"{fact['fact']}"
+        )
+        st.caption(
+            f"Evidence: {references}"
+        )
+
+    st.subheader("Recommended Actions")
+
+    for action in briefing[
+        "recommended_actions"
+    ]:
+        references = ", ".join(
+            action["evidence_refs"]
+        )
+
+        st.markdown(
+            f"**{action['priority']} Priority — "
+            f"{action['action']}**"
+        )
+        st.write(action["rationale"])
+        st.caption(
+            f"Based on evidence: {references}"
+        )
+
+    if briefing["open_questions"]:
+        st.subheader("Open Questions")
+
+        for question in briefing[
+            "open_questions"
+        ]:
+            st.markdown(
+                f"**{question['question']}**"
+            )
+            st.write(
+                question["why_it_matters"]
+            )
+
+    st.subheader("Supporting Sources")
+
+    reference_map = result[
+        "evidence_reference_map"
+    ]
+
+    for reference, source in (
+        reference_map.items()
+    ):
+        st.markdown(
+            f"**{reference} — "
+            f"{source.get('location') or 'Unknown location'}**"
+        )
+
+        if source.get("heading"):
+            st.write(source["heading"])
+
+    with st.expander(
+        "View complete source evidence"
+    ):
+        display_sources(
+            result["evidence"],
+            key_prefix="briefing",
+        )
 
 def display_chat_workspace():
     """
@@ -528,6 +651,7 @@ with st.sidebar:
         "Workspace",
         [
             "Chat",
+            "Briefing",
             "Library",
         ],
     )
@@ -619,5 +743,7 @@ with st.sidebar:
 
 if workspace == "Library":
     display_library_workspace()
+elif workspace == "Briefing":
+    display_briefing_workspace()
 else:
     display_chat_workspace()

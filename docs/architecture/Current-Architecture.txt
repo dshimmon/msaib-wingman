@@ -22,21 +22,31 @@ APPLICATION INTERFACES
 
 Terminal Interface                 Browser Interface
 main.py                            streamlit_app.py
-    |                                   |
-    +-- Terminal question               +-- Streamlit chat input
-    +-- Terminal answer                 +-- Visible session history
-    +-- Printed sources                 +-- Expandable sources
-    |                                   |
-    +----------------+------------------+
-                     |
-                     v
-             wingman_service.py
-                     |
-                     +-- retrieval_pipeline.py
-                     +-- reasoning.py
-                     |
-                     v
-       Answer + Evidence + Retrieval Plan
+|                                   |
++-- Terminal question               +-- Chat Workspace
++-- Terminal answer                 |       |
++-- Printed sources                 |       v
+|  wingman_service.py
+|       |
+|       v
+|  Answer + Evidence
+|
++-- Briefing Workspace
+|       |
+|       v
+|  briefing_service.py
+|       |
+|       v
+|  Structured Briefing
+|
++-- Library Workspace
+|
+v
+library_service.py
+|
+v
+Library Entry
+
 
 ============================================================
 ATLAS KNOWLEDGE LIBRARY
@@ -1011,5 +1021,110 @@ Bare-Topic Guardrail Preserved      PASS
 Testing baseline:
 
 Isolated Unit Tests        79 Passed
+Live Retrieval Tests        7 Passed
+Live Retrieval Failures     0
+
+============================================================
+ATLAS BRIEFING PIPELINE
+============================================================
+
+Atlas Browser
+streamlit_app.py
+        |
+        +-- Chat Workspace
+        +-- Library Workspace
+        +-- Briefing Workspace
+                    |
+                    v
+          briefing_service.py
+                    |
+        +-----------+-----------+
+        |                       |
+        v                       v
+briefing_planner.py    briefing_generator.py
+        |                       |
+        v                       v
+Focused Retrieval       Structured Briefing
+Questions
+        |
+        v
+retrieval_pipeline.py
+        |
+        v
+Strongest Evidence Per Category
+        |
+        +-- Deduplicate evidence
+        +-- Build E1, E2, ... references
+        +-- Enrich sources for display
+        |
+        v
+Verified Facts
+Recommended Actions
+Open Questions
+Supporting Sources
+Expandable Complete Evidence
+
+
+Deterministic module briefing order:
+
+1. curriculum
+2. schedule
+3. dates
+4. preparation
+5. technology
+
+
+General briefing requests use a structured LLM planner.
+
+Generated facts and actions may cite only evidence
+references supplied to the generator.
+
+The Briefing workspace preserves both concise supporting
+references and the expandable full-source evidence display.
+
+============================================================
+MISSION 025 PRINCIPLE
+============================================================
+
+Sources establish the situation. Atlas proposes the action.
+
+
+Sources own:
+
+- Verified facts
+- Curriculum records
+- Schedule records
+- Dates
+- Documented preparation
+- Technology requirements
+- Exact provenance
+
+
+Atlas owns:
+
+- Retrieval planning
+- Evidence selection
+- Recommended actions
+- Prioritization
+- Open questions
+
+============================================================
+MISSION 025 OUTCOME
+============================================================
+
+Atlas can now convert a broad study-preparation request into
+a focused evidence plan and a structured, source-grounded
+briefing.
+
+The existing Chat pipeline remains responsible for direct
+questions and conversational follow-ups.
+
+The Briefing pipeline is responsible for action-oriented
+study preparation.
+
+
+Testing baseline:
+
+Complete Isolated Suite    88 Passed
 Live Retrieval Tests        7 Passed
 Live Retrieval Failures     0

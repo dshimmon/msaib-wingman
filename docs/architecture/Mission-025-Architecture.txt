@@ -1,0 +1,1293 @@
+# MSAIB WINGMAN — CURRENT ARCHITECTURE
+
+NORTH STAR
+
+Wingman is a deterministic knowledge operating system
+that prepares context for large language models.
+
+PRODUCTS
+
+Wingman OS
+|
++-- Academic Wingman — Atlas
++-- Portfolio Wingman — Radar
++-- Career Wingman — Vector
++-- Research Wingman — Recon
++-- Consulting Wingman — Forge
+
+============================================================
+APPLICATION INTERFACES
+======================
+
+Terminal Interface
+main.py
+|
+v
+wingman_service.py
+|
++-- retrieval_pipeline.py
++-- reasoning.py
+|
+v
+Terminal Answer
+|
++-- Answer text
++-- Supporting evidence
++-- Retrieval plan
+
+Browser Interface
+streamlit_app.py
+|
++-- Chat Workspace
+|       |
+|       v
+|  wingman_service.py
+|       |
+|       +-- retrieval_pipeline.py
+|       +-- reasoning.py
+|       |
+|       v
+|  Answer + Evidence + Retrieval Plan
+|
++-- Briefing Workspace
+|       |
+|       v
+|  briefing_service.py
+|       |
+|       +-- briefing_planner.py
+|       +-- retrieval_pipeline.py
+|       +-- briefing_generator.py
+|       +-- source_registry.py
+|       |
+|       v
+|  Structured Briefing + Supporting Evidence
+|
++-- Library Workspace
+|
+v
+library_service.py
+|
+v
+Library Entries
+
+============================================================
+ATLAS KNOWLEDGE LIBRARY
+=======================
+
+Atlas Browser
+streamlit_app.py
+|
++-- Chat Workspace
+|
++-- Briefing Workspace
+|
++-- Library Workspace
+|
+v
+library_service.py
+|
++-----------+-----------+-----------+-----------+
+|           |           |           |
+v           v           v           v
+Source Registry  Knowledge   Embedding    Original
+Metadata         JSON        Index        Document
+|           |           |           |
++-----------+-----------+-----------+
+|
+v
+Library Entry
+
+{
+"source_id": "...",
+"display_name": "...",
+"source_kind": "...",
+"status": "...",
+"knowledge_object_count": 0,
+"concept_count": 0,
+"record_count": 0,
+"embedding_count": 0,
+"can_reprocess": true,
+"can_remove": false
+}
+
+============================================================
+LIBRARY SOURCE STATUS
+=====================
+
+Registered Source
+|
++-- Original file unavailable
+|         |
+|         v
+|   Original unavailable
+|
++-- No processed knowledge
+|         |
+|         v
+|   Needs processing
+|
++-- Fewer embeddings than knowledge units
+|         |
+|         v
+|   Partially indexed
+|
++-- Original + knowledge + complete embeddings
+|
+v
+Ready
+
+============================================================
+SOURCE IDENTITY
+===============
+
+Internal Source ID
+msaib-onboarding-2026
+|
+v
+data/sources/source-registry.json
+|
++-- Friendly display name
++-- Original filename
++-- File type
++-- MIME type
++-- Domain
++-- Program
++-- Academic year
++-- Original local path
++-- Future cloud source URL
+|
+v
+source_registry.py
+|
+v
+Friendly Source Metadata
+
+============================================================
+AUTOMATIC SOURCE REGISTRATION
+=============================
+
+Uploaded File
+|
+v
+SHA-256 Content Hash
+|
++-- Existing hash found?
+|         |
+|         +-- YES --> Return existing source
+|         |
+|         +-- NO  --> Continue ingestion
+|
+v
+Stable Source ID
+|
+v
+Source Registry Entry
+|
++-- Friendly display name
++-- Original filename
++-- File type
++-- MIME type
++-- Domain
++-- Program
++-- Academic year
++-- Original path
++-- Content hash
++-- Upload timestamp
+|
+v
+data/sources/source-registry.json
+
+============================================================
+SOURCE OWNERSHIP
+================
+
+source_kind = repository
+|
++-- Reprocess allowed when original exists
++-- Removal prohibited
++-- Protected by default
+
+source_kind = upload
+|
++-- Reprocess allowed when original exists
++-- Removal allowed with confirmation
+
+Missing source_kind
+|
+v
+Defaults to repository
+|
+v
+Protected from accidental removal
+
+============================================================
+LIBRARY MANAGEMENT
+==================
+
+REPROCESS SOURCE
+
+Registered Source
+|
+v
+Validate Original File
+|
+v
+Snapshot Current State
+|
++-- Source registry
++-- Embedding index
++-- Concept registry
++-- Processed knowledge JSON
+|
+v
+Remove Old Source State
+|
++-- Old embeddings
++-- Old concept occurrences
+|
+v
+Re-ingest Original File
+|
++-- Preserve source ID
++-- Rebuild knowledge
++-- Rebuild embeddings
++-- Rebuild concepts
+|
+v
+Refresh Content Hash
+|
+v
+Save Reprocessed Timestamp
+|
+v
+Ready
+
+Any Failure
+|
+v
+Restore Previous State
+
+REMOVE UPLOADED SOURCE
+
+Registered Source
+|
+v
+Verify source_kind = upload
+|
+v
+Validate Upload Directory
+|
++-- Direct child of uploads directory
++-- Exact source ID path
++-- Not a symbolic link
++-- Must be a directory
+|
+v
+Rename Source Directory to Tombstone
+|
+v
+Remove Source From
+|
++-- Source registry
++-- Embedding index
++-- Concept occurrences
++-- Unused concepts
+|
+v
+Persist Updated State
+|
+v
+Delete Tombstone
+|
+v
+Source Removed
+
+Persistence Failure
+|
+v
+Restore Registries + Restore Source Directory
+
+============================================================
+PERSISTENT STORAGE SAFETY
+=========================
+
+Source Registry
+Concept Registry
+Embedding Index
+|
+v
+Write Temporary JSON File
+|
+v
+Atomic File Replacement
+
+Purpose:
+
+Prevent interrupted writes from leaving malformed
+or partially written persistent storage.
+
+Reprocessing and removal also use:
+
+* In-memory state snapshots
+* Exact processed-file backups
+* Explicit rollback
+* Tombstone deletion
+* Cleanup warnings
+
+============================================================
+DOCUMENT INTAKE
+===============
+
+Atlas Browser
+streamlit_app.py
+|
+v
+File Uploader
+|
++-- PPTX
++-- PDF
++-- DOCX
++-- XLSX
+|
+v
+intake_service.py
+|
++-- Validate extension
++-- Reject empty uploads
++-- Create content hash
++-- Detect duplicate content
++-- Create stable source ID
++-- Store original file
+|
+v
+document_ingestion.py
+|
+v
+document_router.py
+|
++----------------+----------------+----------------+----------------+
+|                |                |                |
+v                v                v                v
+powerpoint_adapter.py  pdf_adapter.py  word_adapter.py  excel_adapter.py
+|                |                |                |
++----------------+----------------+----------------+
+|
+v
+Normalized Document Units
+
+{
+"heading": "...",
+"location": "...",
+"text": "..."
+}
+
+============================================================
+FORMAT-SPECIFIC LOCATIONS
+=========================
+
+PowerPoint
+|
++-- Slide 1
++-- Slide 2
+
+PDF
+|
++-- Page 1
++-- Page 2
+
+Word
+|
++-- Section 1
++-- Section 2
+
+Excel
+|
++-- Sheet Overview, Rows 1-5
++-- Sheet Risks, Rows 1-3
+
+============================================================
+KNOWLEDGE CREATION
+==================
+
+PowerPoint Document
+|
+v
+document_ingestion.py
+|
++-- Extract text
++-- Extract tables
++-- Detect headings
++-- Create knowledge objects
+|
+v
+section_resolver.py
+|
+v
+concept_enrichment.py
+|
++-------------------------+
+|                         |
+v                         v
+concept_extractor.py       record_extractor.py
+|
+v
+canonicalizer.py
+|
+v
+concept_registry.py
+|
+v
+concept_registry_storage.py
+|
+v
+data/concepts/concept-registry.json
+
+COMPLETED KNOWLEDGE OBJECTS
+|
++-----------------------------+
+|                             |
+v                             v
+Document JSON                 embedding_indexer.py
+data/documents/                       |
+embedding_service.py
+|
+v
+embedding_storage.py
+|
+v
+data/embeddings/embeddings.json
+
+KNOWLEDGE OBJECT
+
+{
+"id": "...",
+"document": "...",
+"domain": "...",
+"heading": "...",
+"section": "...",
+"concepts": [],
+"records": [],
+"location": "...",
+"text": "..."
+}
+
+============================================================
+RUNTIME QUESTION FLOW
+=====================
+
+User
+|
++--------------------------+
+|                          |
+v                          v
+main.py              streamlit_app.py
+Terminal              Browser Chat
+|                          |
++------------+-------------+
+|
+v
+wingman_service.py
+|
++-- Coordinates retrieval
++-- Generates the answer
++-- Returns one result object
+|
+v
+retrieval_pipeline.py
+|
+v
+query_interpreter.py
+|
++-- Bare-topic guardrail
++-- OpenAI structured interpretation
+|
+v
+Structured Retrieval Plan
+|
++-------------------------+--------------------------+
+|                         |                          |
+v                         v                          v
+knowledge.py           Structured-record         concept_retrieval.py
+retrieval                         |
+v
+concept_registry_storage.py
+|
+v
+concept-registry.json
+|
+v
+Deterministic Evidence
+
+============================================================
+BROWSER SESSION FLOW
+====================
+
+Streamlit Page Loads
+|
+v
+st.session_state
+|
++-- Existing messages found?
+|         |
+|         +-- YES --> Render conversation history
+|         |
+|         +-- NO  --> Create empty message history
+|
+v
+st.chat_input
+|
+v
+User Question
+|
++-- Save user message
+|
+v
+wingman_service.py
+|
+v
+Answer + Evidence
+|
++-- Display assistant answer
++-- Display expandable sources
++-- Save assistant message and evidence
+|
+v
+Streamlit Reruns
+|
+v
+Conversation Restored from Session State
+
+============================================================
+CONVERSATION CONTEXT
+====================
+
+Streamlit Session History
+|
+v
+wingman_service.py
+|
+v
+build_conversation_context()
+|
++-- Pair each user question with the next
+|   assistant evidence set
+|
++-- Preserve source-grounded evidence
+|
++-- Exclude previous assistant answer text
+|
++-- Keep only the most recent 3 turns
+|
++-- Keep no more than 5 evidence items per turn
+|
++-- Limit each evidence excerpt to 500 characters
+|
+v
+Compact Conversation Context
+
+{
+"user_question": "...",
+"evidence": [
+{
+"source": "...",
+"location": "...",
+"heading": "...",
+"section": "...",
+"concepts": [],
+"records": [],
+"text_excerpt": "..."
+}
+]
+}
+
+============================================================
+CONTINUITY RETRIEVAL FLOW
+=========================
+
+Current User Question
+|
++-----------------------------+
+|                             |
+v                             v
+Recent Conversation          Current Question
+Context                      Text
+|                             |
++--------------+--------------+
+|
+v
+query_interpreter.py
+|
++-- Resolve pronouns
++-- Resolve omitted subjects
++-- Resolve phrases such as:
+|      "those courses"
+|      "which of them"
+|      "the second module"
+|
++-- Ignore irrelevant prior topics
++-- Reject misleading assumptions
+|
+v
+Fresh Retrieval Plan
+|
+v
+retrieval_pipeline.py
+|
++-- Deterministic retrieval
++-- Structured records
++-- Concept memory
++-- Semantic fallback
+|
+v
+Fresh Evidence
+|
+v
+Reasoning
+|
+v
+Grounded New Answer
+
+============================================================
+SEMANTIC FALLBACK
+=================
+
+Deterministic Evidence Found?
+|
++-- YES ------------------------------+
+|                                     |
+|                                     v
+|                              Unified Evidence
+|
++-- NO
+|
+v
+semantic_retriever.py
+|
++-- embedding_service.py
++-- embedding_storage.py
++-- semantic_similarity.py
++-- knowledge_loader.py
+|
+v
+Semantic Evidence
+|
+v
+Unified Evidence
+
+============================================================
+DETERMINISTIC CONFIDENCE GATE
+=============================
+
+Deterministic Text Evidence
+|
+v
+Evidence Ranking
+|
+v
+Confidence Evaluation
+|
++-- Score below 3?
+|         |
+|         +-- YES --> Semantic retrieval
+|
++-- Multiple search terms?
+|
++-- Specific phrase matched?
+|
++-- Multiple terms matched?
+|
++-- NO --> Semantic retrieval
+|
++-- YES --> Keep deterministic evidence
+
+Purpose:
+
+Prevent a broad search term from blocking a stronger
+meaning-based result.
+
+Example:
+
+Question:
+What kind of computer do I need for the program?
+
+Broad deterministic match:
+MSAIB Curriculum
+
+Correct semantic match:
+Laptop Recommendations
+
+============================================================
+CONVERSATION GUARDRAILS
+=======================
+
+Conversation history may be used to understand:
+
+* Pronouns
+* References
+* Omitted subjects
+* Follow-up scope
+* Which prior entities the user means
+
+Conversation history may not be used as:
+
+* Supporting evidence
+* A replacement for retrieval
+* Proof that a prior answer was correct
+* Permission to accept a false premise
+* Authority over the current question
+
+Core rule:
+
+Conversation provides context.
+Sources provide truth.
+
+Every conversational turn must still produce:
+
+Current Question
+|
+v
+Fresh Retrieval Plan
+|
+v
+Fresh Wingman Evidence
+|
+v
+Grounded Answer
+
+============================================================
+EVIDENCE PROCESSING
+===================
+
+Unified Evidence
+|
+v
+evidence_ranker.py
+|
+v
+Ranked Evidence
+|
+v
+context_builder.py
+|
+v
+Organized Context
+|
+v
+reasoning.py
+|
+v
+llm.py
+|
+v
+openai_client.py
+|
+v
+OpenAI
+|
+v
+Answer + Supporting Sources
+
+============================================================
+SOURCE TRACEBACK FLOW
+=====================
+
+Retrieved Evidence
+|
++-- Internal source ID
++-- Exact source location
++-- Original evidence text
+|
+v
+source_registry.py
+|
+v
+Source-Enriched Evidence
+|
++-- Friendly display name
++-- File type
++-- Program
++-- Academic year
++-- Original path
++-- Source URL when available
+|
+v
+streamlit_app.py
+|
++-- Friendly source card
++-- Exact slide reference
++-- Evidence text
++-- Download original source
++-- Open original source when URL exists
+
+============================================================
+RETRIEVAL EVALUATION
+====================
+
+retrieval_cases.json
+|
++-- Expected sources
++-- Expected locations
++-- Expected top result
++-- Additional-evidence rules
++-- No-evidence expectations
+|
+v
+run_retrieval_tests.py
+|
+v
+retrieval_pipeline.py
+|
++-- Query interpretation
++-- Deterministic retrieval
++-- Concept-memory retrieval
++-- Semantic fallback
++-- Evidence ranking
+|
+v
+Actual Evidence
+|
+v
+Compare Actual Results
+with Expected Results
+|
++-- Expected evidence present?
++-- Unexpected evidence absent?
++-- Correct result ranked first?
++-- Missing knowledge rejected?
+|
+v
+PASS / FAIL REPORT
+
+============================================================
+SUPPORTED RETRIEVAL PATHS
+=========================
+
+1. DOCUMENT-TEXT RETRIEVAL
+
+Bare Topic
+|
+v
+query_interpreter.py
+|
+v
+text_search_terms
+|
+v
+knowledge.py
+|
+v
+Matching Document Evidence
+
+2. STRUCTURED-RECORD RETRIEVAL
+
+Natural-Language Question
+|
+v
+OpenAI Retrieval Plan
+|
+v
+Record Type + Exact Filters
+|
+v
+knowledge.py
+|
+v
+Matching Structured Records
+
+3. CONCEPT-MEMORY RETRIEVAL
+
+Occurrence Question
+|
+v
+memory_search_terms
+|
+v
+concept_retrieval.py
+|
+v
+Persistent Concept Occurrences
+
+4. SEMANTIC RETRIEVAL
+
+No Deterministic Text Evidence
+|
+v
+Question Embedding
+|
+v
+Compare with Stored Embeddings
+|
+v
+Similarity Threshold
+|
+v
+Meaning-Based Evidence
+
+============================================================
+EMBEDDING FLOW
+==============
+
+Knowledge Object Text
+|
+v
+embedding_service.py
+|
+v
+OpenAI Embedding
+|
+v
+1,536-Value Vector
+|
+v
+embedding_storage.py
+
+Question
+|
+v
+embedding_service.py
+|
+v
+Question Embedding
+|
+v
+semantic_similarity.py
+|
+v
+Similarity Scores
+|
+v
+semantic_retriever.py
+
+============================================================
+RESPONSIBILITY BOUNDARY
+=======================
+
+OPENAI
+
+* Interprets natural-language questions
+* Produces structured retrieval instructions
+* Creates numerical embeddings
+* Reasons over organized context
+* Produces the final answer
+* Creates structured retrieval plans for general briefing requests
+* Converts supplied briefing evidence into verified facts
+* Proposes clearly labeled recommended actions
+* Identifies meaningful open questions
+
+WINGMAN OS
+
+* Creates structured knowledge
+* Preserves metadata and sources
+* Stores concepts and records
+* Maintains persistent concept memory
+* Creates and stores knowledge embeddings
+* Executes retrieval plans deterministically
+* Performs exact record filtering
+* Compares semantic similarity
+* Rejects weak semantic matches
+* Ranks evidence
+* Builds context for OpenAI
+* Detects recognized academic module briefing requests
+* Creates deterministic module briefing plans
+* Executes focused briefing retrievals
+* Limits evidence by briefing category
+* Deduplicates briefing evidence
+* Assigns stable evidence references
+* Restricts generated citations to supplied evidence
+* Preserves complete briefing source traceback
+* Renders verified facts, recommended actions, and open questions separately
+
+============================================================
+MISSION 024 OUTCOME
+===================
+
+Before Mission 024:
+
+Atlas displayed previous conversation turns, but every new
+question was interpreted independently.
+
+References such as "those," "that course," or "which of
+them" had no backend meaning.
+
+After Mission 024:
+
+Atlas uses recent source-grounded conversation context to
+interpret follow-up questions while requiring fresh
+evidence for every answer.
+
+Current continuity flow:
+
+Visible Session History
+|
+v
+Compact Source-Grounded Context
+|
+v
+Follow-Up Interpretation
+|
+v
+Fresh Retrieval
+|
+v
+Fresh Evidence
+|
+v
+Grounded Answer
+
+Validated conversation behavior:
+
+Relevant Follow-Up Understood       PASS
+Fresh Evidence Retrieved            PASS
+Previous Assistant Prose Excluded   PASS
+Topic Change Recognized             PASS
+False Premise Rejected              PASS
+Bare-Topic Guardrail Preserved      PASS
+
+Testing baseline:
+
+Isolated Unit Tests        79 Passed
+Live Retrieval Tests        7 Passed
+Live Retrieval Failures     0
+
+============================================================
+ATLAS BRIEFING PIPELINE
+=======================
+
+Atlas Browser
+streamlit_app.py
+|
+v
+Briefing Workspace
+|
+v
+briefing_service.py
+|
++---------------------------+
+|                           |
+v                           v
+briefing_planner.py         briefing_generator.py
+|                           ^
+|                           |
+v                           |
+Focused Retrieval Questions        |
+|                           |
+v                           |
+retrieval_pipeline.py               |
+|                           |
+v                           |
+Retrieved Evidence                 |
+|                           |
++-- Limit evidence by       |
+|   briefing category       |
+|
++-- Keep strongest item
+|   per category
+|
++-- Deduplicate evidence
+|
+v
+Selected Briefing Evidence
+|
++---------------------------+
+|
+v
+Stable Evidence References
+E1, E2, E3, ...
+|
+v
+Structured Briefing
+|
++-- Verified Facts
++-- Recommended Actions
++-- Open Questions
+|
+v
+source_registry.py
+|
+v
+Source-Enriched Briefing Result
+|
+v
+streamlit_app.py
+|
++-- Concise supporting references
++-- Expandable complete source evidence
+
+DETERMINISTIC MODULE BRIEFING PLAN
+
+Recognized module request
+|
+v
+Module pattern detection
+|
+v
+Fixed evidence categories
+
+1. curriculum
+2. schedule
+3. dates
+4. preparation
+5. technology
+
+For the validated Fall Module A briefing,
+the preparation query uses the canonical source label:
+
+Summer Work
+
+GENERAL BRIEFING PLAN
+
+Non-module briefing request
+|
+v
+OpenAI structured planner
+|
++-- Maximum 5 retrieval questions
++-- One focused factual question per retrieval
++-- Supported briefing categories only
+|
+v
+Focused Retrieval Plan
+
+EVIDENCE REFERENCE CONTROL
+
+Selected evidence
+|
+v
+briefing_generator.py
+|
++-- Assign E1, E2, E3, ...
++-- Preserve source
++-- Preserve location
++-- Preserve heading
+|
+v
+Dynamic Allowed-Reference Enum
+|
+v
+Generated facts and actions may cite only
+references supplied to the current briefing.
+
+STRUCTURED OUTPUT LIMITS
+
+Verified Facts
+Maximum: 10
+
+Recommended Actions
+Maximum: 6
+
+Open Questions
+Maximum: 5
+
+EMPTY-EVIDENCE BEHAVIOR
+
+No evidence available
+|
+v
+Safe Structured Response
+|
++-- No verified facts
++-- No recommended actions
++-- Open question requesting additional sources
++-- No OpenAI call
+
+============================================================
+MISSION 025 PRINCIPLE
+=====================
+
+Sources establish the situation. Atlas proposes the action.
+
+Sources establish:
+
+* Verified facts
+* Curriculum records
+* Schedule records
+* Dates
+* Documented preparation
+* Technology requirements
+* Exact provenance
+
+Atlas proposes:
+
+* Retrieval planning
+* Evidence selection
+* Recommended actions
+* Prioritization
+* Open questions
+
+The source remains authoritative for what is true.
+
+Atlas remains responsible for interpreting that verified
+situation and proposing what the user should do next.
+
+============================================================
+MISSION 025 OUTCOME
+===================
+
+Before Mission 025:
+
+Atlas could answer direct, source-grounded academic
+questions.
+
+A broad preparation request still depended on the user
+asking several separate questions and assembling the
+answers manually.
+
+After Mission 025:
+
+Atlas can convert a broad study-preparation request into:
+
+* A focused evidence plan
+* Verified source facts
+* Clearly labeled recommended actions
+* Meaningful open questions
+* Traceable supporting evidence
+
+The existing Chat pipeline remains responsible for:
+
+* Direct questions
+* Grounded answers
+* Conversational follow-ups
+
+The Briefing pipeline is responsible for:
+
+* Multi-category preparation requests
+* Deterministic module evidence plans
+* Evidence selection and deduplication
+* Structured action-oriented briefings
+
+Validated Fall Module A evidence:
+
+Curriculum             Slide 8
+Course Times           Slide 11
+Term Structure         Slide 12
+Summer Work            Slide 4
+Laptop Recommendations Slide 5
+
+Validated briefing behavior:
+
+Deterministic Module Plan          PASS
+Five Required Categories Retrieved PASS
+Strongest Evidence Per Category    PASS
+Duplicate Evidence Removed         PASS
+Verified Facts Separated           PASS
+Recommended Actions Separated      PASS
+Open Questions Preserved           PASS
+Citation References Constrained    PASS
+Complete Source Evidence Retained  PASS
+General LLM Planner Preserved      PASS
+Empty-Evidence Safety Preserved    PASS
+
+Testing baseline:
+
+Focused Briefing Tests      9 Passed
+Complete Isolated Suite    88 Passed
+Live Retrieval Tests        7 Passed
+Live Retrieval Failures     0
+
+Atlas has advanced from answering:
+
+What is true?
+
+to also answering:
+
+Given what is true, what should I do next?
