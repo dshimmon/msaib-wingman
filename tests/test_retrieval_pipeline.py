@@ -56,6 +56,71 @@ class RetrievalPipelineTests(unittest.TestCase):
             concept_retrieval,
         )
 
+    def test_forwards_conversation_context(self):
+        query_plan = {
+            "text_search_terms": [],
+            "record_types": ["course_schedule"],
+            "record_filters": [],
+            "memory_search_terms": [],
+        }
+        conversation_context = [
+            {
+                "user_question": "Previous question",
+                "evidence": [],
+            }
+        ]
+
+        with (
+            patch.object(
+                retrieval_pipeline,
+                "interpret_query",
+                return_value=query_plan,
+            ) as interpret_query,
+            patch.object(
+                retrieval_pipeline,
+                "retrieve_evidence",
+                return_value=[],
+            ),
+        ):
+            retrieval_pipeline.retrieve_question_evidence(
+                "Follow-up question",
+                conversation_context=conversation_context,
+            )
+
+        interpret_query.assert_called_once_with(
+            "Follow-up question",
+            conversation_context=conversation_context,
+        )
+
+    def test_no_context_forwards_none_safely(self):
+        query_plan = {
+            "text_search_terms": [],
+            "record_types": [],
+            "record_filters": [],
+            "memory_search_terms": [],
+        }
+
+        with (
+            patch.object(
+                retrieval_pipeline,
+                "interpret_query",
+                return_value=query_plan,
+            ) as interpret_query,
+            patch.object(
+                retrieval_pipeline,
+                "retrieve_evidence",
+                return_value=[],
+            ),
+        ):
+            retrieval_pipeline.retrieve_question_evidence(
+                "Question"
+            )
+
+        interpret_query.assert_called_once_with(
+            "Question",
+            conversation_context=None,
+        )
+
     def test_strong_heading_match_skips_semantic_retrieval(self):
         query_plan = {
             "text_search_terms": ["orientation"],

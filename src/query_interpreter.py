@@ -54,13 +54,23 @@ def is_bare_topic(user_question):
     )
 
 
-def interpret_query(user_question):
+def interpret_query(
+    user_question,
+    conversation_context=None,
+):
     """
     Convert a natural-language question into
     structured retrieval instructions.
     """
 
-    if is_bare_topic(user_question):
+    conversation_context = (
+        conversation_context or []
+    )
+
+    if (
+        is_bare_topic(user_question)
+        and not conversation_context
+    ):
         return {
             "memory_search_terms": [],
             "text_search_terms": [
@@ -69,7 +79,10 @@ def interpret_query(user_question):
             "record_types": [],
             "record_filters": [],
         }
-
+    conversation_context_text = json.dumps(
+        conversation_context,
+        indent=2,
+    )
     prompt = f"""
 You are the query interpreter for MSAIB Wingman.
 
@@ -78,6 +91,48 @@ Your only job is to convert the user's question into
 structured retrieval instructions.
 
 Do not answer the question.
+
+Recent source-grounded conversation context:
+{conversation_context_text}
+
+Conversation-context rules:
+
+- Use recent context only to resolve pronouns, references,
+  omitted subjects, and follow-up scope.
+- Prior assistant wording is not provided and must not be
+  treated as evidence.
+- Prior evidence helps explain what the user means, but the
+  retrieval plan must always retrieve fresh Wingman evidence.
+- Prefer the most recent relevant conversation turn.
+- Ignore conversation context when the current question is
+  self-contained or clearly changes topics.
+- Do not let earlier conversation override the current
+  question.
+- If prior evidence contains structured records, use their
+  exact field values when resolving phrases such as:
+  "those courses," "those classes," or "the second module."
+- Multiple filters for the same field represent accepted
+  alternatives.
+- Different fields represent combined requirements.
+
+Follow-up example:
+
+Previous question:
+"What classes will I take in the fall?"
+
+Previous evidence:
+curriculum_course records containing the Fall 2026 course
+names.
+
+Current question:
+"Which of those meet on Tuesday?"
+
+Interpretation:
+- Request course_schedule records.
+- Filter day = "Tuesday".
+- Filter course_name using the relevant course names from
+  the prior curriculum evidence.
+- Retrieve fresh schedule evidence.
 
 User question:
 {user_question}

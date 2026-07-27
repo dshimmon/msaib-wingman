@@ -494,7 +494,12 @@ def display_chat_workspace():
             with st.spinner(
                 "Atlas is reviewing the evidence..."
             ):
-                result = ask_wingman(question)
+                result = ask_wingman(
+                    question,
+                    conversation_history=(
+                        st.session_state.messages
+                    ),
+                )
 
             st.write(result["answer"])
 

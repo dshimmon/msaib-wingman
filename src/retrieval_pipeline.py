@@ -66,12 +66,18 @@ def has_confident_deterministic_match(
     )
 
 
-def retrieve_question_evidence(question):
+def retrieve_question_evidence(
+    question,
+    conversation_context=None,
+):
     """
     Interpret a question and return its retrieval plan
     and ranked supporting evidence.
     """
-    query_plan = interpret_query(question)
+    query_plan = interpret_query(
+        question,
+        conversation_context=conversation_context,
+    )
     evidence = retrieve_evidence(query_plan)
 
     text_search_terms = query_plan.get(
