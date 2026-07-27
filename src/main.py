@@ -9,7 +9,6 @@ from interface import (
 )
 from wingman_service import ask_wingman
 
-
 show_header()
 
 mission = get_mission()

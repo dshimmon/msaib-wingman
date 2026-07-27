@@ -140,6 +140,10 @@ def enrich_evidence_sources(evidence):
             "uploaded_at": stored_metadata.get(
                 "uploaded_at",
             ),
+            "source_kind": stored_metadata.get(
+                "source_kind",
+                "repository",
+            ),
         }
 
         enriched_evidence.append(

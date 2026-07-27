@@ -186,6 +186,7 @@ def ingest_uploaded_document(
                 "uploaded_at": datetime.now(
                     timezone.utc
                 ).isoformat(),
+                "source_kind": "upload",
             },
         )
 
