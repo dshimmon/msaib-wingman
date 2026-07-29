@@ -102,9 +102,7 @@ class BriefingVersionRecord(EntityRecord):
     retrieval_results: JsonArray = field(
         default_factory=list
     )
-    evidence_snapshot: JsonArray = field(
-        default_factory=list
-    )
+    evidence_snapshot: JsonObject | JsonArray = field(default_factory=dict)
     source_fingerprint: str | None = None
     version_created_at: str = ""
 

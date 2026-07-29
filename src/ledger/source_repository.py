@@ -245,6 +245,24 @@ def get_source(connection, entity_id):
     return source_from_row(row)
 
 
+def get_current_source_version(connection, source_id):
+    """Resolve a source's current immutable version, when present."""
+    source = get_source(connection, source_id)
+    if source is None or source.current_source_version_id is None:
+        return None
+    return get_source_version(
+        connection, source.current_source_version_id
+    )
+
+
+def resolve_current_source_versions(connection, source_ids):
+    """Resolve current versions for a collection of source IDs."""
+    return {
+        source_id: get_current_source_version(connection, source_id)
+        for source_id in source_ids
+    }
+
+
 def list_sources(connection, *, status=None):
     """
     Return sources, optionally filtered by entity status.

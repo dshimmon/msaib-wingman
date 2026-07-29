@@ -206,7 +206,8 @@ class BriefingServiceTests(unittest.TestCase):
         enrich_sources.return_value = display_evidence
 
         result = briefing_service.create_study_briefing(
-            "Test topic"
+            "Test topic",
+            persist=False,
         )
 
         generate_briefing.assert_called_once_with(

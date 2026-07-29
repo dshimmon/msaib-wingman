@@ -192,3 +192,35 @@ def get_diagnostic_event(connection, entity_id):
     ).fetchone()
 
     return diagnostic_event_from_row(row)
+
+
+def _list_diagnostic_events(connection, clause, value):
+    rows = connection.execute(
+        f"""
+        SELECT
+            e.entity_id, e.entity_type, e.product_key, e.domain,
+            e.status AS entity_status, e.version AS entity_version,
+            e.created_at, e.updated_at,
+            e.metadata_json AS entity_metadata_json,
+            d.trace_id, d.operation, d.severity, d.recoverable,
+            d.related_entity_id, d.message, d.details_json, d.occurred_at
+        FROM entities AS e
+        JOIN diagnostic_events AS d ON d.entity_id = e.entity_id
+        WHERE d.{clause} = ?
+        ORDER BY d.occurred_at, e.entity_id
+        """,
+        (value,),
+    ).fetchall()
+    return [diagnostic_event_from_row(row) for row in rows]
+
+
+def list_events_for_trace(connection, trace_id):
+    """Return diagnostic events belonging to a trace."""
+    return _list_diagnostic_events(connection, "trace_id", trace_id)
+
+
+def list_events_for_related_entity(connection, related_entity_id):
+    """Return diagnostic events associated with an entity."""
+    return _list_diagnostic_events(
+        connection, "related_entity_id", related_entity_id
+    )

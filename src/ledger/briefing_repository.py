@@ -240,10 +240,14 @@ def create_briefing_version(
         "retrieval_results",
         list,
     )
+    if not isinstance(evidence_snapshot, (dict, list)):
+        raise ValueError(
+            "evidence_snapshot must be a dict or list."
+        )
     evidence_snapshot_json = serialize_json(
         evidence_snapshot,
         "evidence_snapshot",
-        list,
+        type(evidence_snapshot),
     )
     insert_entity(
         connection,
@@ -408,3 +412,68 @@ def get_briefing_version(connection, entity_id):
     ).fetchone()
 
     return briefing_version_from_row(row)
+
+
+def list_briefings(connection):
+    """Return all briefings in stable creation order."""
+    rows = connection.execute(
+        """
+        SELECT
+            e.entity_id, e.entity_type, e.product_key, e.domain,
+            e.status AS entity_status, e.version AS entity_version,
+            e.created_at, e.updated_at,
+            e.metadata_json AS entity_metadata_json,
+            b.topic, b.title, b.current_briefing_version_id
+        FROM entities AS e
+        JOIN briefings AS b ON b.entity_id = e.entity_id
+        ORDER BY e.created_at, e.entity_id
+        """
+    ).fetchall()
+    return [briefing_from_row(row) for row in rows]
+
+
+def list_briefing_versions(connection, briefing_id):
+    """Return every immutable version of a briefing in version order."""
+    rows = connection.execute(
+        """
+        SELECT
+            e.entity_id, e.entity_type, e.product_key, e.domain,
+            e.status AS entity_status, e.version AS entity_version,
+            e.created_at AS entity_created_at, e.updated_at,
+            e.metadata_json AS entity_metadata_json,
+            bv.briefing_id, bv.version_number, bv.request_text,
+            bv.planner_type, bv.briefing_json,
+            bv.retrieval_results_json, bv.evidence_snapshot_json,
+            bv.source_fingerprint, bv.created_at AS version_created_at
+        FROM entities AS e
+        JOIN briefing_versions AS bv ON bv.entity_id = e.entity_id
+        WHERE bv.briefing_id = ?
+        ORDER BY bv.version_number
+        """,
+        (briefing_id,),
+    ).fetchall()
+    return [briefing_version_from_row(row) for row in rows]
+
+
+def get_current_briefing_version(connection, briefing_id):
+    """Return the version selected by a briefing's current pointer."""
+    briefing = get_briefing(connection, briefing_id)
+    if briefing is None or briefing.current_briefing_version_id is None:
+        return None
+    return get_briefing_version(
+        connection, briefing.current_briefing_version_id
+    )
+
+
+def next_briefing_version_number(connection, briefing_id):
+    """Return the next sequential version number."""
+    if get_briefing(connection, briefing_id) is None:
+        raise KeyError(f"Unknown briefing: {briefing_id}")
+    row = connection.execute(
+        """
+        SELECT COALESCE(MAX(version_number), 0) + 1 AS next_number
+        FROM briefing_versions WHERE briefing_id = ?
+        """,
+        (briefing_id,),
+    ).fetchone()
+    return row["next_number"]

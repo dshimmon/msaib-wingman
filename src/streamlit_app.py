@@ -497,6 +497,11 @@ def display_briefing_workspace():
     if not result:
         return
 
+    if result.get("persistence", {}).get("status") == "failed":
+        st.warning(
+            "This briefing was generated but could not be saved."
+        )
+
     briefing = result["briefing"]
 
     st.divider()
