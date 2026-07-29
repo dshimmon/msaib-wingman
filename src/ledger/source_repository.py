@@ -245,6 +245,156 @@ def get_source(connection, entity_id):
     return source_from_row(row)
 
 
+def list_sources(connection, *, status=None):
+    """
+    Return sources, optionally filtered by entity status.
+    """
+    parameters = ()
+    status_clause = ""
+    if status is not None:
+        status_clause = "WHERE e.status = ?"
+        parameters = (status,)
+
+    rows = connection.execute(
+        f"""
+        SELECT
+            e.entity_id,
+            e.entity_type,
+            e.product_key,
+            e.domain,
+            e.status AS entity_status,
+            e.version AS entity_version,
+            e.created_at,
+            e.updated_at,
+            e.metadata_json AS entity_metadata_json,
+            s.source_kind,
+            s.display_name,
+            s.file_name,
+            s.file_type,
+            s.mime_type,
+            s.program,
+            s.academic_year,
+            s.source_url,
+            s.original_path,
+            s.current_source_version_id
+        FROM entities AS e
+        JOIN sources AS s
+            ON s.entity_id = e.entity_id
+        {status_clause}
+        ORDER BY e.entity_id
+        """,
+        parameters,
+    ).fetchall()
+
+    return [source_from_row(row) for row in rows]
+
+
+def list_active_sources(connection):
+    """
+    Return active sources in stable ID order.
+    """
+    return list_sources(connection, status="active")
+
+
+@atomic_repository_write
+def update_source(
+    connection,
+    entity_id,
+    *,
+    source_kind,
+    display_name,
+    status,
+    domain=None,
+    file_name=None,
+    file_type=None,
+    mime_type=None,
+    program=None,
+    academic_year=None,
+    source_url=None,
+    original_path=None,
+    metadata=None,
+    updated_at=None,
+):
+    """
+    Replace one source's current metadata and status.
+    """
+    if get_source(connection, entity_id) is None:
+        raise KeyError(f"Unknown source: {entity_id}")
+
+    timestamp = updated_at or utc_now()
+    metadata_json = serialize_json(
+        metadata if metadata is not None else {},
+        "metadata",
+        dict,
+    )
+    connection.execute(
+        """
+        UPDATE entities
+        SET domain = ?, status = ?, version = version + 1,
+            updated_at = ?, metadata_json = ?
+        WHERE entity_id = ?
+        """,
+        (
+            domain,
+            status,
+            timestamp,
+            metadata_json,
+            entity_id,
+        ),
+    )
+    connection.execute(
+        """
+        UPDATE sources
+        SET source_kind = ?, display_name = ?, file_name = ?,
+            file_type = ?, mime_type = ?, program = ?,
+            academic_year = ?, source_url = ?,
+            original_path = ?
+        WHERE entity_id = ?
+        """,
+        (
+            source_kind,
+            display_name,
+            file_name,
+            file_type,
+            mime_type,
+            program,
+            academic_year,
+            source_url,
+            original_path,
+            entity_id,
+        ),
+    )
+    return get_source(connection, entity_id)
+
+
+@atomic_repository_write
+def set_source_status(
+    connection,
+    entity_id,
+    status,
+    *,
+    updated_at=None,
+):
+    """
+    Mark one source active or removed.
+    """
+    source = get_source(connection, entity_id)
+    if source is None:
+        raise KeyError(f"Unknown source: {entity_id}")
+    if source.status == status:
+        return source
+
+    connection.execute(
+        """
+        UPDATE entities
+        SET status = ?, version = version + 1, updated_at = ?
+        WHERE entity_id = ?
+        """,
+        (status, updated_at or utc_now(), entity_id),
+    )
+    return get_source(connection, entity_id)
+
+
 @atomic_repository_write
 def create_source_version(
     connection,
@@ -435,3 +585,94 @@ def get_source_version(connection, entity_id):
     ).fetchone()
 
     return source_version_from_row(row)
+
+
+def list_source_versions(connection, source_id):
+    """
+    Return a source's versions in version-number order.
+    """
+    rows = connection.execute(
+        """
+        SELECT
+            e.entity_id, e.entity_type, e.product_key, e.domain,
+            e.status AS entity_status,
+            e.version AS entity_version, e.created_at, e.updated_at,
+            e.metadata_json AS entity_metadata_json,
+            sv.source_id, sv.version_number, sv.content_hash,
+            sv.original_path, sv.captured_at, sv.change_type,
+            sv.metadata_json AS version_metadata_json
+        FROM entities AS e
+        JOIN source_versions AS sv
+            ON sv.entity_id = e.entity_id
+        WHERE sv.source_id = ?
+        ORDER BY sv.version_number
+        """,
+        (source_id,),
+    ).fetchall()
+    return [source_version_from_row(row) for row in rows]
+
+
+def find_matching_source_version(
+    connection,
+    source_id,
+    *,
+    content_hash,
+    original_path,
+    reprocessed_at,
+):
+    """
+    Find an equivalent historical version-defining snapshot.
+    """
+    for version in list_source_versions(connection, source_id):
+        if (
+            version.content_hash == content_hash
+            and version.original_path == original_path
+            and version.version_metadata.get("reprocessed_at")
+            == reprocessed_at
+        ):
+            return version
+    return None
+
+
+def next_source_version_number(connection, source_id):
+    """
+    Return the next sequential number for a source version.
+    """
+    row = connection.execute(
+        """
+        SELECT COALESCE(MAX(version_number), 0) + 1 AS next_number
+        FROM source_versions
+        WHERE source_id = ?
+        """,
+        (source_id,),
+    ).fetchone()
+    return row["next_number"]
+
+
+def find_active_source_by_current_content_hash(
+    connection,
+    content_hash,
+):
+    """
+    Find an active source by its current version's hash.
+    """
+    if not content_hash:
+        return None
+
+    row = connection.execute(
+        """
+        SELECT e.entity_id
+        FROM entities AS e
+        JOIN sources AS s ON s.entity_id = e.entity_id
+        JOIN source_versions AS sv
+            ON sv.entity_id = s.current_source_version_id
+        WHERE e.status = 'active' AND sv.content_hash = ?
+        ORDER BY e.entity_id
+        LIMIT 1
+        """,
+        (content_hash,),
+    ).fetchone()
+    return get_source(
+        connection,
+        row["entity_id"],
+    ) if row is not None else None

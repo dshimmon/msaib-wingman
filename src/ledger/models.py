@@ -26,6 +26,7 @@ def serialize_json(value, field_name, expected_type):
             value,
             sort_keys=True,
             separators=(",", ":"),
+            allow_nan=False,
         )
     except (TypeError, ValueError) as error:
         raise ValueError(
@@ -73,7 +74,7 @@ class SourceRecord(EntityRecord):
 class SourceVersionRecord(EntityRecord):
     source_id: str = ""
     version_number: int = 1
-    content_hash: str = ""
+    content_hash: str | None = None
     original_path: str | None = None
     captured_at: str = ""
     change_type: str = ""

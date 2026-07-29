@@ -149,6 +149,166 @@ class LedgerCoreTests(unittest.TestCase):
             ],
         )
 
+    def test_fresh_schema_has_nullable_source_version_hash(
+        self,
+    ):
+        self.migrate()
+
+        columns = self.connection.execute(
+            "PRAGMA table_info(source_versions)"
+        ).fetchall()
+        content_hash = next(
+            column
+            for column in columns
+            if column["name"] == "content_hash"
+        )
+
+        self.assertEqual(content_hash["notnull"], 0)
+
+    def test_nullable_hash_migration_preserves_versions_and_pointer(
+        self,
+    ):
+        with patch.object(
+            ledger.migrations,
+            "MIGRATIONS",
+            MIGRATIONS[:2],
+        ):
+            apply_migrations(self.connection)
+
+        with transaction(self.connection):
+            create_source(
+                self.connection,
+                entity_id="source-one",
+                source_kind="repository",
+                display_name="Source One",
+                created_at=TEST_TIMESTAMP,
+            )
+            create_source_version(
+                self.connection,
+                entity_id="version-without-hash",
+                source_id="source-one",
+                version_number=1,
+                content_hash="",
+                change_type="registered",
+                captured_at=TEST_TIMESTAMP,
+            )
+            create_source_version(
+                self.connection,
+                entity_id="version-with-hash",
+                source_id="source-one",
+                version_number=2,
+                content_hash="real-hash",
+                change_type="updated",
+                captured_at=TEST_TIMESTAMP,
+            )
+
+        apply_migrations(self.connection)
+
+        versions = self.connection.execute(
+            """
+            SELECT entity_id, source_id, version_number, content_hash,
+                   original_path, captured_at, change_type, metadata_json
+            FROM source_versions
+            ORDER BY version_number
+            """
+        ).fetchall()
+        source = get_source(self.connection, "source-one")
+
+        self.assertEqual(
+            versions[0]["entity_id"],
+            "version-without-hash",
+        )
+        self.assertIsNone(versions[0]["content_hash"])
+        self.assertEqual(
+            versions[1]["content_hash"],
+            "real-hash",
+        )
+        self.assertEqual(
+            source.current_source_version_id,
+            "version-with-hash",
+        )
+        self.assertEqual(
+            self.connection.execute(
+                "PRAGMA foreign_key_check"
+            ).fetchall(),
+            [],
+        )
+
+        with transaction(self.connection):
+            create_source(
+                self.connection,
+                entity_id="source-two",
+                source_kind="repository",
+                display_name="Source Two",
+                created_at=TEST_TIMESTAMP,
+            )
+
+        with self.assertRaises(sqlite3.IntegrityError):
+            with transaction(self.connection):
+                self.connection.execute(
+                    """
+                    UPDATE sources
+                    SET current_source_version_id =
+                        'version-with-hash'
+                    WHERE entity_id = 'source-two'
+                    """
+                )
+
+    def test_failed_rebuild_rolls_back_and_is_not_recorded(
+        self,
+    ):
+        with patch.object(
+            ledger.migrations,
+            "MIGRATIONS",
+            MIGRATIONS[:2],
+        ):
+            apply_migrations(self.connection)
+
+        failing_migration = Migration(
+            version=3,
+            name="failing_table_rebuild",
+            rebuilds_foreign_keys=True,
+            statements=(
+                """
+                ALTER TABLE source_versions
+                RENAME TO source_versions_old
+                """,
+                "THIS IS NOT VALID SQL",
+            ),
+        )
+
+        with patch.object(
+            ledger.migrations,
+            "MIGRATIONS",
+            (failing_migration,),
+        ):
+            with self.assertRaises(sqlite3.OperationalError):
+                apply_migrations(self.connection)
+
+        self.assertIsNotNone(
+            self.connection.execute(
+                """
+                SELECT name FROM sqlite_master
+                WHERE type = 'table'
+                  AND name = 'source_versions'
+                """
+            ).fetchone()
+        )
+        self.assertIsNone(
+            self.connection.execute(
+                """
+                SELECT version FROM schema_migrations
+                WHERE version = 3
+                """
+            ).fetchone()
+        )
+        self.assertEqual(
+            self.connection.execute(
+                "PRAGMA foreign_keys"
+            ).fetchone()[0],
+            1,
+        )
+
     def test_failed_migration_rolls_back_and_is_not_recorded(
         self,
     ):

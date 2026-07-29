@@ -3,3 +3,6 @@ __pycache__/
 .env
 # Local Atlas document uploads
 /data/documents/uploads/
+/data/ledger/*.sqlite3
+/data/ledger/*.sqlite3-wal
+/data/ledger/*.sqlite3-shm

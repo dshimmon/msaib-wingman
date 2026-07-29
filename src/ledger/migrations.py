@@ -17,6 +17,7 @@ class Migration:
     version: int
     name: str
     statements: tuple[str, ...]
+    rebuilds_foreign_keys: bool = False
 
 
 INITIAL_SCHEMA_STATEMENTS = (
@@ -242,6 +243,122 @@ MIGRATIONS = (
         name="initial_ledger_schema",
         statements=INITIAL_SCHEMA_STATEMENTS,
     ),
+    Migration(
+        version=2,
+        name="legacy_import_tracking",
+        statements=(
+            """
+            CREATE TABLE legacy_imports (
+                import_key TEXT PRIMARY KEY,
+                status TEXT NOT NULL,
+                completed_at TEXT NOT NULL,
+                details_json TEXT NOT NULL DEFAULT '{}'
+            )
+            """,
+        ),
+    ),
+    Migration(
+        version=3,
+        name="nullable_source_version_content_hash",
+        rebuilds_foreign_keys=True,
+        statements=(
+            """
+            DROP TRIGGER sources_current_version_insert_guard
+            """,
+            """
+            DROP TRIGGER sources_current_version_update_guard
+            """,
+            """
+            CREATE TABLE source_versions_rebuilt (
+                entity_id TEXT PRIMARY KEY,
+                source_id TEXT NOT NULL,
+                version_number INTEGER NOT NULL,
+                content_hash TEXT NULL,
+                original_path TEXT NULL,
+                captured_at TEXT NOT NULL,
+                change_type TEXT NOT NULL,
+                metadata_json TEXT NOT NULL DEFAULT '{}',
+                FOREIGN KEY (entity_id)
+                    REFERENCES entities(entity_id)
+                    ON DELETE CASCADE,
+                FOREIGN KEY (source_id)
+                    REFERENCES sources(entity_id)
+                    ON DELETE RESTRICT,
+                UNIQUE (source_id, version_number)
+            )
+            """,
+            """
+            INSERT INTO source_versions_rebuilt (
+                entity_id,
+                source_id,
+                version_number,
+                content_hash,
+                original_path,
+                captured_at,
+                change_type,
+                metadata_json
+            )
+            SELECT
+                entity_id,
+                source_id,
+                version_number,
+                NULLIF(content_hash, ''),
+                original_path,
+                captured_at,
+                change_type,
+                metadata_json
+            FROM source_versions
+            """,
+            """
+            DROP INDEX source_versions_source_id_index
+            """,
+            """
+            DROP TABLE source_versions
+            """,
+            """
+            ALTER TABLE source_versions_rebuilt
+            RENAME TO source_versions
+            """,
+            """
+            CREATE INDEX source_versions_source_id_index
+            ON source_versions(source_id)
+            """,
+            """
+            CREATE TRIGGER sources_current_version_insert_guard
+            BEFORE INSERT ON sources
+            WHEN NEW.current_source_version_id IS NOT NULL
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM source_versions
+                  WHERE entity_id = NEW.current_source_version_id
+                    AND source_id = NEW.entity_id
+              )
+            BEGIN
+                SELECT RAISE(
+                    ABORT,
+                    'Current source version must belong to the source.'
+                );
+            END
+            """,
+            """
+            CREATE TRIGGER sources_current_version_update_guard
+            BEFORE UPDATE OF current_source_version_id ON sources
+            WHEN NEW.current_source_version_id IS NOT NULL
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM source_versions
+                  WHERE entity_id = NEW.current_source_version_id
+                    AND source_id = NEW.entity_id
+              )
+            BEGIN
+                SELECT RAISE(
+                    ABORT,
+                    'Current source version must belong to the source.'
+                );
+            END
+            """,
+        ),
+    ),
 )
 
 
@@ -293,26 +410,47 @@ def apply_migrations(connection):
         if migration.version in applied_versions:
             continue
 
-        with transaction(connection):
-            for statement in migration.statements:
-                connection.execute(statement)
-
+        if migration.rebuilds_foreign_keys:
             connection.execute(
-                """
-                INSERT INTO schema_migrations (
-                    version,
-                    name,
-                    applied_at
-                )
-                VALUES (?, ?, ?)
-                """,
-                (
-                    migration.version,
-                    migration.name,
-                    datetime.now(
-                        timezone.utc
-                    ).isoformat(),
-                ),
+                "PRAGMA foreign_keys = OFF"
             )
+
+        try:
+            with transaction(connection):
+                for statement in migration.statements:
+                    connection.execute(statement)
+
+                if migration.rebuilds_foreign_keys:
+                    violations = connection.execute(
+                        "PRAGMA foreign_key_check"
+                    ).fetchall()
+                    if violations:
+                        raise RuntimeError(
+                            "Foreign-key violations detected "
+                            f"during migration {migration.version}."
+                        )
+
+                connection.execute(
+                    """
+                    INSERT INTO schema_migrations (
+                        version,
+                        name,
+                        applied_at
+                    )
+                    VALUES (?, ?, ?)
+                    """,
+                    (
+                        migration.version,
+                        migration.name,
+                        datetime.now(
+                            timezone.utc
+                        ).isoformat(),
+                    ),
+                )
+        finally:
+            if migration.rebuilds_foreign_keys:
+                connection.execute(
+                    "PRAGMA foreign_keys = ON"
+                )
 
     return get_applied_versions(connection)
