@@ -1,4 +1,12 @@
-# MSAIB WINGMAN — CURRENT ARCHITECTURE
+# SUPERSEDED CURRENT-ARCHITECTURE SNAPSHOT
+
+The authoritative current architecture is now:
+
+    docs/architecture/Airframe.md
+
+This file preserves the Mission 026 pre-Airframe snapshot for history.
+
+# MSAIB WINGMAN — MISSION 026 ARCHITECTURE SNAPSHOT
 
 NORTH STAR
 

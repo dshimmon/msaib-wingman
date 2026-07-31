@@ -1,9 +1,20 @@
-def show_header():
+def show_header(configuration=None):
+    title = (
+        configuration.terminal_title
+        if configuration is not None
+        else "MSAIB WINGMAN"
+    )
+    welcome = (
+        configuration.terminal_welcome
+        if configuration is not None
+        else "Welcome aboard, Maverick."
+    )
+
     print("=" * 40)
-    print("        MSAIB WINGMAN")
+    print(f"        {title}")
     print("=" * 40)
     print()
-    print("Welcome aboard, Maverick.")
+    print(welcome)
     print()
 
 

@@ -12,12 +12,47 @@ from ledger.models import (
     serialize_json,
 )
 
+_LEGACY_SOURCE_METADATA_COLUMNS = (
+    "program",
+    "academic_year",
+)
+
 
 def utc_now():
     """
     Return a current UTC ISO timestamp.
     """
     return datetime.now(timezone.utc).isoformat()
+
+
+def _source_metadata_from_version_3_row(row):
+    """
+    Merge temporary version-3 storage columns into public metadata.
+
+    Generic entity metadata is authoritative when both representations
+    contain the same key. Reading never repairs or otherwise mutates the
+    database.
+    """
+    metadata = deserialize_json(
+        row["entity_metadata_json"]
+    )
+    for key in _LEGACY_SOURCE_METADATA_COLUMNS:
+        if key not in metadata and row[key] is not None:
+            metadata[key] = row[key]
+    return metadata
+
+
+def _legacy_source_values_from_metadata(metadata):
+    """
+    Mirror generic metadata into version-3 compatibility columns.
+    """
+    source_metadata = (
+        metadata if metadata is not None else {}
+    )
+    return tuple(
+        source_metadata.get(key)
+        for key in _LEGACY_SOURCE_METADATA_COLUMNS
+    )
 
 
 def insert_entity(
@@ -85,16 +120,12 @@ def source_from_row(row):
         version=row["entity_version"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
-        metadata=deserialize_json(
-            row["entity_metadata_json"]
-        ),
+        metadata=_source_metadata_from_version_3_row(row),
         source_kind=row["source_kind"],
         display_name=row["display_name"],
         file_name=row["file_name"],
         file_type=row["file_type"],
         mime_type=row["mime_type"],
-        program=row["program"],
-        academic_year=row["academic_year"],
         source_url=row["source_url"],
         original_path=row["original_path"],
         current_source_version_id=(
@@ -147,8 +178,6 @@ def create_source(
     file_name=None,
     file_type=None,
     mime_type=None,
-    program=None,
-    academic_year=None,
     source_url=None,
     original_path=None,
     metadata=None,
@@ -198,8 +227,9 @@ def create_source(
             file_name,
             file_type,
             mime_type,
-            program,
-            academic_year,
+            *_legacy_source_values_from_metadata(
+                metadata
+            ),
             source_url,
             original_path,
         ),
@@ -326,8 +356,6 @@ def update_source(
     file_name=None,
     file_type=None,
     mime_type=None,
-    program=None,
-    academic_year=None,
     source_url=None,
     original_path=None,
     metadata=None,
@@ -365,8 +393,7 @@ def update_source(
         UPDATE sources
         SET source_kind = ?, display_name = ?, file_name = ?,
             file_type = ?, mime_type = ?, program = ?,
-            academic_year = ?, source_url = ?,
-            original_path = ?
+            academic_year = ?, source_url = ?, original_path = ?
         WHERE entity_id = ?
         """,
         (
@@ -375,8 +402,9 @@ def update_source(
             file_name,
             file_type,
             mime_type,
-            program,
-            academic_year,
+            *_legacy_source_values_from_metadata(
+                metadata
+            ),
             source_url,
             original_path,
             entity_id,

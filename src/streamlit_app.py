@@ -18,15 +18,15 @@ from intake_service import (
     ingest_uploaded_document,
 )
 from library_service import list_library_sources
+from product_config import ATLAS_PRODUCT
 from wingman_service import ask_wingman
 
 
 st.set_page_config(
-    page_title="Atlas | Wingman",
-    page_icon="🪿",
+    page_title=ATLAS_PRODUCT.page_title,
+    page_icon=ATLAS_PRODUCT.page_icon,
     layout="wide",
 )
-
 
 def format_uploaded_at(uploaded_at):
     """
@@ -78,11 +78,6 @@ def display_sources(evidence, key_prefix):
             )
 
             file_type = metadata.get("file_type")
-            program = metadata.get("program")
-            academic_year = metadata.get(
-                "academic_year"
-            )
-
             st.markdown(
                 f"### {display_name}"
             )
@@ -97,8 +92,13 @@ def display_sources(evidence, key_prefix):
                     file_type.upper()
                     if file_type
                     else None,
-                    program,
-                    academic_year,
+                    *[
+                        metadata.get(field.key)
+                        for field in (
+                            ATLAS_PRODUCT
+                            .source_metadata_fields
+                        )
+                    ],
                 ]
                 if detail
             ]
@@ -165,11 +165,6 @@ def display_library_source(source, source_index):
     ):
         file_type = source.get("file_type")
         domain = source.get("domain")
-        program = source.get("program")
-        academic_year = source.get(
-            "academic_year"
-        )
-
         source_details = [
             detail
             for detail in [
@@ -177,8 +172,13 @@ def display_library_source(source, source_index):
                 if file_type
                 else None,
                 domain,
-                program,
-                academic_year,
+                *[
+                    source.get(field.key)
+                    for field in (
+                        ATLAS_PRODUCT
+                        .source_metadata_fields
+                    )
+                ],
             ]
             if detail
         ]
@@ -583,8 +583,10 @@ def display_chat_workspace():
     """
     Display Atlas's conversational workspace.
     """
-    st.title("Academic Wingman")
-    st.caption("Call Sign: Atlas")
+    st.title(ATLAS_PRODUCT.product_name)
+    st.caption(
+        f"Call Sign: {ATLAS_PRODUCT.call_sign}"
+    )
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -604,7 +606,7 @@ def display_chat_workspace():
                 )
 
     question = st.chat_input(
-        "Ask Atlas a question..."
+        f"Ask {ATLAS_PRODUCT.call_sign} a question..."
     )
 
     if question:
@@ -649,8 +651,12 @@ def display_chat_workspace():
 
 
 with st.sidebar:
-    st.markdown("## Academic Wingman")
-    st.caption("Call Sign: Atlas")
+    st.markdown(
+        f"## {ATLAS_PRODUCT.product_name}"
+    )
+    st.caption(
+        f"Call Sign: {ATLAS_PRODUCT.call_sign}"
+    )
 
     workspace = st.radio(
         "Workspace",
@@ -688,18 +694,18 @@ with st.sidebar:
 
         domain = st.text_input(
             "Domain",
-            value="General",
+            value=ATLAS_PRODUCT.default_domain,
         )
 
-        program = st.text_input(
-            "Program",
-            placeholder="Optional",
-        )
-
-        academic_year = st.text_input(
-            "Academic year",
-            placeholder="Optional",
-        )
+        product_metadata = {
+            field.key: st.text_input(
+                field.label,
+                placeholder=field.placeholder,
+            )
+            for field in (
+                ATLAS_PRODUCT.source_metadata_fields
+            )
+        }
 
         if st.button(
             "Add to Atlas",
@@ -717,8 +723,7 @@ with st.sidebar:
                             ),
                             display_name=display_name,
                             domain=domain,
-                            program=program,
-                            academic_year=academic_year,
+                            product_metadata=product_metadata,
                         )
                     )
 

@@ -1,4 +1,4 @@
-# Builds Atlas's visible inventory of registered knowledge sources.
+# Builds a product-facing inventory of registered knowledge sources.
 
 import json
 from pathlib import Path
@@ -92,7 +92,7 @@ def determine_source_status(
     embedding_count,
 ):
     """
-    Describe whether a source is ready for Atlas.
+    Describe whether a source is ready for product use.
     """
     if not original_available:
         return "Original unavailable"
@@ -171,6 +171,7 @@ def build_library_entry(
     )
 
     return {
+        **metadata,
         "source_id": source_id,
         "display_name": metadata.get(
             "display_name",
@@ -179,10 +180,6 @@ def build_library_entry(
         "file_name": metadata.get("file_name"),
         "file_type": metadata.get("file_type"),
         "domain": metadata.get("domain"),
-        "program": metadata.get("program"),
-        "academic_year": metadata.get(
-            "academic_year"
-        ),
         "uploaded_at": metadata.get(
             "uploaded_at"
         ),
@@ -229,7 +226,7 @@ def build_library_entry(
 
 def list_library_sources():
     """
-    Return every registered Atlas source with its
+    Return every registered source with its
     current storage and indexing status.
     """
     registry = load_source_registry()

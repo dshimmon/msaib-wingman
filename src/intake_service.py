@@ -7,6 +7,7 @@ from pathlib import Path
 
 from document_ingestion import ingest_document
 from document_router import SUPPORTED_EXTENSIONS
+from product_contract import validate_product_metadata_key
 from source_registry import (
     find_source_by_content_hash,
     register_source,
@@ -32,7 +33,6 @@ MIME_TYPES = {
         "spreadsheetml.sheet"
     ),
 }
-
 
 def create_display_name(file_name):
     """
@@ -67,6 +67,64 @@ def create_source_id(file_name, content_hash):
     return f"{slug}-{content_hash[:12]}"
 
 
+def normalize_optional_metadata_value(value):
+    """Use None consistently for configured blank string values."""
+    if isinstance(value, str):
+        value = value.strip()
+        return value or None
+    return value
+
+
+def normalize_product_metadata(
+    product_metadata,
+    *,
+    program=None,
+    academic_year=None,
+):
+    """Validate and normalize product-owned source metadata."""
+    if (
+        product_metadata is not None
+        and not isinstance(product_metadata, dict)
+    ):
+        raise ValueError(
+            "Product metadata must contain a dictionary."
+        )
+
+    for key in product_metadata or {}:
+        validate_product_metadata_key(key)
+
+    normalized = {
+        "program": normalize_optional_metadata_value(
+            program
+        ),
+        "academic_year": (
+            normalize_optional_metadata_value(
+                academic_year
+            )
+        ),
+    }
+    for key, value in (
+        product_metadata or {}
+    ).items():
+        normalized_value = (
+            normalize_optional_metadata_value(
+                value
+            )
+        )
+        if (
+            normalized.get(key) is not None
+            and normalized_value
+            != normalized[key]
+        ):
+            raise ValueError(
+                "Product metadata conflicts with the "
+                f"legacy argument for {key!r}."
+            )
+        normalized[key] = normalized_value
+
+    return normalized
+
+
 def ingest_uploaded_document(
     file_name,
     file_bytes,
@@ -74,6 +132,7 @@ def ingest_uploaded_document(
     domain="General",
     program=None,
     academic_year=None,
+    product_metadata=None,
 ):
     """
     Store, ingest, and register one uploaded document.
@@ -94,6 +153,14 @@ def ingest_uploaded_document(
     content_hash = hashlib.sha256(
         file_bytes
     ).hexdigest()
+
+    normalized_product_metadata = (
+        normalize_product_metadata(
+            product_metadata,
+            program=program,
+            academic_year=academic_year,
+        )
+    )
 
     existing_source_id, existing_metadata = (
         find_source_by_content_hash(
@@ -168,18 +235,7 @@ def ingest_uploaded_document(
                 "file_type": extension.lstrip("."),
                 "mime_type": MIME_TYPES[extension],
                 "domain": domain,
-                "program": (
-                    program.strip()
-                    if program
-                    and program.strip()
-                    else None
-                ),
-                "academic_year": (
-                    academic_year.strip()
-                    if academic_year
-                    and academic_year.strip()
-                    else None
-                ),
+                **normalized_product_metadata,
                 "source_url": None,
                 "original_path": str(original_path),
                 "content_hash": content_hash,

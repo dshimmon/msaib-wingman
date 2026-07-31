@@ -25,7 +25,7 @@ def build_context(evidence):
     domain_sections = []
 
     for domain, texts in evidence_by_domain.items():
-        section = f"Course/Domain: {domain}\n" + "\n".join(texts)
+        section = f"Domain: {domain}\n" + "\n".join(texts)
         domain_sections.append(section)
 
     return "\n\n".join(domain_sections)

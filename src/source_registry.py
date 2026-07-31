@@ -32,20 +32,6 @@ SOURCE_REGISTRY_PATH = Path(
     "data/sources/source-registry.json"
 )
 LEGACY_IMPORT_KEY = "source-registry-json-v1"
-NORMALIZED_FIELDS = (
-    "source_kind",
-    "display_name",
-    "file_name",
-    "file_type",
-    "mime_type",
-    "domain",
-    "program",
-    "academic_year",
-    "source_url",
-    "original_path",
-)
-
-
 def utc_now():
     return datetime.now(timezone.utc).isoformat()
 
@@ -99,8 +85,6 @@ def normalized_arguments(source_id, metadata):
         "file_name": metadata.get("file_name"),
         "file_type": metadata.get("file_type"),
         "mime_type": metadata.get("mime_type"),
-        "program": metadata.get("program"),
-        "academic_year": metadata.get("academic_year"),
         "source_url": metadata.get("source_url"),
         "original_path": metadata.get("original_path"),
     }
@@ -427,6 +411,7 @@ def enrich_evidence_sources(evidence):
         )
 
         source_metadata = {
+            **stored_metadata,
             "id": source_id,
             "display_name": stored_metadata.get(
                 "display_name",
@@ -441,10 +426,6 @@ def enrich_evidence_sources(evidence):
             "domain": stored_metadata.get(
                 "domain",
                 item.get("domain"),
-            ),
-            "program": stored_metadata.get("program"),
-            "academic_year": stored_metadata.get(
-                "academic_year"
             ),
             "source_url": stored_metadata.get("source_url"),
             "original_path": stored_metadata.get(

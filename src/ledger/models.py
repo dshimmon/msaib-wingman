@@ -63,8 +63,6 @@ class SourceRecord(EntityRecord):
     file_name: str | None = None
     file_type: str | None = None
     mime_type: str | None = None
-    program: str | None = None
-    academic_year: str | None = None
     source_url: str | None = None
     original_path: str | None = None
     current_source_version_id: str | None = None

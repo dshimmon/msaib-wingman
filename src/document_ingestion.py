@@ -1,92 +1,62 @@
-# Converts normalized document units into enriched Wingman knowledge.
+"""Atlas composition and CLI for product-enriched document ingestion."""
 
-import json
-from pathlib import Path
+import argparse
 
 from concept_enrichment import enrich_concepts
 from document_router import extract_document_units
 from embedding_indexer import index_knowledge_objects
+from knowledge_ingestion import (
+    create_knowledge_objects as create_core_knowledge_objects,
+)
+from knowledge_ingestion import (
+    ingest_document as ingest_core_document,
+)
+from knowledge_ingestion import save_knowledge_objects
 from section_resolver import resolve_section
+
+
+# Supported through Mission 028: callers may import or patch these six
+# names exactly as they could before the Airframe split.
+__all__ = [
+    "create_knowledge_objects",
+    "extract_document_units",
+    "index_knowledge_objects",
+    "ingest_document",
+    "resolve_section",
+    "save_knowledge_objects",
+]
 
 
 def create_knowledge_objects(
     file_path,
     domain,
     source_id=None,
+    *,
+    enricher=None,
+    unit_extractor=None,
+    section_selector=None,
 ):
-    """
-    Convert a supported document into enriched
-    Wingman knowledge objects.
-    """
-    if source_id is None:
-        source_id = Path(file_path).stem
-
-    document_units = extract_document_units(file_path)
-
-    knowledge_objects = []
-    current_section = "General"
-
-    for unit_number, unit in enumerate(
-        document_units,
-        start=1,
-    ):
-        heading = unit.get("heading")
-        text = unit.get("text", "").strip()
-        location = unit.get("location")
-
-        if not text:
-            continue
-
-        current_section = resolve_section(
-            heading,
-            current_section,
-        )
-
-        knowledge_object = {
-            "id": f"{source_id}_{unit_number:03}",
-            "document": source_id,
-            "domain": domain,
-            "heading": heading,
-            "section": current_section,
-            "concepts": [],
-            "records": [],
-            "location": location,
-            "text": text,
-        }
-
-        enriched_object = enrich_concepts(
-            knowledge_object
-        )
-
-        knowledge_objects.append(
-            enriched_object
-        )
-
-    return knowledge_objects
-
-
-def save_knowledge_objects(
-    knowledge_objects,
-    output_path,
-):
-    """
-    Save completed knowledge objects as JSON.
-    """
-    output_file = Path(output_path)
-    output_file.parent.mkdir(
-        parents=True,
-        exist_ok=True,
+    """Create objects using Atlas's concept and record enrichment."""
+    return create_core_knowledge_objects(
+        file_path,
+        domain,
+        source_id=source_id,
+        enricher=(
+            enricher
+            if enricher is not None
+            else enrich_concepts
+        ),
+        unit_extractor=(
+            unit_extractor
+            if unit_extractor is not None
+            else extract_document_units
+        ),
+        section_selector=(
+            section_selector
+            if section_selector is not None
+            else resolve_section
+        ),
     )
-
-    with output_file.open(
-        "w",
-        encoding="utf-8",
-    ) as file:
-        json.dump(
-            knowledge_objects,
-            file,
-            indent=2,
-        )
 
 
 def ingest_document(
@@ -94,46 +64,72 @@ def ingest_document(
     domain,
     output_path=None,
     source_id=None,
+    *,
+    indexer=None,
 ):
-    """
-    Run the complete ingestion pipeline for one document.
-    """
-    source_path = Path(file_path)
-
-    if source_id is None:
-        source_id = source_path.stem
-
-    if output_path is None:
-        output_path = (
-            source_path.parent
-            / f"{source_id}.json"
-        )
-
-    knowledge_objects = create_knowledge_objects(
-        source_path,
+    """Run ingestion with Atlas enrichment injected into Core."""
+    return ingest_core_document(
+        file_path,
         domain,
+        output_path=output_path,
         source_id=source_id,
+        enricher=enrich_concepts,
+        object_creator=create_knowledge_objects,
+        object_saver=save_knowledge_objects,
+        indexer=(
+            indexer
+            if indexer is not None
+            else index_knowledge_objects
+        ),
     )
 
-    save_knowledge_objects(
-        knowledge_objects,
-        output_path,
-    )
 
-    index_knowledge_objects(
-        knowledge_objects
+def build_argument_parser():
+    """Build the supported ingestion command-line interface."""
+    parser = argparse.ArgumentParser(
+        description=(
+            "Ingest one document through the Atlas "
+            "compatibility composition."
+        )
     )
+    parser.add_argument("file_path")
+    parser.add_argument(
+        "--domain",
+        default="General",
+    )
+    parser.add_argument("--output-path")
+    parser.add_argument("--source-id")
+    parser.add_argument(
+        "--skip-index",
+        action="store_true",
+        help=(
+            "Create processed knowledge without model-backed "
+            "embedding indexing."
+        ),
+    )
+    return parser
 
-    return knowledge_objects
+
+def main(arguments=None):
+    """Run the public compatibility wrapper from the command line."""
+    options = build_argument_parser().parse_args(
+        arguments
+    )
+    indexer = (
+        (lambda knowledge_objects: None)
+        if options.skip_index
+        else None
+    )
+    chunks = ingest_document(
+        file_path=options.file_path,
+        domain=options.domain,
+        output_path=options.output_path,
+        source_id=options.source_id,
+        indexer=indexer,
+    )
+    print(f"Saved {len(chunks)} chunks.")
+    return 0
 
 
 if __name__ == "__main__":
-    chunks = ingest_document(
-        file_path=(
-            "data/documents/onboarding/"
-            "msaib-onboarding-2026.pptx"
-        ),
-        domain="Onboarding",
-    )
-
-    print(f"Saved {len(chunks)} chunks.")
+    raise SystemExit(main())
