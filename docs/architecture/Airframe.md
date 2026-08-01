@@ -2,7 +2,9 @@
 
 Mission 027, call sign **Airframe**
 
-Status: proposed, unstaged, and uncommitted.
+Status: complete and committed in
+`e1570b0c0d759933eaa0d2d0b48839051337d441` (`Establish product-neutral
+Wingman Airframe`).
 
 This document is the practical engineering guide for the current repository.
 `src/airframe_manifest.py` is its machine-readable ownership inventory.

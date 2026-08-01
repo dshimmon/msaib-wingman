@@ -5,6 +5,10 @@
 **Status:** Complete  
 **Date:** July 31, 2026
 
+**Implementation commit:** `e1570b0c0d759933eaa0d2d0b48839051337d441`
+
+**Commit subject:** `Establish product-neutral Wingman Airframe`
+
 ---
 
 ## Objective
@@ -265,8 +269,14 @@ Final verification established:
 * 26 additive tests passed.
 * The complete 167-test suite passed.
 * Source compilation passed.
-* Diff whitespace validation passed.
-* The working tree remained unstaged and uncommitted during review.
+* Review-time `git diff --check` returned no output. This journal was then an
+  untracked file and therefore outside that command's scope. The final
+  commit's `git show --check` reports only the intentional Markdown
+  hard-line-break spaces on metadata lines 3–5 of this journal.
+* The working tree remained unstaged and uncommitted during review. After
+  approval, the completed implementation was committed as
+  `e1570b0c0d759933eaa0d2d0b48839051337d441` (`Establish product-neutral
+  Wingman Airframe`).
 * No real model credential or network model call was used.
 * No live migration, restoration, or live-data write occurred.
 
@@ -556,11 +566,16 @@ Airframe returned to its core purpose:
 * Hide legacy storage behind a private adapter.
 * Document the debt honestly.
 
-The completed working tree contains 25 Mission 027 files:
+The completed working tree described during review contained 25 Mission 027
+files:
 
 * 18 production files.
 * 4 additive test files.
 * 3 documentation files.
+
+The subsequent approved implementation commit contains 26 files. Git records
+the same 18 production files and 4 additive test files, plus 4 documentation
+files because `README.md` is also part of the final commit.
 
 The final suite contains:
 
@@ -676,4 +691,5 @@ A future Ledger Transition mission must independently address:
 
 Until those requirements are satisfied:
 
-> The Airframe code may be committed. The live Ledger may not be migrated.
+> The Airframe code is committed. The live Ledger may not be migrated, and
+> Mission 027 does not authorize a future Ledger migration.
