@@ -4,7 +4,7 @@
 
 **Version:** 1.0  
 **Recovery date:** August 1, 2026  
-**Status:** Approved by Maverick on August 1, 2026; repository integration pending commit  
+**Status:** Approved by Maverick on August 1, 2026; committed as `726dbbe981364e3e58a6650d176d0b7edf436286`
 **Authority:** Maverick retains final authority over scope, priority, promotion, implementation, approval, and completion.
 
 ---
@@ -482,4 +482,10 @@ future-ideas list.
 
 ## 9. Next Gate
 
-The Vault has been approved by Maverick and integrated into the working tree for review. Codex must report the exact diff and repository state before any commit. Maverick retains sole authority to authorize the commit. This approval does not launch Mission 028 or authorize implementation of any preserved capability.
+Maverick approved the Vault on August 1, 2026, and it was committed as
+`726dbbe981364e3e58a6650d176d0b7edf436286`. Root `AGENTS.md` was subsequently
+committed as `7518bf717ce9974dcbb9d24fefe6a1b91bfee7b3`. Crew Chief is required but
+has not yet been implemented, and no independent Crew Chief audit has occurred.
+Mission 028 has not begun. After this reconciliation is committed, the next
+substantive gate is Maverick's decision on designing and implementing Crew
+Chief before Mission 028 begins.
