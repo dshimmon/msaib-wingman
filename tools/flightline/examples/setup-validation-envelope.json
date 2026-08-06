@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.1",
+  "mission": {
+    "number": "SETUP",
+    "name": "Development Flightline Setup",
+    "call_sign": "Flightline",
+    "objective": "Validate the Development Flightline safety controls without implementing Mission 028."
+  },
+  "role": "development-engineer",
+  "state": "APPROVED",
+  "canary": "CANOPY-7C2F-ATLAS",
+  "baseline_commit": "4cabb431829a29357c6ead8c00fd7539b7e91fa7",
+  "repository_root": "/Users/davidshimmon/Developer/Wingman/msaib-wingman",
+  "worktree_path": "/private/tmp/wingman-flightline-worktrees/setup",
+  "allowed_write_paths": [
+    "tools/flightline"
+  ],
+  "protected_data_paths": [
+    "/Users/davidshimmon/Developer/Wingman/msaib-wingman/.env",
+    "/Users/davidshimmon/Developer/Wingman/msaib-wingman/data"
+  ],
+  "credential_paths": [
+    "/Users/davidshimmon/.ssh",
+    "/Users/davidshimmon/.aws",
+    "/Users/davidshimmon/.gnupg",
+    "/Users/davidshimmon/.config/gcloud",
+    "/Users/davidshimmon/Library/Keychains",
+    "/Users/davidshimmon/.codex/auth.json"
+  ],
+  "approved_command_prefixes": [
+    ["rg"],
+    ["sed"],
+    ["cat"],
+    ["git", "status"],
+    ["git", "diff"],
+    ["git", "rev-parse"],
+    ["git", "log"],
+    ["shasum", "-a", "256"],
+    [".venv/flightline-py312/bin/python", "-m", "unittest"]
+  ],
+  "allowed_tools": [
+    "update_plan"
+  ],
+  "network_policy": "off",
+  "credential_policy": "none-mounted",
+  "budgets": {
+    "time_seconds": 1800,
+    "token_budget": 120000,
+    "command_budget": 200,
+    "max_changed_files": 30
+  },
+  "allowed_temp_paths": [
+    "/private/tmp/wingman-flightline-output/setup"
+  ],
+  "acceptance_criteria": [
+    "The foreground checkout and Git metadata remain unchanged.",
+    "Scoped writes succeed while secret, data, Git-metadata writes, and network access fail.",
+    "No Mission 028 implementation occurs."
+  ],
+  "explicit_exclusions": [
+    "Mission 028 implementation",
+    "staging, commits, pushes, merges, tags, releases, or deployment",
+    "destructive operations, credentials, live data, or external access"
+  ],
+  "stop_conditions": [
+    "Canary, baseline, profile, hook, or postflight invariant fails.",
+    "A command or path falls outside the explicit envelope.",
+    "Any new approval, credential, network, or destructive authority is required."
+  ],
+  "authorities": {
+    "stage": false,
+    "commit": false,
+    "push": false,
+    "merge": false,
+    "rebase": false,
+    "tag": false,
+    "release": false,
+    "deploy": false,
+    "destructive": false
+  },
+  "report_schema": "/Users/davidshimmon/Developer/Wingman/msaib-wingman/tools/flightline/schemas/engineer-report.schema.json",
+  "output_root": "/private/tmp/wingman-flightline-output/setup/evidence",
+  "allow_deletions": false
+}

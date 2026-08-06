@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "wingman-flightline-independent-auditor-report-v1",
+  "title": "Wingman Independent Auditor Report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["severity", "summary", "evidence", "recommendation"],
+      "properties": {
+        "severity": {
+          "type": "string",
+          "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFORMATIONAL"]
+        },
+        "summary": {"type": "string"},
+        "evidence": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "recommendation": {"type": "string"}
+      }
+    },
+    "acceptanceCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["criterion", "result", "evidence"],
+      "properties": {
+        "criterion": {"type": "string"},
+        "result": {
+          "type": "string",
+          "enum": ["PASS", "FAIL", "BLOCKED", "NOT_APPLICABLE"]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "result", "evidence"],
+      "properties": {
+        "command": {"type": "string"},
+        "result": {
+          "type": "string",
+          "enum": ["PASS", "FAIL", "BLOCKED", "NOT_RUN"]
+        },
+        "evidence": {"type": "string"}
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "evidence"],
+      "properties": {
+        "summary": {"type": "string"},
+        "evidence": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    }
+  },
+  "required": [
+    "canary",
+    "role",
+    "baseline_commit",
+    "authorization_id",
+    "activation_proof",
+    "verdict",
+    "findings",
+    "acceptance_criteria",
+    "independent_validation",
+    "architecture_analysis",
+    "isolation_analysis",
+    "compatibility_analysis",
+    "traceability_and_ledger_safety",
+    "repository_hygiene",
+    "documentation_accuracy",
+    "residual_risks",
+    "no_fix_confirmation",
+    "crew_chief_distinction"
+  ],
+  "properties": {
+    "canary": {
+      "type": "string",
+      "const": "CANOPY-7C2F-ATLAS"
+    },
+    "role": {
+      "type": "string",
+      "const": "independent-auditor"
+    },
+    "baseline_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "authorization_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "activation_proof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "controller_issued",
+        "state",
+        "unused_at_launch",
+        "environment_bindings_active",
+        "repository_write_denied",
+        "git_mutation_denied",
+        "credential_access_denied",
+        "protected_data_access_denied",
+        "network_access_denied"
+      ],
+      "properties": {
+        "controller_issued": {"type": "boolean", "const": true},
+        "state": {"type": "string", "const": "PREFLIGHTED"},
+        "unused_at_launch": {"type": "boolean", "const": true},
+        "environment_bindings_active": {"type": "boolean", "const": true},
+        "repository_write_denied": {"type": "boolean", "const": true},
+        "git_mutation_denied": {"type": "boolean", "const": true},
+        "credential_access_denied": {"type": "boolean", "const": true},
+        "protected_data_access_denied": {"type": "boolean", "const": true},
+        "network_access_denied": {"type": "boolean", "const": true}
+      }
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["PASS", "CONDITIONAL", "FAIL", "BLOCKED"]
+    },
+    "findings": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/finding"}
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/acceptanceCriterion"}
+    },
+    "independent_validation": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/validation"}
+    },
+    "architecture_analysis": {"$ref": "#/$defs/analysis"},
+    "isolation_analysis": {"$ref": "#/$defs/analysis"},
+    "compatibility_analysis": {"$ref": "#/$defs/analysis"},
+    "traceability_and_ledger_safety": {"$ref": "#/$defs/analysis"},
+    "repository_hygiene": {"$ref": "#/$defs/analysis"},
+    "documentation_accuracy": {"$ref": "#/$defs/analysis"},
+    "residual_risks": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "no_fix_confirmation": {"type": "boolean", "const": true},
+    "crew_chief_distinction": {
+      "type": "string",
+      "const": "This audit is not a Crew Chief audit."
+    }
+  }
+}

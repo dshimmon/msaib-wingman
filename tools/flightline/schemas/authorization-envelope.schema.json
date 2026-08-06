@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "wingman-development-flightline-authorization-envelope-v1-1",
+  "title": "Wingman Development Flightline Authorization Envelope v1.1",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "artifactBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "mission",
+    "role",
+    "state",
+    "canary",
+    "baseline_commit",
+    "repository_root",
+    "worktree_path",
+    "allowed_write_paths",
+    "protected_data_paths",
+    "credential_paths",
+    "approved_command_prefixes",
+    "allowed_tools",
+    "network_policy",
+    "credential_policy",
+    "budgets",
+    "allowed_temp_paths",
+    "acceptance_criteria",
+    "explicit_exclusions",
+    "stop_conditions",
+    "authorities",
+    "report_schema",
+    "output_root",
+    "allow_deletions"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.1"},
+    "mission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["number", "name", "call_sign", "objective"],
+      "properties": {
+        "number": {"type": "string", "minLength": 1},
+        "name": {"type": "string", "minLength": 1},
+        "call_sign": {"type": "string", "minLength": 1},
+        "objective": {"type": "string", "minLength": 1}
+      }
+    },
+    "role": {"enum": ["development-engineer", "independent-auditor"]},
+    "state": {"enum": ["APPROVED", "PREFLIGHTED"]},
+    "canary": {"const": "CANOPY-7C2F-ATLAS"},
+    "baseline_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "repository_root": {"type": "string", "minLength": 1},
+    "worktree_path": {"type": "string", "minLength": 1},
+    "allowed_write_paths": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "protected_data_paths": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "credential_paths": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "approved_command_prefixes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "items": {"type": "string", "minLength": 1}
+      }
+    },
+    "allowed_tools": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"enum": ["update_plan"]}
+    },
+    "network_policy": {"const": "off"},
+    "credential_policy": {"const": "none-mounted"},
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["time_seconds", "token_budget", "command_budget", "max_changed_files"],
+      "properties": {
+        "time_seconds": {"type": "integer", "minimum": 1},
+        "token_budget": {"type": "integer", "minimum": 1},
+        "command_budget": {"type": "integer", "minimum": 1},
+        "max_changed_files": {"type": "integer", "minimum": 1}
+      }
+    },
+    "allowed_temp_paths": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "acceptance_criteria": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "explicit_exclusions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "stop_conditions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "authorities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "commit", "push", "merge", "rebase", "tag", "release", "deploy", "destructive"],
+      "properties": {
+        "stage": {"const": false},
+        "commit": {"const": false},
+        "push": {"const": false},
+        "merge": {"const": false},
+        "rebase": {"const": false},
+        "tag": {"const": false},
+        "release": {"const": false},
+        "deploy": {"const": false},
+        "destructive": {"const": false}
+      }
+    },
+    "report_schema": {"type": "string", "minLength": 1},
+    "output_root": {"type": "string", "minLength": 1},
+    "allow_deletions": {"const": false},
+    "prompt_file": {"type": "string", "minLength": 1},
+    "prompt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "model": {"type": "string", "minLength": 1},
+    "runtime_paths": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "controller_authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "issuer",
+        "authorization_id",
+        "issued_at_epoch_seconds",
+        "expires_at_epoch_seconds",
+        "use_policy",
+        "issuance_record",
+        "consumption_record"
+      ],
+      "properties": {
+        "issuer": {"const": "flightline-controller"},
+        "authorization_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "issued_at_epoch_seconds": {"type": "integer", "minimum": 1},
+        "expires_at_epoch_seconds": {"type": "integer", "minimum": 1},
+        "use_policy": {"const": "single-use"},
+        "issuance_record": {"type": "string", "minLength": 1},
+        "consumption_record": {"type": "string", "minLength": 1}
+      }
+    },
+    "frozen_subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frozen_manifest",
+        "frozen_diff",
+        "evidence_package",
+        "audit_workspace_manifest",
+        "foreground_preflight"
+      ],
+      "properties": {
+        "frozen_manifest": {"$ref": "#/$defs/artifactBinding"},
+        "frozen_diff": {"$ref": "#/$defs/artifactBinding"},
+        "evidence_package": {"$ref": "#/$defs/artifactBinding"},
+        "audit_workspace_manifest": {"$ref": "#/$defs/artifactBinding"},
+        "foreground_preflight": {"$ref": "#/$defs/artifactBinding"}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"role": {"const": "independent-auditor"}}},
+      "then": {
+        "required": [
+          "prompt_file",
+          "prompt_sha256",
+          "runtime_paths",
+          "controller_authorization",
+          "frozen_subject"
+        ],
+        "properties": {
+          "state": {"const": "PREFLIGHTED"},
+          "allowed_write_paths": {"maxItems": 0}
+        }
+      },
+      "else": {
+        "not": {
+          "anyOf": [
+            {"required": ["runtime_paths"]},
+            {"required": ["controller_authorization"]},
+            {"required": ["frozen_subject"]}
+          ]
+        }
+      }
+    }
+  ]
+}

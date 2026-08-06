@@ -227,6 +227,13 @@ recommendations do not automatically mutate code, expand mission scope,
 authorize commits, or overrule Maverick. Maverick may later approve defined
 blocking rules through Rules of Engagement or constitutional assurance.
 
+**Sequencing:** Crew Chief remains required, but it is not a prerequisite for
+Mission 028. The Development Flightline Independent Auditor may audit Mission
+028, but it is not Crew Chief and may not claim that a Crew Chief audit
+occurred. Maverick will decide Crew Chief's exact roadmap placement after
+Hardpoints and before the relevant Assurance mission. Crew Chief is not
+automatically deferred until after Mission 037.
+
 Crew Chief should measure mixed responsibilities, duplication, dependency
 complexity, circular imports, repeated navigation, excessive context or tool
 output, dead code, compatibility layers, slow or flaky tests, high-churn failure
@@ -486,6 +493,11 @@ Maverick approved the Vault on August 1, 2026, and it was committed as
 `726dbbe981364e3e58a6650d176d0b7edf436286`. Root `AGENTS.md` was subsequently
 committed as `7518bf717ce9974dcbb9d24fefe6a1b91bfee7b3`. Crew Chief is required but
 has not yet been implemented, and no independent Crew Chief audit has occurred.
-Mission 028 has not begun. After this reconciliation is committed, the next
-substantive gate is Maverick's decision on designing and implementing Crew
-Chief before Mission 028 begins.
+Mission 028 has not begun. Maverick subsequently approved the separately
+bounded Development Flightline setup and harmless safety validation, then
+authorized the bounded correction required after a fresh Independent Auditor
+correctly rejected the missing controller-issued Auditor activation path. The
+next gate is a new Auditor session launched from the controller's expiring,
+single-use envelope bound to the refreshed frozen evidence. Crew Chief is not
+a Mission 028 prerequisite; its exact roadmap placement must be decided after
+Hardpoints and before the relevant Assurance mission.
