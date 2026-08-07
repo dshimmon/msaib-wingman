@@ -23,6 +23,7 @@ from product_config import (
     PRODUCTION_PRODUCT_REGISTRY,
     create_atlas_context,
     create_product_context,
+    normalize_course_id,
 )
 from product_contract import (
     PRODUCT_CONTRACT_VERSION,
@@ -45,6 +46,7 @@ from product_runtime import (
 )
 from knowledge_ingestion import save_knowledge_objects
 import intake_service
+from batch_ingestion import browser_file_input, preview_batch
 import main
 
 
@@ -121,6 +123,14 @@ TEST_PRODUCT = ProductContract(
 
 
 class ProductContractTests(unittest.TestCase):
+    def test_atlas_course_id_is_small_explicit_and_validated(self):
+        self.assertEqual(normalize_course_id("  AI-101 / A  "), "AI-101 / A")
+        self.assertIsNone(normalize_course_id("   "))
+        for value in (42, "#unsafe", "x" * 121):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    normalize_course_id(value)
+
     def test_atlas_exercises_every_contract_area(self):
         self.assertEqual(
             ATLAS_PRODUCT.contract_version,
@@ -155,7 +165,7 @@ class ProductContractTests(unittest.TestCase):
                     ATLAS_PRODUCT.source_metadata_fields
                 )
             },
-            {"program", "academic_year"},
+            {"course_id", "program", "academic_year"},
         )
         self.assertTrue(
             callable(
@@ -542,10 +552,24 @@ class ProductContractTests(unittest.TestCase):
         )
         self.assertNotIn("program", metadata)
         self.assertNotIn("academic_year", metadata)
+        self.assertNotIn("course_id", metadata)
         self.assertIs(
             ingest_document.call_args.kwargs["product_context"],
             context,
         )
+
+    def test_non_atlas_batch_cannot_receive_atlas_course_metadata(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            "does not declare Atlas course metadata",
+        ):
+            preview_batch(
+                [browser_file_input("field-note.txt", b"Observation")],
+                product_context=ProductContext(TEST_PRODUCT),
+                input_mode="browser",
+                default_course_id="AI-101",
+                assignments_confirmed=True,
+            )
 
     def test_atlas_intake_legacy_and_explicit_context_match(self):
         arguments = {
@@ -746,7 +770,9 @@ class ProductContractTests(unittest.TestCase):
         required_calls = {
             "ask_wingman",
             "create_study_briefing",
-            "ingest_uploaded_document",
+            "preview_batch",
+            "execute_batch",
+            "resume_plan",
             "remove_library_source",
             "reprocess_library_source",
         }

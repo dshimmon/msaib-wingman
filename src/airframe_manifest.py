@@ -13,6 +13,8 @@ MODULE_OWNERS = {
     "concept_registry_storage": CORE,
     "concept_retrieval": CORE,
     "context_builder": CORE,
+    "csv_adapter": CORE,
+    "document_errors": CORE,
     "document_router": CORE,
     "embedding_indexer": CORE,
     "embedding_service": CORE,
@@ -20,6 +22,7 @@ MODULE_OWNERS = {
     "evidence_ranker": CORE,
     "excel_adapter": CORE,
     "knowledge": CORE,
+    "folder_intake": CORE,
     "knowledge_ingestion": CORE,
     "knowledge_loader": CORE,
     "ledger": CORE,
@@ -39,6 +42,7 @@ MODULE_OWNERS = {
     "section_resolver": CORE,
     "semantic_retriever": CORE,
     "semantic_similarity": CORE,
+    "text_adapter": CORE,
     "word_adapter": CORE,
 
     # Shared Product Framework
@@ -52,9 +56,11 @@ MODULE_OWNERS = {
     "source_registry": SHARED,
 
     # Atlas-Specific
+    "batch_ingestion": PRODUCT_SPECIFIC,
     "briefing_generator": PRODUCT_SPECIFIC,
     "briefing_planner": PRODUCT_SPECIFIC,
     "briefing_service": PRODUCT_SPECIFIC,
+    "bulk_ingestion": PRODUCT_SPECIFIC,
     "canonicalizer": PRODUCT_SPECIFIC,
     "concept_enrichment": PRODUCT_SPECIFIC,
     "concept_extractor": PRODUCT_SPECIFIC,

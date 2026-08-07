@@ -87,7 +87,10 @@ def save_knowledge_objects(
         exist_ok=True,
     )
 
-    with output_file.open(
+    temporary_file = output_file.with_name(
+        f".{output_file.name}.tmp"
+    )
+    with temporary_file.open(
         "w",
         encoding="utf-8",
     ) as file:
@@ -96,6 +99,7 @@ def save_knowledge_objects(
             file,
             indent=2,
         )
+    temporary_file.replace(output_file)
 
 
 def ingest_document(
@@ -108,6 +112,7 @@ def ingest_document(
     object_creator=None,
     object_saver=None,
     indexer=None,
+    progress_callback=None,
 ):
     """
     Run generic extraction, persistence, and indexing.
@@ -134,6 +139,8 @@ def ingest_document(
             / f"{source_id}.json"
         )
 
+    if progress_callback is not None:
+        progress_callback("extracting")
     knowledge_objects = object_creator(
         source_path,
         domain,
@@ -141,11 +148,15 @@ def ingest_document(
         enricher=enricher,
     )
 
+    if progress_callback is not None:
+        progress_callback("saving")
     object_saver(
         knowledge_objects,
         output_path,
     )
 
+    if progress_callback is not None:
+        progress_callback("indexing")
     indexer(
         knowledge_objects
     )

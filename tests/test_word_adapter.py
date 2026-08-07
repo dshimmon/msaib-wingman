@@ -118,9 +118,9 @@ class WordAdapterTests(unittest.TestCase):
     def test_router_preserves_existing_unsupported_errors(self):
         with self.assertRaisesRegex(
             ValueError,
-            r"Unsupported document type: \.txt",
+            r"Unsupported document type: \.rtf",
         ):
-            extract_document_units("notes.txt")
+                extract_document_units("notes.rtf")
 
 
 if __name__ == "__main__":

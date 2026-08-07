@@ -2,8 +2,8 @@
 
 **Mission:** 028 — Hardpoints
 
-**Authority state:** Implemented and tested in the working tree; unapproved and
-uncommitted
+**Authority state:** Mission 028 approved, committed, and closed; unpushed and
+unmerged
 
 **Authoritative implementation:** `src/product_contract.py`
 
@@ -32,7 +32,7 @@ validation, not a migration platform.
 | `product_name` / `display_name` | Page and application display text may change without changing internal identity. | `Academic Wingman`. |
 | `capabilities` | Shared paths must fail before using behavior a product did not declare. | Chat, ingestion, retrieval, Briefing, and Library. |
 | `records` | Current ingestion emits product-owned structured record types and needs a product-owned enricher. | Curriculum-course and course-schedule declarations plus academic enrichment. |
-| `source_metadata_fields` | Upload and Library UI use declared fields and product rules while generic metadata remains opaque. | Program and academic-year fields with blank-text normalization and explicit-null preservation. |
+| `source_metadata_fields` | Upload and Library UI use declared fields and product rules while generic metadata remains opaque. | Required-for-batch course ID plus optional program and academic-year fields, with product-owned validation and explicit-null preservation. |
 | `retrieval` | Current queries require product interpretation before Core executes a neutral plan. | Academic query interpreter; all four retrieval modes still execute in Core. |
 | `briefing` | Current Briefing requires product-owned evidence planning and source-grounded generation. | Atlas briefing planner and generator. |
 | product page, call-sign, terminal, and workspace terms | Product-scoped terminal and Streamlit paths display this bounded vocabulary. | Existing Atlas page, terminal, Chat, Briefing, and Library terms. |
@@ -111,6 +111,13 @@ undeclared opaque values remain exact, and Atlas's `program` and
 them. A non-null Atlas legacy metadata argument is rejected when an explicitly
 selected product does not declare that field rather than being ignored or
 silently attached.
+
+Atlas also declares `course_id` through this existing v1 metadata surface. The
+Atlas-owned batch service requires a non-blank, explicitly confirmed value for
+every ingestible file. Shared and Core transport it opaquely. A product that
+does not declare the field is rejected by the Atlas batch boundary and never
+receives it. This added use of the existing metadata extension surface does not
+change Product Contract version 1.
 
 ## Atlas composition
 

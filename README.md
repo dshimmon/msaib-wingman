@@ -19,6 +19,17 @@ Streamlit:
 python3 -m streamlit run src/streamlit_app.py
 ```
 
+Preview a bounded folder batch (non-recursive by default):
+
+```bash
+PYTHONPATH=src python3 -m bulk_ingestion ./selected-folder \
+  --course-id AI-101
+```
+
+Add `--execute` only after reviewing the deterministic per-file preview. Use
+`--recursive` explicitly to include nested folders. Browser and folder intake
+support PDF, DOCX, XLSX, PPTX, CSV, TXT, MD, and MARKDOWN files.
+
 Run the offline suite:
 
 ```bash
@@ -39,6 +50,10 @@ defines the explicit typed Hardpoints seam. Atlas owns its immutable definition
 and the closed production registry; Shared applies an explicit Product Context
 to neutral Core ingestion and retrieval. A concise attachment walkthrough is in
 [`docs/Product-Attachment-Guide.md`](docs/Product-Attachment-Guide.md).
+
+[`docs/journal/Wingman-Ingests-Documents-in-Bulk.md`](docs/journal/Wingman-Ingests-Documents-in-Bulk.md)
+records the unnumbered bulk-ingestion architecture, folder safety, manifest,
+retry, failure isolation, and offline scale procedures.
 
 The Ledger remains physically at migrations 1–3. The temporary `program`
 and `academic_year` columns are translated privately by the source

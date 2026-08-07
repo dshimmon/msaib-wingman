@@ -1,7 +1,7 @@
 # Compatibility Surface Register
 
-**Status:** Mission 028 proposed state; implemented and tested, unapproved and
-uncommitted.
+**Status:** Mission 028 approved, committed, and closed; updated for the
+unnumbered bulk-ingestion working mission.
 
 Hardpoints removes no supported facade. The existing flat layout and patch
 surfaces still have repository callers, so removing them would expand the
@@ -18,6 +18,7 @@ forwards to the Product Contract or existing lower-layer owner.
 | `wingman_service` conversation-context re-exports | Atlas | Chat callers and tests import/patch the established names. | A caller inventory proves no supported imports remain. |
 | `interface.show_header()` no-argument behavior | Atlas | Terminal callers rely on the existing Atlas header default. | Terminal composition always passes context and compatibility removal is separately approved. |
 | `intake_service` `program` and `academic_year` keyword arguments | Atlas | Existing upload callers still use the pre-generic metadata arguments. | Callers use `product_metadata` exclusively and schema-v3 compatibility is independently resolved. |
+| `intake_service.ingest_uploaded_document` single-file call | Atlas | Existing callers and tests ingest one named byte payload directly. Batch entry points call this same pipeline sequentially with atomic cleanup enabled; a one-file browser selection remains valid. | A separately approved caller migration provides an equivalent stable single-file API and proves all callers moved. |
 | Version-3 source-column adapter | Core Ledger private adapter | Applied schema history and live compatibility require the physical columns while public metadata stays generic. | A separately authorized Ledger Transition after its assurance, backup, locking, dry-run, and rollback gates. |
 
 ## Removed surfaces

@@ -1,6 +1,7 @@
 # Tests isolated uploaded-document intake behavior.
 
 import hashlib
+import json
 import sys
 import tempfile
 import unittest
@@ -14,6 +15,8 @@ SRC_DIRECTORY = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_DIRECTORY))
 
 import intake_service
+import concept_registry_storage
+import embedding_storage
 
 
 class IntakeServiceTests(unittest.TestCase):
@@ -182,10 +185,10 @@ class IntakeServiceTests(unittest.TestCase):
     def test_unsupported_extension_raises_value_error(self):
         with self.assertRaisesRegex(
             ValueError,
-            r"Unsupported document type: \.txt",
+            r"Unsupported document type: \.rtf",
         ):
             intake_service.ingest_uploaded_document(
-                "notes.txt",
+                "notes.rtf",
                 b"content",
             )
 
@@ -261,6 +264,12 @@ class IntakeServiceTests(unittest.TestCase):
             "Mission 022 Intake Notes",
         )
 
+    def test_mime_types_cover_every_routed_extension(self):
+        self.assertEqual(
+            set(intake_service.MIME_TYPES),
+            set(intake_service.SUPPORTED_EXTENSIONS),
+        )
+
     def test_create_source_id_is_stable_and_safe(self):
         content_hash = "abcdef1234567890"
 
@@ -278,6 +287,252 @@ class IntakeServiceTests(unittest.TestCase):
             "unsafe-name-final-abcdef123456",
         )
         self.assertEqual(first_id, second_id)
+
+    def atomic_store_patches(self):
+        root = Path(self.temporary_directory.name)
+        return (
+            patch.object(
+                embedding_storage,
+                "EMBEDDINGS_PATH",
+                root / "embeddings.json",
+            ),
+            patch.object(
+                concept_registry_storage,
+                "REGISTRY_PATH",
+                root / "concepts.json",
+            ),
+        )
+
+    @patch.object(intake_service, "register_source")
+    @patch.object(
+        intake_service,
+        "find_source_by_content_hash",
+        return_value=(None, None),
+    )
+    def test_atomic_failure_restores_shared_stores_and_source_files(
+        self,
+        find_source,
+        register_source,
+    ):
+        embeddings_patch, concepts_patch = self.atomic_store_patches()
+        with embeddings_patch, concepts_patch:
+            embedding_storage.EMBEDDINGS_PATH.write_text(
+                '{"existing": {"embedding": [1]}}',
+                encoding="utf-8",
+            )
+            concept_registry_storage.REGISTRY_PATH.write_text(
+                '{"existing": {"occurrences": []}}',
+                encoding="utf-8",
+            )
+            embedding_before = embedding_storage.EMBEDDINGS_PATH.read_bytes()
+            concept_before = concept_registry_storage.REGISTRY_PATH.read_bytes()
+
+            def fail_after_mutations(**kwargs):
+                kwargs["output_path"].write_text("partial", encoding="utf-8")
+                embedding_storage.EMBEDDINGS_PATH.write_text(
+                    json.dumps({"partial": {}}), encoding="utf-8"
+                )
+                concept_registry_storage.REGISTRY_PATH.write_text(
+                    json.dumps({"partial": {}}), encoding="utf-8"
+                )
+                raise RuntimeError("indexing failed")
+
+            error = None
+            with patch.object(
+                intake_service,
+                "ingest_document",
+                side_effect=fail_after_mutations,
+            ):
+                try:
+                    intake_service.ingest_uploaded_document(
+                        "atomic.txt",
+                        b"source text",
+                        atomic=True,
+                    )
+                except RuntimeError as caught:
+                    error = caught
+
+            self.assertIsNotNone(error)
+            self.assertTrue(error.cleanup_verified)
+            self.assertEqual(error.failure_stage, "extracting")
+            self.assertEqual(
+                embedding_storage.EMBEDDINGS_PATH.read_bytes(),
+                embedding_before,
+            )
+            self.assertEqual(
+                concept_registry_storage.REGISTRY_PATH.read_bytes(),
+                concept_before,
+            )
+            self.assertEqual(list(self.uploads_directory.iterdir()), [])
+            register_source.assert_not_called()
+
+    @patch.object(
+        intake_service,
+        "find_source_by_content_hash",
+        return_value=(None, None),
+    )
+    def test_registration_failure_rolls_back_completed_indexing(self, find_source):
+        embeddings_patch, concepts_patch = self.atomic_store_patches()
+        with embeddings_patch, concepts_patch:
+            def complete_ingestion(**kwargs):
+                kwargs["output_path"].write_text("[]", encoding="utf-8")
+                embedding_storage.save_embeddings({"new": {}})
+                concept_registry_storage.save_registry({"new": {}})
+                return [{"id": "knowledge-1"}]
+
+            with (
+                patch.object(
+                    intake_service,
+                    "ingest_document",
+                    side_effect=complete_ingestion,
+                ),
+                patch.object(
+                    intake_service,
+                    "register_source",
+                    side_effect=RuntimeError("registration failed"),
+                ),
+            ):
+                with self.assertRaisesRegex(RuntimeError, "registration failed") as caught:
+                    intake_service.ingest_uploaded_document(
+                        "registration.md",
+                        b"# Source",
+                        atomic=True,
+                    )
+
+            self.assertTrue(caught.exception.cleanup_verified)
+            self.assertEqual(caught.exception.failure_stage, "registering")
+            self.assertFalse(embedding_storage.EMBEDDINGS_PATH.exists())
+            self.assertFalse(concept_registry_storage.REGISTRY_PATH.exists())
+            self.assertEqual(list(self.uploads_directory.iterdir()), [])
+
+    @patch.object(
+        intake_service,
+        "find_source_by_content_hash",
+        return_value=(None, None),
+    )
+    def test_cleanup_failure_is_typed_and_unverified(self, find_source):
+        embeddings_patch, concepts_patch = self.atomic_store_patches()
+        with embeddings_patch, concepts_patch:
+            with (
+                patch.object(
+                    intake_service,
+                    "ingest_document",
+                    side_effect=RuntimeError("ingestion failed"),
+                ),
+                patch.object(
+                    intake_service,
+                    "restore_file",
+                    side_effect=OSError("restore failed"),
+                ),
+            ):
+                with self.assertRaises(intake_service.IntakeRollbackError) as caught:
+                    intake_service.ingest_uploaded_document(
+                        "rollback.csv",
+                        b"Header\nValue\n",
+                        atomic=True,
+                    )
+
+            self.assertFalse(caught.exception.cleanup_verified)
+            self.assertEqual(caught.exception.stage, "extracting")
+
+    @patch.object(intake_service, "register_source")
+    @patch.object(
+        intake_service,
+        "find_source_by_content_hash",
+        return_value=(None, None),
+    )
+    def test_empty_extraction_fails_without_registering(self, find_source, register_source):
+        embeddings_patch, concepts_patch = self.atomic_store_patches()
+        with embeddings_patch, concepts_patch:
+            with patch.object(
+                intake_service,
+                "ingest_document",
+                return_value=[],
+            ):
+                with self.assertRaisesRegex(
+                    ValueError, "no readable content"
+                ) as caught:
+                    intake_service.ingest_uploaded_document(
+                        "empty.pptx",
+                        b"presentation container",
+                        atomic=True,
+                    )
+            self.assertTrue(caught.exception.cleanup_verified)
+            self.assertEqual(list(self.uploads_directory.iterdir()), [])
+            register_source.assert_not_called()
+
+    @patch.object(
+        intake_service,
+        "find_source_by_content_hash",
+        return_value=(None, None),
+    )
+    def test_interrupted_cleanup_removes_only_unregistered_source_state(
+        self,
+        find_source,
+    ):
+        embeddings_patch, concepts_patch = self.atomic_store_patches()
+        file_bytes = b"interrupted source"
+        content_hash = hashlib.sha256(file_bytes).hexdigest()
+        source_id = intake_service.create_source_id(
+            "interrupted.txt",
+            content_hash,
+        )
+        with embeddings_patch, concepts_patch:
+            source_directory = self.uploads_directory / source_id
+            source_directory.mkdir(parents=True)
+            (source_directory / "interrupted.txt").write_bytes(file_bytes)
+            (source_directory / f"{source_id}.json").write_text(
+                "partial", encoding="utf-8"
+            )
+            embedding_storage.save_embeddings(
+                {
+                    f"{source_id}_001": {"embedding": [1]},
+                    "other_001": {"embedding": [2]},
+                }
+            )
+            concept_registry_storage.save_registry(
+                {
+                    "shared": {
+                        "occurrences": [
+                            {"document": source_id},
+                            {"document": "other"},
+                        ]
+                    },
+                    "source-only": {
+                        "occurrences": [{"document": source_id}]
+                    },
+                }
+            )
+            Path(f"{embedding_storage.EMBEDDINGS_PATH}.tmp").write_text(
+                "partial", encoding="utf-8"
+            )
+            Path(f"{concept_registry_storage.REGISTRY_PATH}.tmp").write_text(
+                "partial", encoding="utf-8"
+            )
+
+            result = intake_service.cleanup_interrupted_upload(
+                "interrupted.txt",
+                content_hash,
+            )
+
+            self.assertFalse(result["registered"])
+            self.assertFalse(source_directory.exists())
+            self.assertEqual(
+                set(embedding_storage.load_embeddings()),
+                {"other_001"},
+            )
+            concepts = concept_registry_storage.load_registry()
+            self.assertEqual(set(concepts), {"shared"})
+            self.assertEqual(
+                concepts["shared"]["occurrences"],
+                [{"document": "other"}],
+            )
+            self.assertFalse(
+                Path(f"{embedding_storage.EMBEDDINGS_PATH}.tmp").exists()
+            )
+            self.assertFalse(
+                Path(f"{concept_registry_storage.REGISTRY_PATH}.tmp").exists()
+            )
 
 
 if __name__ == "__main__":

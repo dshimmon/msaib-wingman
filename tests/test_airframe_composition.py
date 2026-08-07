@@ -309,30 +309,90 @@ class AirframeCompositionTests(unittest.TestCase):
         indexer.assert_called_once_with(objects)
         self.assertIs(result, objects)
 
-    def test_streamlit_routes_configured_metadata_to_intake(self):
-        tree = ast.parse(
-            (SRC_DIRECTORY / "streamlit_app.py").read_text(
-                encoding="utf-8"
-            )
+    def test_streamlit_routes_multi_selection_through_batch_preview(self):
+        source_text = (SRC_DIRECTORY / "streamlit_app.py").read_text(
+            encoding="utf-8"
         )
-        calls = [
+        tree = ast.parse(source_text)
+        preview_calls = [
             node
             for node in ast.walk(tree)
             if (
                 isinstance(node, ast.Call)
                 and isinstance(node.func, ast.Name)
                 and node.func.id
-                == "ingest_uploaded_document"
+                == "preview_batch"
             )
         ]
-        self.assertEqual(len(calls), 1)
+        self.assertEqual(len(preview_calls), 1)
         values = [
             keyword.value
-            for keyword in calls[0].keywords
+            for keyword in preview_calls[0].keywords
             if keyword.arg == "product_metadata"
         ]
         self.assertEqual(len(values), 1)
         self.assertEqual(values[0].id, "product_metadata")
+
+        uploader_calls = [
+            node
+            for node in ast.walk(tree)
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "file_uploader"
+            )
+        ]
+        document_uploader = next(
+            call
+            for call in uploader_calls
+            if isinstance(call.args[0], ast.Constant)
+            and call.args[0].value == "Upload documents"
+        )
+        keywords = {
+            keyword.arg: keyword.value
+            for keyword in document_uploader.keywords
+        }
+        self.assertIs(keywords["accept_multiple_files"].value, True)
+        self.assertEqual(
+            {element.value for element in keywords["type"].elts},
+            {
+                "pptx",
+                "pdf",
+                "docx",
+                "xlsx",
+                "csv",
+                "txt",
+                "md",
+                "markdown",
+            },
+        )
+        self.assertIn("default_course_id.strip()", source_text)
+        self.assertIn("course_overrides.items()", source_text)
+        self.assertLess(
+            source_text.index("reset_assignment_confirmation_if_changed("),
+            source_text.index("assignments_confirmed = st.checkbox"),
+        )
+        confirmation_calls = [
+            node
+            for node in ast.walk(tree)
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "checkbox"
+                and node.args
+                and isinstance(node.args[0], ast.Constant)
+                and "confirm the course assignment" in node.args[0].value
+            )
+        ]
+        self.assertEqual(len(confirmation_calls), 1)
+        confirmation_keywords = {
+            keyword.arg: keyword.value
+            for keyword in confirmation_calls[0].keywords
+        }
+        self.assertEqual(
+            confirmation_keywords["key"].value,
+            "batch_assignments_confirmed",
+        )
 
     def test_terminal_defaults_and_configuration_match(self):
         default_output = io.StringIO()

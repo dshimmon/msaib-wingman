@@ -1,7 +1,6 @@
 # Tests transactional Atlas Library source management.
 
 import hashlib
-import json
 import sys
 import tempfile
 import unittest
@@ -151,6 +150,7 @@ class LibraryManagementServiceTests(unittest.TestCase):
                 "original_path": str(original_path),
                 "source_kind": "upload",
                 "custom_metadata": "preserve me",
+                "course_id": "AI-101",
                 "content_hash": hashlib.sha256(
                     b"old original bytes"
                 ).hexdigest(),
@@ -306,6 +306,7 @@ class LibraryManagementServiceTests(unittest.TestCase):
             metadata["custom_metadata"],
             "preserve me",
         )
+        self.assertEqual(metadata["course_id"], "AI-101")
         self.assertEqual(
             metadata["content_hash"],
             expected_content_hash,
@@ -684,6 +685,7 @@ class LibraryManagementServiceTests(unittest.TestCase):
                     "source_kind": "upload",
                     "original_path": str(original_path),
                     "reprocessed_at": "timestamp",
+                    "course_id": "AI-101",
                 },
                 {},
             )
@@ -695,6 +697,7 @@ class LibraryManagementServiceTests(unittest.TestCase):
             entry["reprocessed_at"],
             "timestamp",
         )
+        self.assertEqual(entry["course_id"], "AI-101")
 
     def test_missing_source_kind_defaults_to_repository(self):
         entry = library_service.build_library_entry(

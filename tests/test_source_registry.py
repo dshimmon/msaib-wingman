@@ -173,6 +173,7 @@ class SourceRegistryTests(unittest.TestCase):
                     "file_name": "source.pdf",
                     "mime_type": "application/pdf",
                     "domain": "Academics",
+                    "course_id": "AI-101",
                 }
             }
         )
@@ -204,6 +205,7 @@ class SourceRegistryTests(unittest.TestCase):
             metadata["domain"],
             "Academics",
         )
+        self.assertEqual(metadata["course_id"], "AI-101")
 
     def test_unregistered_evidence_uses_fallbacks(self):
         enriched = source_registry.enrich_evidence_sources(

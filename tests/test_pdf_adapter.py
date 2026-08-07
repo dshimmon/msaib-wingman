@@ -108,9 +108,9 @@ class PdfAdapterTests(unittest.TestCase):
     def test_router_preserves_unsupported_format_errors(self):
         with self.assertRaisesRegex(
             ValueError,
-            r"Unsupported document type: \.txt",
+            r"Unsupported document type: \.rtf",
         ):
-            extract_document_units("notes.txt")
+                extract_document_units("notes.rtf")
 
     def test_flattens_non_empty_table_rows(self):
         rows = flatten_table_rows(

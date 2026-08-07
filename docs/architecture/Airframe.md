@@ -6,8 +6,8 @@ Mission 027 status: complete and committed in
 `e1570b0c0d759933eaa0d2d0b48839051337d441` (`Establish product-neutral
 Wingman Airframe`).
 
-Mission 028 Hardpoints status: implemented and under review in the current
-working tree; unapproved and uncommitted.
+Mission 028 Hardpoints status: approved, committed, and closed; unpushed and
+unmerged.
 
 This document is the practical engineering guide for the current repository.
 `src/airframe_manifest.py` is its machine-readable ownership inventory.
@@ -96,6 +96,16 @@ composition root exposes it through an explicitly declared global shell
 workspace, separate from the Chat, Briefing, and Library terms governed by
 Product Contract v1.
 
+`csv_adapter`, `text_adapter`, and `document_errors` extend Core's normalized
+document-unit seam without product policy. `folder_intake` owns bounded,
+deterministic local path discovery and follows no symlink or alias.
+
+`batch_ingestion` and `bulk_ingestion` are Atlas-owned. They require an
+explicit Product Context, apply Atlas's confirmed course-assignment policy,
+call the existing single-file intake pipeline sequentially, and persist only
+local operational manifests and reports. Core receives paths, content, neutral
+callbacks, and opaque metadata, never Product Context or course meaning.
+
 ## Version-3 Ledger compatibility
 
 The physical Ledger schema remains exactly at migrations 1–3. Applied
@@ -127,12 +137,15 @@ The following inventory must exactly match `MODULE_OWNERS`.
 - `concept_registry_storage`
 - `concept_retrieval`
 - `context_builder`
+- `csv_adapter`
+- `document_errors`
 - `document_router`
 - `embedding_indexer`
 - `embedding_service`
 - `embedding_storage`
 - `evidence_ranker`
 - `excel_adapter`
+- `folder_intake`
 - `knowledge`
 - `knowledge_ingestion`
 - `knowledge_loader`
@@ -153,6 +166,7 @@ The following inventory must exactly match `MODULE_OWNERS`.
 - `section_resolver`
 - `semantic_retriever`
 - `semantic_similarity`
+- `text_adapter`
 - `word_adapter`
 
 ### Shared Product Framework
@@ -168,9 +182,11 @@ The following inventory must exactly match `MODULE_OWNERS`.
 
 ### Atlas-Specific
 
+- `batch_ingestion`
 - `briefing_generator`
 - `briefing_planner`
 - `briefing_service`
+- `bulk_ingestion`
 - `canonicalizer`
 - `concept_enrichment`
 - `concept_extractor`

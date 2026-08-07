@@ -1,5 +1,7 @@
 """Atlas-owned Product Contract v1 composition and production registry."""
 
+import re
+
 from product_contract import (
     PRODUCT_CONTRACT_VERSION,
     BriefingComposition,
@@ -19,6 +21,26 @@ def normalize_optional_text(value):
         value = value.strip()
         return value or None
     return value
+
+
+def normalize_course_id(value):
+    """Validate an explicitly assigned Atlas course identifier."""
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ValueError("Course ID must be text.")
+    normalized = value.strip()
+    if not normalized:
+        return None
+    if len(normalized) > 120 or not re.fullmatch(
+        r"[A-Za-z0-9][A-Za-z0-9._:/ -]*",
+        normalized,
+    ):
+        raise ValueError(
+            "Course ID must start with a letter or number and use only "
+            "letters, numbers, spaces, '.', '_', ':', '/', or '-'."
+        )
+    return normalized
 
 
 def enrich_atlas_knowledge(knowledge_object):
@@ -128,6 +150,12 @@ ATLAS_PRODUCT = ProductContract(
         enrich_knowledge=enrich_atlas_knowledge,
     ),
     source_metadata_fields=(
+        SourceMetadataField(
+            key="course_id",
+            label="Course ID",
+            placeholder="Required for batch imports",
+            normalizer=normalize_course_id,
+        ),
         SourceMetadataField(
             key="program",
             label="Program",

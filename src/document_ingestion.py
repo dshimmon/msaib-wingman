@@ -82,6 +82,7 @@ def ingest_document(
     *,
     indexer=None,
     product_context=None,
+    progress_callback=None,
 ):
     """Run ingestion with Atlas enrichment injected into Core."""
     explicit_context = product_context is not None
@@ -106,23 +107,28 @@ def ingest_document(
             product_context=context,
         )
 
-    return ingest_core_document(
-        file_path,
-        domain,
-        output_path=output_path,
-        source_id=source_id,
-        enricher=(
+    arguments = {
+        "output_path": output_path,
+        "source_id": source_id,
+        "enricher": (
             context.product.records.enrich_knowledge
             if explicit_context
             else enrich_concepts
         ),
-        object_creator=configured_creator,
-        object_saver=save_knowledge_objects,
-        indexer=(
+        "object_creator": configured_creator,
+        "object_saver": save_knowledge_objects,
+        "indexer": (
             indexer
             if indexer is not None
             else index_knowledge_objects
         ),
+    }
+    if progress_callback is not None:
+        arguments["progress_callback"] = progress_callback
+    return ingest_core_document(
+        file_path,
+        domain,
+        **arguments,
     )
 
 

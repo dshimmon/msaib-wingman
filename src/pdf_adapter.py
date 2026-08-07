@@ -5,6 +5,8 @@ import statistics
 
 import pymupdf
 
+from document_errors import NoExtractableTextError
+
 
 MAX_HEADING_WORDS = 12
 MAX_HEADING_CHARACTERS = 120
@@ -205,7 +207,7 @@ def extract_pdf_units(file_path):
             )
 
     if not units:
-        raise ValueError(
+        raise NoExtractableTextError(
             "PDF contains no extractable text and may require OCR."
         )
 
