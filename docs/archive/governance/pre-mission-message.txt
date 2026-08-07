@@ -1,3 +1,16 @@
+<!-- wingman-archive-metadata
+{
+  "schema_version": 1,
+  "classification": "historical_noncanonical",
+  "canonical_replacement": "AGENTS.md",
+  "archived_from": null
+}
+-->
+
+> [!WARNING]
+> **HISTORICAL / NONCANONICAL ARCHIVE.** Canonical replacement:
+> [`AGENTS.md`](../../../AGENTS.md).
+
 ARCHIVED NONCANONICAL MESSAGE — preserved for historical evidence only.
 Current repository workflow is controlled by AGENTS.md and the authoritative
 mission record under docs/missions/.

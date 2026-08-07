@@ -1,3 +1,17 @@
+<!-- wingman-archive-metadata
+{
+  "schema_version": 1,
+  "classification": "historical_noncanonical",
+  "canonical_replacement": null,
+  "archived_from": null
+}
+-->
+
+> [!WARNING]
+> **HISTORICAL / NONCANONICAL ARCHIVE.** No single canonical replacement
+> exists; current authority must be resolved from `AGENTS.md`,
+> `CURRENT_MISSION.md`, `docs/missions/`, and `docs/decisions/`.
+
 # Archived — Wingman Pre-Mission 028 Planning Package
 
 > Archived on 2026-08-07 by `governance/repository-architecture`. This package

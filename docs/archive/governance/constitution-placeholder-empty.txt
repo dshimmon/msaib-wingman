@@ -1,0 +1,14 @@
+<!-- wingman-archive-metadata
+{
+  "schema_version": 1,
+  "classification": "historical_noncanonical",
+  "canonical_replacement": null,
+  "archived_from": null
+}
+-->
+
+HISTORICAL / NONCANONICAL ARCHIVE.
+
+This preserved placeholder contained no substantive content. No canonical
+replacement exists; current authority must be resolved from `AGENTS.md`,
+`CURRENT_MISSION.md`, `docs/missions/`, and `docs/decisions/`.

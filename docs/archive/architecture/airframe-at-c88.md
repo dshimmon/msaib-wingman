@@ -1,3 +1,16 @@
+<!-- wingman-archive-metadata
+{
+  "schema_version": 1,
+  "classification": "historical_noncanonical",
+  "canonical_replacement": "docs/wingman-os/architecture.md",
+  "archived_from": null
+}
+-->
+
+> [!WARNING]
+> **HISTORICAL / NONCANONICAL ARCHIVE.** Canonical replacement:
+> [`docs/wingman-os/architecture.md`](../../wingman-os/architecture.md).
+
 # Airframe — Wingman Defines the Boundary
 
 Mission 027, call sign **Airframe**
@@ -9,10 +22,11 @@ Wingman Airframe`).
 Mission 028 Hardpoints status: approved, committed, and closed; unpushed and
 unmerged.
 
-This document is the practical engineering guide for the current repository.
-`src/airframe_manifest.py` is its machine-readable ownership inventory.
-`tests/test_architecture_boundaries.py` performs bounded static review of the
-real source tree.
+This document was the practical engineering guide for the repository at
+`c88a226`; it is not the current guide. At that historical point,
+`src/airframe_manifest.py` was its machine-readable ownership inventory and
+`tests/test_architecture_boundaries.py` performed bounded static review of the
+then-current source tree.
 
 ## Governance scope
 

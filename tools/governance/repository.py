@@ -3,19 +3,29 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import re
 import subprocess
 import sys
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
+
+from jsonschema import Draft202012Validator
 
 
 ROOT = Path(__file__).resolve().parents[2]
 MISSION_ROOT = ROOT / "docs" / "missions"
 DECISION_ROOT = ROOT / "docs" / "decisions"
+ARCHIVE_ROOT = ROOT / "docs" / "archive"
+CANONICAL_MERGE_TARGET = "refs/remotes/origin/main"
+RATIFICATION_DECISION = (
+    ROOT / "docs/decisions/governance/historical-mission-ratification.md"
+)
 MISSION_MARKER = "wingman-mission-metadata"
 DECISION_MARKER = "wingman-decision-metadata"
+ARCHIVE_MARKER = "wingman-archive-metadata"
 MISSION_ID = re.compile(r"^[a-z0-9-]+(?:/[a-z0-9-]+)+$")
 DECISION_ID = re.compile(r"^[A-Z]+-[0-9]{3}$")
 COMMIT_ID = re.compile(r"^[0-9a-f]{7,40}$")
@@ -23,8 +33,10 @@ LIFECYCLES = frozenset({"draft", "active", "completed", "archived"})
 DECISION_STATES = frozenset({"proposed", "accepted", "superseded"})
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
 STATUS_CLAIM = re.compile(
-    r"(?im)^.*(?:\*\*status:\*\*|\bcurrent (?:mission )?status\b|"
-    r"\bmission (?:is )?(?:complete|completed|active)\b).*$"
+    r"(?im)^(?:>\s*)?(?:[-*]\s*)?(?:\*\*)?"
+    r"(?:mission\s+[^:\n]+\s+)?(?:status|lifecycle|approval|approved|"
+    r"committed|pushed|merged|publication|next gate|exact next gate)"
+    r"(?:\*\*)?\s*:.*$"
 )
 JUNK_NAMES = frozenset({".DS_Store", "Thumbs.db", "Desktop.ini"})
 
@@ -88,15 +100,82 @@ def _duplicates(values: list[str]) -> list[str]:
     return sorted({value for value in values if values.count(value) > 1})
 
 
-def _commit_is_reachable(commit: str) -> bool:
-    result = subprocess.run(
-        ["git", "merge-base", "--is-ancestor", commit, "HEAD"],
+def _schema(path: Path) -> dict:
+    value = json.loads(path.read_text(encoding="utf-8"))
+    Draft202012Validator.check_schema(value)
+    return value
+
+
+def validate_record_schemas(
+    missions: list[Record], decisions: list[Record]
+) -> list[str]:
+    """Validate embedded metadata with real Draft 2020-12 validators."""
+    errors: list[str] = []
+    validators = (
+        (Draft202012Validator(_schema(ROOT / "docs/governance/mission.schema.json")), missions),
+        (Draft202012Validator(_schema(ROOT / "docs/governance/decision.schema.json")), decisions),
+    )
+    for validator, records in validators:
+        for record in records:
+            for error in sorted(
+                validator.iter_errors(record.metadata),
+                key=lambda item: tuple(str(part) for part in item.absolute_path),
+            ):
+                location = ".".join(str(part) for part in error.absolute_path)
+                suffix = f" at {location}" if location else ""
+                errors.append(
+                    f"{_relative(record.path)}: schema violation{suffix}: "
+                    f"{error.message}"
+                )
+    return errors
+
+
+def _git_result(*arguments: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["git", *arguments],
         cwd=ROOT,
         check=False,
         capture_output=True,
         text=True,
     )
-    return result.returncode == 0
+
+
+@lru_cache(maxsize=None)
+def _commit_exists(commit: str) -> bool:
+    return _git_result("cat-file", "-e", f"{commit}^{{commit}}").returncode == 0
+
+
+@lru_cache(maxsize=None)
+def _commit_is_reachable(commit: str) -> bool:
+    return _git_result("merge-base", "--is-ancestor", commit, "HEAD").returncode == 0
+
+
+@lru_cache(maxsize=None)
+def _remote_refs_containing(commit: str) -> tuple[str, ...]:
+    result = _git_result(
+        "for-each-ref", "--format=%(refname)", "--contains", commit,
+        "refs/remotes/",
+    )
+    if result.returncode != 0:
+        return ()
+    return tuple(
+        ref for ref in result.stdout.splitlines()
+        if ref and not ref.endswith("/HEAD")
+    )
+
+
+@lru_cache(maxsize=None)
+def _merge_target_exists() -> bool:
+    return _git_result("show-ref", "--verify", "--quiet", CANONICAL_MERGE_TARGET).returncode == 0
+
+
+@lru_cache(maxsize=None)
+def _merge_target_contains(commit: str) -> bool:
+    if not _merge_target_exists():
+        return False
+    return _git_result(
+        "merge-base", "--is-ancestor", commit, CANONICAL_MERGE_TARGET
+    ).returncode == 0
 
 
 def validate_metadata(
@@ -199,8 +278,10 @@ def validate_metadata(
                 continue
             if not isinstance(commit, str) or not COMMIT_ID.fullmatch(commit):
                 errors.append(f"{mission_id}: invalid commit ID {commit!r}")
-            elif metadata["lifecycle"] == "completed" and not _commit_is_reachable(commit):
-                errors.append(f"{mission_id}: completed commit not reachable: {commit}")
+            elif not _commit_exists(commit):
+                errors.append(f"{mission_id}: recorded commit does not exist: {commit}")
+            elif not _commit_is_reachable(commit):
+                errors.append(f"{mission_id}: recorded commit not reachable from HEAD: {commit}")
         for decision_path in metadata["official_decisions"]:
             if not (ROOT / decision_path).is_file():
                 errors.append(f"{mission_id}: decision link does not resolve: {decision_path}")
@@ -233,6 +314,75 @@ def validate_metadata(
         for reference in references:
             if reference not in known_decisions:
                 errors.append(f"{decision_id}: unknown decision reference {reference}")
+    errors.extend(validate_historical_ratification(missions, decisions))
+    errors.extend(validate_publication_evidence(missions))
+    return errors
+
+
+def validate_historical_ratification(
+    missions: list[Record], decisions: list[Record]
+) -> list[str]:
+    """Bind the exact retrospective ratification to canonical mission records."""
+    errors: list[str] = []
+    ratification = next(
+        (
+            record for record in decisions
+            if record.metadata["id"] == "GOV-003"
+        ),
+        None,
+    )
+    if ratification is None:
+        return ["GOV-003 historical mission ratification is missing"]
+    entries = ratification.metadata.get("ratified_missions", [])
+    ratified = {entry["id"]: entry["implementation_commits"] for entry in entries}
+    if len(entries) != 30 or len(ratified) != 30:
+        errors.append("GOV-003 must contain exactly 30 unique ratified missions")
+    completed = {
+        record.metadata["id"]: record
+        for record in missions
+        if record.metadata["lifecycle"] == "completed"
+    }
+    if set(ratified) != set(completed):
+        errors.append("GOV-003 ratified mission inventory does not match completed records")
+    body = ratification.path.read_text(encoding="utf-8")
+    decision_path = _relative(RATIFICATION_DECISION)
+    for mission_id, commits in ratified.items():
+        record = completed.get(mission_id)
+        if record is None:
+            continue
+        if record.metadata["implementation_commits"] != commits:
+            errors.append(f"{mission_id}: GOV-003 commit inventory disagrees")
+        if decision_path not in record.metadata["official_decisions"]:
+            errors.append(f"{mission_id}: canonical record does not cite GOV-003")
+        if not any(
+            "GOV-003" in evidence["scope"]
+            for evidence in record.metadata["approval_evidence"]
+        ):
+            errors.append(f"{mission_id}: completion evidence does not cite GOV-003")
+        if f"| `{mission_id}` |" not in body:
+            errors.append(f"GOV-003 readable table omits {mission_id}")
+    return errors
+
+
+def validate_publication_evidence(missions: list[Record]) -> list[str]:
+    """Reconcile pushed/merged booleans with cached, nondestructive Git facts."""
+    errors: list[str] = []
+    for record in missions:
+        metadata = record.metadata
+        mission_id = metadata["id"]
+        commits = metadata["implementation_commits"]
+        published = bool(commits) and all(_remote_refs_containing(commit) for commit in commits)
+        merged = bool(commits) and all(_merge_target_contains(commit) for commit in commits)
+        if metadata["pushed"] != published:
+            errors.append(
+                f"{mission_id}: pushed={metadata['pushed']} contradicts cached "
+                f"remote-tracking evidence ({published})"
+            )
+        if metadata["merged"] != merged:
+            errors.append(
+                f"{mission_id}: merged={metadata['merged']} contradicts "
+                f"{CANONICAL_MERGE_TARGET} evidence ({merged})"
+            )
     return errors
 
 
@@ -413,7 +563,9 @@ def generated_content(missions: list[Record], decisions: list[Record]) -> dict[P
 def generate() -> None:
     missions = load_missions()
     decisions = load_decisions()
-    errors = validate_metadata(missions, decisions)
+    errors = validate_record_schemas(missions, decisions)
+    if not errors:
+        errors.extend(validate_metadata(missions, decisions))
     if errors:
         raise GovernanceError("\n".join(errors))
     for path, content in generated_content(missions, decisions).items():
@@ -472,10 +624,17 @@ def validate_links_and_documents() -> list[str]:
                 if target.startswith("/")
                 else path.parent / target
             ).resolve()
-            if not resolved.exists():
+            try:
+                resolved.relative_to(ROOT.resolve())
+            except ValueError:
                 errors.append(
-                    f"{_relative(path)}: link does not resolve: {target}"
+                    f"{_relative(path)}: repository link escapes root: {target}"
                 )
+            else:
+                if not resolved.exists():
+                    errors.append(
+                        f"{_relative(path)}: link does not resolve: {target}"
+                    )
         if (
             path not in trusted_status
             and "missions" not in path.relative_to(ROOT).parts
@@ -490,6 +649,160 @@ def validate_links_and_documents() -> list[str]:
                 errors.append(
                     f"{_relative(path)}: current-status claim lacks a canonical source"
                 )
+    return errors
+
+
+def validate_link_target(source: Path, target: str) -> list[str]:
+    """Validate one repository-relative link, including root confinement."""
+    target = target.split("#", 1)[0]
+    if not target or re.match(r"^[a-z][a-z0-9+.-]*:", target, re.I):
+        return []
+    resolved = (
+        ROOT / target.lstrip("/")
+        if target.startswith("/")
+        else source.parent / target
+    ).resolve()
+    try:
+        resolved.relative_to(ROOT.resolve())
+    except ValueError:
+        return [f"{_relative(source)}: repository link escapes root: {target}"]
+    if not resolved.exists():
+        return [f"{_relative(source)}: link does not resolve: {target}"]
+    return []
+
+
+def _archive_metadata(path: Path, text: str) -> dict:
+    prefix = f"<!-- {ARCHIVE_MARKER}\n"
+    try:
+        payload = text.split(prefix, 1)[1].split("\n-->", 1)[0]
+        metadata = json.loads(payload)
+    except (IndexError, json.JSONDecodeError) as error:
+        raise GovernanceError(
+            f"{_relative(path)} has no valid file-local archive classification"
+        ) from error
+    if not isinstance(metadata, dict):
+        raise GovernanceError(f"{_relative(path)} archive metadata must be an object")
+    return metadata
+
+
+def validate_archive_document(path: Path, text: str) -> list[str]:
+    """Require local classification, warning, and replacement for one archive."""
+    errors: list[str] = []
+    try:
+        metadata = _archive_metadata(path, text)
+    except GovernanceError as error:
+        return [str(error)]
+    expected_fields = {
+        "schema_version", "classification", "canonical_replacement",
+        "archived_from",
+    }
+    if set(metadata) != expected_fields:
+        errors.append(f"{_relative(path)}: archive metadata fields are not exact")
+        return errors
+    if metadata["schema_version"] != 1:
+        errors.append(f"{_relative(path)}: unsupported archive schema version")
+    classification = metadata["classification"]
+    if classification not in {"historical_noncanonical", "archive_index"}:
+        errors.append(f"{_relative(path)}: invalid archive classification")
+    warning = (
+        r"HISTORICAL\s*/\s*NONCANONICAL"
+        if classification == "historical_noncanonical"
+        else r"NONCANONICAL ARCHIVE INDEX"
+    )
+    visible = re.search(warning, text, re.I)
+    if not visible:
+        errors.append(f"{_relative(path)}: missing file-local noncanonical warning")
+    replacement = metadata["canonical_replacement"]
+    if replacement is None:
+        warning_text = re.sub(r"(?m)^>\s?", "", text)
+        if not re.search(
+            r"No\s+(?:single\s+)?canonical\s+replacement\s+exists",
+            warning_text,
+            re.I,
+        ):
+            errors.append(
+                f"{_relative(path)}: missing explicit no-replacement statement"
+            )
+    elif not isinstance(replacement, str) or not replacement:
+        errors.append(f"{_relative(path)}: invalid canonical replacement")
+    else:
+        canonical = (ROOT / replacement).resolve()
+        try:
+            canonical.relative_to(ROOT.resolve())
+        except ValueError:
+            errors.append(f"{_relative(path)}: archive replacement escapes root")
+        else:
+            if not canonical.exists():
+                errors.append(
+                    f"{_relative(path)}: archive replacement does not exist: "
+                    f"{replacement}"
+                )
+            if replacement not in text:
+                errors.append(
+                    f"{_relative(path)}: replacement is not linked file-locally"
+                )
+    return errors
+
+
+def validate_archive_documents() -> list[str]:
+    errors: list[str] = []
+    for path in sorted(item for item in ARCHIVE_ROOT.rglob("*") if item.is_file()):
+        errors.extend(validate_archive_document(path, path.read_text(encoding="utf-8")))
+        if path.name == "journal.md" and "mission-history" in path.parts:
+            metadata = _archive_metadata(path, path.read_text(encoding="utf-8"))
+            mission_id = "/".join(path.parts[path.parts.index("mission-history") + 1:-1])
+            expected = f"docs/missions/{mission_id}/mission.md"
+            if metadata.get("classification") != "historical_noncanonical":
+                errors.append(f"{_relative(path)}: mission journal classification invalid")
+            if metadata.get("canonical_replacement") != expected:
+                errors.append(f"{_relative(path)}: mission journal replacement invalid")
+    return errors
+
+
+def validate_mission_journal_authority(
+    missions: list[Record], exists=None
+) -> list[str]:
+    """Forbid a competing journal beside any completed mission record."""
+    exists = exists or (lambda path: path.is_file())
+    errors = []
+    for record in missions:
+        if record.metadata["lifecycle"] != "completed":
+            continue
+        journal = record.path.parent / "journal.md"
+        if exists(journal):
+            errors.append(
+                f"{record.metadata['id']}: completed mission retains competing journal.md"
+            )
+    return errors
+
+
+def validate_status_authority() -> list[str]:
+    """Reject current mission-state assertions outside canonical surfaces."""
+    errors: list[str] = []
+    trusted = {
+        ROOT / "CURRENT_MISSION.md",
+        ROOT / "WINGMAN_VAULT.md",
+        *GENERATED.keys(),
+    }
+    for path in sorted((ROOT / "docs").rglob("*")):
+        if not path.is_file() or path.suffix not in {".md", ".txt"}:
+            continue
+        if ARCHIVE_ROOT in path.parents or path in trusted:
+            continue
+        if path.name == "mission.md" and MISSION_ROOT in path.parents:
+            continue
+        if DECISION_ROOT in path.parents:
+            continue
+        text = path.read_text(encoding="utf-8")
+        if not STATUS_CLAIM.search(text):
+            continue
+        deference = "mission.md" in text and re.search(
+            r"sole canonical|does not claim|authoritative|controlled by", text, re.I
+        )
+        if not deference:
+            errors.append(
+                f"{_relative(path)}: competing current mission-status claim"
+            )
     return errors
 
 
@@ -532,6 +845,25 @@ def _canonical_module_path(canonical: str) -> Path:
     return package if package.is_file() else base.with_suffix(".py")
 
 
+def validate_facade_source(source: str, historical: str) -> list[str]:
+    """Accept only the exact three-statement compatibility-facade AST."""
+    template = (
+        f'"""Compatibility facade for the historical `{historical}` module."""\n\n'
+        "from wingman.shared.compatibility import expose as _expose\n\n\n"
+        f'_expose(__name__, "{historical}")\n'
+    )
+    try:
+        observed = ast.parse(source)
+    except SyntaxError as error:
+        return [f"facade is not valid Python: {error}"]
+    expected = ast.parse(template)
+    if ast.dump(observed, include_attributes=False) != ast.dump(
+        expected, include_attributes=False
+    ):
+        return ["facade does not match the permitted thin AST"]
+    return []
+
+
 def validate_compatibility_facades() -> list[str]:
     errors: list[str] = []
     source = str(ROOT / "src")
@@ -551,11 +883,12 @@ def validate_compatibility_facades() -> list[str]:
         errors.append(f"registered facade is missing: {stale}")
     for facade in COMPATIBILITY_FACADES:
         path = _facade_path(facade.historical)
-        expected = f'_expose(__name__, "{facade.historical}")'
         if not path.is_file():
             continue
-        if expected not in path.read_text(encoding="utf-8"):
-            errors.append(f"{_relative(path)}: facade does not use the registry")
+        facade_errors = validate_facade_source(
+            path.read_text(encoding="utf-8"), facade.historical
+        )
+        errors.extend(f"{_relative(path)}: {error}" for error in facade_errors)
         if not _canonical_module_path(facade.canonical).is_file():
             errors.append(
                 f"{facade.historical}: canonical target is missing: {facade.canonical}"
@@ -607,10 +940,15 @@ def validate_schemas_and_first_reads() -> list[str]:
 def validate() -> list[str]:
     missions = load_missions()
     decisions = load_decisions()
-    errors = validate_metadata(missions, decisions)
+    errors = validate_record_schemas(missions, decisions)
+    if not errors:
+        errors.extend(validate_metadata(missions, decisions))
     if not errors:
         errors.extend(validate_generated(missions, decisions))
     errors.extend(validate_links_and_documents())
+    errors.extend(validate_mission_journal_authority(missions))
+    errors.extend(validate_archive_documents())
+    errors.extend(validate_status_authority())
     errors.extend(validate_repository_hygiene())
     errors.extend(validate_compatibility_facades())
     errors.extend(validate_schemas_and_first_reads())

@@ -21,6 +21,136 @@ class RepositoryGovernanceTests(unittest.TestCase):
             repository.validate_generated(self.missions, self.decisions), []
         )
 
+    def _mission(self, mission_id):
+        return next(
+            record for record in self.missions
+            if record.metadata["id"] == mission_id
+        )
+
+    def _with_metadata(self, record, **changes):
+        metadata = copy.deepcopy(record.metadata)
+        metadata.update(changes)
+        return repository.Record(record.path, metadata)
+
+    def test_bulk_ingestion_conflict_is_rejected(self):
+        record = self._mission("atlas/bulk-ingestion")
+        errors = repository.validate_mission_journal_authority(
+            [record], exists=lambda path: path.name == "journal.md"
+        )
+        self.assertEqual(
+            errors,
+            ["atlas/bulk-ingestion: completed mission retains competing journal.md"],
+        )
+
+    def test_prompt_optimizer_conflict_is_rejected(self):
+        record = self._mission("wingman-os/prompt-optimizer")
+        errors = repository.validate_mission_journal_authority(
+            [record], exists=lambda path: path.name == "journal.md"
+        )
+        self.assertEqual(
+            errors,
+            [
+                "wingman-os/prompt-optimizer: completed mission retains "
+                "competing journal.md"
+            ],
+        )
+
+    def test_any_completed_mission_retaining_journal_is_rejected(self):
+        record = self._mission("wingman-os/foundation")
+        errors = repository.validate_mission_journal_authority(
+            [record], exists=lambda path: True
+        )
+        self.assertTrue(any("competing journal.md" in error for error in errors))
+
+    def test_schema_rejects_malformed_priority(self):
+        record = self._with_metadata(self.missions[0], priority={"rank": 1})
+        errors = repository.validate_record_schemas([record], self.decisions)
+        self.assertTrue(any("priority" in error for error in errors), errors)
+
+    def test_schema_rejects_unexpected_metadata_field(self):
+        record = self._with_metadata(self.missions[0], unexpected="claim")
+        errors = repository.validate_record_schemas([record], self.decisions)
+        self.assertTrue(
+            any("Additional properties" in error for error in errors), errors
+        )
+
+    def test_schema_rejects_malformed_approval_evidence(self):
+        record = self._with_metadata(
+            self.missions[0],
+            approval_evidence=[{"date": "2026-08-07", "authority": "Maverick"}],
+        )
+        errors = repository.validate_record_schemas([record], self.decisions)
+        self.assertTrue(any("scope" in error for error in errors), errors)
+
+    def test_decision_schema_rejects_unexpected_and_malformed_evidence(self):
+        metadata = copy.deepcopy(self.decisions[0].metadata)
+        metadata["approval_evidence"] = {"unsupported": True}
+        metadata["unexpected"] = "claim"
+        record = repository.Record(self.decisions[0].path, metadata)
+        errors = repository.validate_record_schemas(self.missions, [record])
+        self.assertTrue(
+            any("approval_evidence" in error for error in errors), errors
+        )
+        self.assertTrue(
+            any("Additional properties" in error for error in errors), errors
+        )
+
+    def test_false_pushed_and_merged_claims_are_rejected(self):
+        record = self._with_metadata(
+            self._mission("atlas/bulk-ingestion"), pushed=True, merged=True
+        )
+        with (
+            patch.object(repository, "_remote_refs_containing", return_value=()),
+            patch.object(repository, "_merge_target_contains", return_value=False),
+        ):
+            errors = repository.validate_publication_evidence([record])
+        self.assertTrue(any("pushed=True contradicts" in error for error in errors))
+        self.assertTrue(any("merged=True contradicts" in error for error in errors))
+
+    def test_invalid_unreachable_active_mission_commit_is_rejected(self):
+        record = self._with_metadata(
+            self._mission("governance/repository-architecture"),
+            implementation_commits=["f" * 40],
+        )
+        with (
+            patch.object(repository, "_commit_exists", return_value=False),
+            patch.object(repository, "_commit_is_reachable", return_value=False),
+            patch.object(repository, "_remote_refs_containing", return_value=()),
+            patch.object(repository, "_merge_target_contains", return_value=False),
+        ):
+            errors = repository.validate_metadata([record], self.decisions)
+        self.assertTrue(
+            any("recorded commit does not exist" in error for error in errors),
+            errors,
+        )
+
+    def test_repository_relative_link_may_not_escape_root(self):
+        errors = repository.validate_link_target(
+            repository.ROOT / "README.md", "../outside.md"
+        )
+        self.assertTrue(any("escapes root" in error for error in errors), errors)
+
+    def test_full_implementation_disguised_as_facade_is_rejected(self):
+        source = '''"""Compatibility facade for the historical `knowledge` module."""
+from wingman.shared.compatibility import expose as _expose
+
+def hidden_implementation():
+    return "not thin"
+
+_expose(__name__, "knowledge")
+'''
+        errors = repository.validate_facade_source(source, "knowledge")
+        self.assertEqual(errors, ["facade does not match the permitted thin AST"])
+
+    def test_archived_snapshot_without_local_banner_is_rejected(self):
+        path = repository.ARCHIVE_ROOT / "architecture" / "unlabeled.md"
+        errors = repository.validate_archive_document(
+            path, "# Current repository\n\nStatus: complete\n"
+        )
+        self.assertTrue(
+            any("archive classification" in error for error in errors), errors
+        )
+
     def test_duplicate_ids_and_aliases_are_rejected(self):
         duplicate = self.missions[0]
         with patch.object(repository, "_commit_is_reachable", return_value=True):

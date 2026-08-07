@@ -15,6 +15,7 @@ from wingman.shared.compatibility import (  # noqa: E402
     COMPATIBILITY_FACADES,
     FACADE_BY_HISTORICAL,
 )
+from tools.governance.repository import validate_facade_source  # noqa: E402
 
 
 def facade_path(historical):
@@ -48,9 +49,12 @@ class CompatibilityFacadeTests(unittest.TestCase):
                 self.assertTrue(
                     canonical_path(facade.canonical).is_file(), facade.canonical
                 )
-                self.assertIn(
-                    f'_expose(__name__, "{facade.historical}")',
-                    historical_path.read_text(encoding="utf-8"),
+                self.assertEqual(
+                    validate_facade_source(
+                        historical_path.read_text(encoding="utf-8"),
+                        facade.historical,
+                    ),
+                    [],
                 )
 
     def test_representative_imports_alias_the_canonical_module_object(self):

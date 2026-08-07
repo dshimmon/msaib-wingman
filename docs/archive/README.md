@@ -1,3 +1,16 @@
+<!-- wingman-archive-metadata
+{
+  "schema_version": 1,
+  "classification": "archive_index",
+  "canonical_replacement": "docs/README.md",
+  "archived_from": null
+}
+-->
+
+> [!IMPORTANT]
+> **NONCANONICAL ARCHIVE INDEX.** Current documentation is indexed at
+> [`docs/README.md`](../README.md).
+
 # Documentation Archive
 
 Everything below this directory is noncanonical historical evidence:

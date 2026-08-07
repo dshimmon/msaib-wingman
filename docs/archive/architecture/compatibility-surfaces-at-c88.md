@@ -1,3 +1,16 @@
+<!-- wingman-archive-metadata
+{
+  "schema_version": 1,
+  "classification": "historical_noncanonical",
+  "canonical_replacement": "docs/governance/compatibility-surfaces.md",
+  "archived_from": null
+}
+-->
+
+> [!WARNING]
+> **HISTORICAL / NONCANONICAL ARCHIVE.** Canonical replacement:
+> [`docs/governance/compatibility-surfaces.md`](../../governance/compatibility-surfaces.md).
+
 # Compatibility Surface Register
 
 **Status:** Mission 028 approved, committed, and closed; updated for the

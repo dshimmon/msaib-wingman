@@ -1,3 +1,16 @@
+<!-- wingman-archive-metadata
+{
+  "schema_version": 1,
+  "classification": "historical_noncanonical",
+  "canonical_replacement": "docs/wingman-os/knowledge-flow.md",
+  "archived_from": null
+}
+-->
+
+> [!WARNING]
+> **HISTORICAL / NONCANONICAL ARCHIVE.** Canonical replacement:
+> [`docs/wingman-os/knowledge-flow.md`](../../wingman-os/knowledge-flow.md).
+
 # Knowledge Flow
 
 ## Purpose
