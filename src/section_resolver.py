@@ -1,9 +1,6 @@
-def resolve_section(heading, current_section):
-    """
-    Determines whether a heading begins a new section.
-    """
+"""Compatibility facade for the historical `section_resolver` module."""
 
-    if not heading:
-        return current_section
+from wingman.shared.compatibility import expose as _expose
 
-    return heading
+
+_expose(__name__, "section_resolver")

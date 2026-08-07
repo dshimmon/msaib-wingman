@@ -1,21 +1,6 @@
-# Loads complete knowledge objects from stored document JSON files.
+"""Compatibility facade for the historical `knowledge_loader` module."""
 
-import json
-from pathlib import Path
+from wingman.shared.compatibility import expose as _expose
 
 
-def load_knowledge_objects():
-    """
-    Load all stored knowledge objects.
-    """
-
-    knowledge_objects = []
-    documents_folder = Path("data/documents")
-
-    for json_file in documents_folder.rglob("*.json"):
-        with open(json_file, "r") as file:
-            document_objects = json.load(file)
-
-        knowledge_objects.extend(document_objects)
-
-    return knowledge_objects
+_expose(__name__, "knowledge_loader")

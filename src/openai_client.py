@@ -1,13 +1,6 @@
-# Centralizing API calls from llm.py and query_interpretor.py
+"""Compatibility facade for the historical `openai_client` module."""
 
-import os
-
-from dotenv import load_dotenv
-from openai import OpenAI
+from wingman.shared.compatibility import expose as _expose
 
 
-load_dotenv()
-
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY")
-)
+_expose(__name__, "openai_client")

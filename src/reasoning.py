@@ -1,5 +1,6 @@
-from llm import summarize_with_ai
+"""Compatibility facade for the historical `reasoning` module."""
+
+from wingman.shared.compatibility import expose as _expose
 
 
-def summarize_results(topic, evidence):
-    return summarize_with_ai(topic, evidence)
+_expose(__name__, "reasoning")

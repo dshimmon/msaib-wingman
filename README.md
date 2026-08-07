@@ -41,10 +41,11 @@ support PDF, DOCX, XLSX, PPTX, CSV, TXT, MD, and MARKDOWN files.
 Run the offline suite:
 
 ```bash
-python3 -m unittest discover -s tests -p 'test_*.py'
+python3 -m unittest discover -s tests -t . -p 'test_*.py'
 ```
 
-`tests/run_retrieval_tests.py` is a separate API-backed diagnostic.
+`tests/products/atlas/run_retrieval_tests.py` is a separate API-backed
+diagnostic.
 
 ## Architecture and governance
 

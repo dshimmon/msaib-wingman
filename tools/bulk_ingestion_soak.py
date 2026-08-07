@@ -22,23 +22,23 @@ if str(SRC) not in sys.path:
 os.environ["PYTHON_DOTENV_DISABLED"] = "1"
 os.environ["OPENAI_API_KEY"] = "bulk-ingestion-offline-placeholder"
 
-import concept_enrichment  # noqa: E402
-import concept_registry_storage  # noqa: E402
-import embedding_indexer  # noqa: E402
-import embedding_storage  # noqa: E402
-import intake_service  # noqa: E402
-import source_registry  # noqa: E402
-from batch_ingestion import (  # noqa: E402
+import products.atlas.concept_enrichment as concept_enrichment  # noqa: E402
+import products.atlas.intake_service as intake_service  # noqa: E402
+import wingman.core.concept_registry_storage as concept_registry_storage  # noqa: E402
+import wingman.core.embedding_indexer as embedding_indexer  # noqa: E402
+import wingman.core.embedding_storage as embedding_storage  # noqa: E402
+import wingman.shared.source_registry as source_registry  # noqa: E402
+from products.atlas.batch_ingestion import (  # noqa: E402
     execute_batch,
     folder_file_inputs,
     preview_batch,
     resume_plan,
     write_manifest,
 )
-from folder_intake import collect_folder_entries  # noqa: E402
-from intake_service import create_source_id  # noqa: E402
-from knowledge import retrieve_evidence  # noqa: E402
-from product_config import create_atlas_context  # noqa: E402
+from products.atlas.intake_service import create_source_id  # noqa: E402
+from products.atlas.product_config import create_atlas_context  # noqa: E402
+from wingman.core.folder_intake import collect_folder_entries  # noqa: E402
+from wingman.core.knowledge import retrieve_evidence  # noqa: E402
 
 
 SUPPORTED_CYCLE = (".pdf", ".docx", ".xlsx", ".pptx", ".csv", ".txt", ".md", ".markdown")

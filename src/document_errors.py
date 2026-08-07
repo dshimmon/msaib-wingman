@@ -1,17 +1,6 @@
-"""Typed product-neutral document extraction failures."""
+"""Compatibility facade for the historical `document_errors` module."""
+
+from wingman.shared.compatibility import expose as _expose
 
 
-class DocumentExtractionError(ValueError):
-    """Base error for a document that cannot produce normalized units."""
-
-
-class NoReadableContentError(DocumentExtractionError):
-    """The document is valid enough to inspect but contains no usable text."""
-
-
-class NoExtractableTextError(NoReadableContentError):
-    """A PDF exposed no extractable text through the current adapter."""
-
-
-class DocumentDecodingError(DocumentExtractionError):
-    """A text-based document does not use the supported encoding."""
+_expose(__name__, "document_errors")

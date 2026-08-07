@@ -1,51 +1,6 @@
-# Loads and saves Wingman's persistent concept registry.
+"""Compatibility facade for the historical `concept_registry_storage` module."""
 
-import json
-from pathlib import Path
-
-
-REGISTRY_PATH = Path(
-    "data/concepts/concept-registry.json"
-)
+from wingman.shared.compatibility import expose as _expose
 
 
-def load_registry():
-    """
-    Load Wingman's concept registry.
-    """
-    if not REGISTRY_PATH.exists():
-        return {}
-
-    with REGISTRY_PATH.open(
-        "r",
-        encoding="utf-8",
-    ) as file:
-        return json.load(file)
-
-
-def save_registry(registry):
-    """
-    Save the concept registry using an atomic replacement.
-    """
-    REGISTRY_PATH.parent.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    temporary_path = Path(
-        f"{REGISTRY_PATH}.tmp"
-    )
-
-    with temporary_path.open(
-        "w",
-        encoding="utf-8",
-    ) as file:
-        json.dump(
-            registry,
-            file,
-            indent=4,
-        )
-
-    temporary_path.replace(
-        REGISTRY_PATH
-    )
+_expose(__name__, "concept_registry_storage")

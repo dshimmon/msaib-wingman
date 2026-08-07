@@ -1,20 +1,6 @@
-"""
-Product-neutral SQLite persistence for Wingman OS.
-"""
+"""Compatibility facade for the historical `ledger` module."""
 
-from ledger.database import (
-    connect_database,
-    get_database_path,
-    require_transaction,
-    transaction,
-)
-from ledger.migrations import apply_migrations
+from wingman.shared.compatibility import expose as _expose
 
 
-__all__ = [
-    "apply_migrations",
-    "connect_database",
-    "get_database_path",
-    "require_transaction",
-    "transaction",
-]
+_expose(__name__, "ledger")

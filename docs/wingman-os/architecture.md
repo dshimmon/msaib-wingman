@@ -26,6 +26,8 @@ tests/
 
 `src/wingman/shared/airframe_manifest.py` is the machine-readable ownership
 inventory. Governance and architecture tests compare it with the actual tree.
+The canonical roots are `src/wingman/core/`, `src/wingman/shared/`,
+`src/products/atlas/`, and `src/products/radar/`.
 
 ## Dependency direction
 

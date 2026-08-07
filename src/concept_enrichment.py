@@ -1,21 +1,6 @@
-from concept_extractor import extract_concepts
-from record_extractor import extract_records
-from concept_registry import register_concepts
+"""Compatibility facade for the historical `concept_enrichment` module."""
+
+from wingman.shared.compatibility import expose as _expose
 
 
-def enrich_concepts(knowledge_object):
-    """
-    Enrich a knowledge object with concepts and structured records.
-    """
-
-    concepts = extract_concepts(knowledge_object)
-    knowledge_object["concepts"] = register_concepts(
-        concepts,
-        knowledge_object,
-    )
-    knowledge_object["records"] = extract_records(
-        knowledge_object,
-        knowledge_object["concepts"],
-    )
-
-    return knowledge_object
+_expose(__name__, "concept_enrichment")
