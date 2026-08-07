@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "generated_date": "2026-08-07",
+  "foreground_checkout": "/Users/davidshimmon/Developer/Wingman/msaib-wingman",
+  "foreground_branch": "codex/Audit",
+  "foreground_head": "c88a226ac13e69e235ed5df1347a3872e3330554",
+  "foreground_binary_diff_sha256": "1f1643d9d66c79d0fd468eeb3a9b0a9917983d1322f77ba5659cdc6abc766894",
+  "correction_checkout": "/private/tmp/wingman-repository-architecture-20260807-01",
+  "correction_comparison_head": "0bc7be1e88d5a7c70d4485d49264c02fc8d95b81",
+  "comparison_basis": "Post-hoc exact-byte comparison against the still-intact read-only foreground checkout, anchored to the previously recorded aggregate binary diff fingerprint; no immutable preflight per-file manifest existed.",
+  "incorporation_rule": "A protected foreground version is incorporated only if its exact SHA-256 appears in a tracked file at the correction comparison HEAD.",
+  "path_disposition_counts": {
+    "deleted": 3,
+    "moved": 5,
+    "unchanged": 3
+  },
+  "protected_foreground_versions_excluded": true,
+  "entries": [
+    {
+      "path": ".DS_Store",
+      "git_status": " M",
+      "foreground_working_tree_sha256": "d68fdd877061ca60013d5dacd9970a78c9d5cb8226a8e548ec45f324e0d8e691",
+      "foreground_head_baseline_sha256": "26d65076dee9fc7f070c9bdee831417ace4ec9fdab752dbab66d3868ab501930",
+      "correction_disposition": "deleted",
+      "target_path": null,
+      "target_path_sha256": null,
+      "exact_working_version_matches_in_correction": [],
+      "foreground_version_incorporated": false
+    },
+    {
+      "path": "data/.DS_Store",
+      "git_status": " M",
+      "foreground_working_tree_sha256": "b070ece745487525bdb69bb77ccddeb99d583d21758126f705e029349e2333a4",
+      "foreground_head_baseline_sha256": "875c574ecf8fdeb38867707a163dfff7162fe61850e22bee69fdfc9ea14c69e7",
+      "correction_disposition": "deleted",
+      "target_path": null,
+      "target_path_sha256": null,
+      "exact_working_version_matches_in_correction": [],
+      "foreground_version_incorporated": false
+    },
+    {
+      "path": "data/documents/.DS_Store",
+      "git_status": " M",
+      "foreground_working_tree_sha256": "3a15edd6b503e9b4cdc8e3891dbf3494665495d24c116763f44323149d8a557e",
+      "foreground_head_baseline_sha256": "42fa028339ed8e09b4f228aeb9a766ae32be9a32de632ee1ffbf83d292e3f505",
+      "correction_disposition": "deleted",
+      "target_path": null,
+      "target_path_sha256": null,
+      "exact_working_version_matches_in_correction": [],
+      "foreground_version_incorporated": false
+    },
+    {
+      "path": "docs/Development-Flightline.md",
+      "git_status": " M",
+      "foreground_working_tree_sha256": "159ef74b6f9fc1a51afeadabe9ac77d0d9ece5dd821e147597ae0f397325a63a",
+      "foreground_head_baseline_sha256": "8e503392eb9e5f3e3d6c599168dce69b36d319de09fc28e8776dd11707b401e2",
+      "correction_disposition": "moved",
+      "target_path": "docs/runbooks/development-flightline.md",
+      "target_path_sha256": "8443320e69b8d735d2c712c9a19453b845f26c47ca557a566081c918fafd81aa",
+      "exact_working_version_matches_in_correction": [],
+      "foreground_version_incorporated": false
+    },
+    {
+      "path": "docs/Mission-brief.md",
+      "git_status": " M",
+      "foreground_working_tree_sha256": "eaf3d009a4cdba5a4a8ec4a1f15887d9a1f5924f98e9666cc82df698ba7be379",
+      "foreground_head_baseline_sha256": "4cc4e85ab00b4203a8bbf2e5b1063b82144e705804f2a8657dcbf368ec766b29",
+      "correction_disposition": "moved",
+      "target_path": "docs/archive/governance/pre-mission-message.txt",
+      "target_path_sha256": "47b335f21ac7bc90a971429220b5d28b9833afa04032a63e0419d7711ae90be8",
+      "exact_working_version_matches_in_correction": [],
+      "foreground_version_incorporated": false
+    },
+    {
+      "path": "docs/Wingman_Pre-Mission_028_Planning_Package.md",
+      "git_status": " M",
+      "foreground_working_tree_sha256": "6c064ccde7d0ed038ee13a05c43d2a1a101cd25345e107ad8d9f1f27e9edf46d",
+      "foreground_head_baseline_sha256": "d08f368e03de1c5f16962c976af80ba42ea31793b3b7679f8a50d89033ea6ee7",
+      "correction_disposition": "moved",
+      "target_path": "docs/archive/governance/pre-mission-028-planning-package.md",
+      "target_path_sha256": "21c947f82a890323f346d4ade257dc8014d837bc71ce1c2bba727b6d10cf5a4c",
+      "exact_working_version_matches_in_correction": [],
+      "foreground_version_incorporated": false
+    },
+    {
+      "path": "docs/architecture/Airframe.md",
+      "git_status": " M",
+      "foreground_working_tree_sha256": "fd9f029d02b7d1a0c0be6905dca51e473fded6fd3a3327512277c1b0467a067b",
+      "foreground_head_baseline_sha256": "5c0593904df11262357ce0de779c6b1da2a2f45ec270c4b2d7f708819c2bfbb4",
+      "correction_disposition": "moved",
+      "target_path": "docs/archive/architecture/airframe-at-c88.md",
+      "target_path_sha256": "b2f01fa6522e0b22eb7d1274bb98c87a90e4f9db200591ead2792e188855224e",
+      "exact_working_version_matches_in_correction": [],
+      "foreground_version_incorporated": false
+    },
+    {
+      "path": "tests/test_flightline.py",
+      "git_status": " M",
+      "foreground_working_tree_sha256": "806c942acefea102b5f922c7197ece8899a67692f11b34141f036833ad11a409",
+      "foreground_head_baseline_sha256": "518c6f48323a686c037da57102fb72b3bddc9b2958cbc38c2dbaeada5572fc8e",
+      "correction_disposition": "moved",
+      "target_path": "tests/governance/test_flightline.py",
+      "target_path_sha256": "8affa07ce6aec9ca49e1b1f5edff866c1ad9c0e4c03055528567e4c7f06590b1",
+      "exact_working_version_matches_in_correction": [],
+      "foreground_version_incorporated": false
+    },
+    {
+      "path": "tools/flightline/flightline.py",
+      "git_status": " M",
+      "foreground_working_tree_sha256": "44b0871854fdb6ce3684a8f0e89383319069b9320f59314c1e7ad7fe2f9b11ef",
+      "foreground_head_baseline_sha256": "a9edcf266b48c468a93711942698cc34665f9f34e0f63f8d0cb96d440717105a",
+      "correction_disposition": "unchanged",
+      "target_path": "tools/flightline/flightline.py",
+      "target_path_sha256": "a9edcf266b48c468a93711942698cc34665f9f34e0f63f8d0cb96d440717105a",
+      "exact_working_version_matches_in_correction": [],
+      "foreground_version_incorporated": false
+    },
+    {
+      "path": "tools/flightline/guard.py",
+      "git_status": " M",
+      "foreground_working_tree_sha256": "99eecdffddc120f91c8820ac58f915d148c6e1a0e24bae5d1326f5e36d9931c7",
+      "foreground_head_baseline_sha256": "e8149c455847a0914ec31c9c0814a52efd2ddb13bbd34a3ceb393fa8923f36e7",
+      "correction_disposition": "unchanged",
+      "target_path": "tools/flightline/guard.py",
+      "target_path_sha256": "e8149c455847a0914ec31c9c0814a52efd2ddb13bbd34a3ceb393fa8923f36e7",
+      "exact_working_version_matches_in_correction": [],
+      "foreground_version_incorporated": false
+    },
+    {
+      "path": "tools/flightline/schemas/engineer-report.schema.json",
+      "git_status": " M",
+      "foreground_working_tree_sha256": "73b88fd4333667bec363f1b1840f884a2d58cb16184c4b94fc41f9258b590b37",
+      "foreground_head_baseline_sha256": "0beadbd9394f84f354c2b0f0080a2561e910dcdb045d8e55cd6771a38a1d0bb3",
+      "correction_disposition": "unchanged",
+      "target_path": "tools/flightline/schemas/engineer-report.schema.json",
+      "target_path_sha256": "0beadbd9394f84f354c2b0f0080a2561e910dcdb045d8e55cd6771a38a1d0bb3",
+      "exact_working_version_matches_in_correction": [],
+      "foreground_version_incorporated": false
+    }
+  ]
+}

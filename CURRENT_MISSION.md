@@ -7,9 +7,9 @@
 
 - Mission: **governance/repository-architecture — Wingman Repository Architecture**
 - Lifecycle: **active**
-- Authorization gate: `publication_blocked_pending_antecedent_authority_and_independent_review`
+- Authorization gate: `previous_independent_audit_failed_corrections_committed_fresh_audit_and_antecedent_disposition_required`
 - Official record: [docs/missions/governance/repository-architecture/mission.md](docs/missions/governance/repository-architecture/mission.md)
-- Next gate: Maverick must disposition publication of the eight antecedent commits; then an approved fresh reviewer must complete the usability drill and independent read-only audit before push or merge.
+- Next gate: A fresh independent read-only audit must pass on the correction commits; publication remains separately blocked until Maverick dispositions the eight antecedent commits.
 
 ## Last completed work
 
@@ -21,7 +21,7 @@
 
 | Mission | Role | Branch | Worktree | State | Next gate |
 |---|---|---|---|---|---|
-| `governance/repository-architecture` | primary | `codex/governance-repository-architecture` | `/private/tmp/wingman-repository-architecture-20260807-01` | validated_pending_external_gates | Maverick must disposition publication of the eight antecedent commits; then an approved fresh reviewer must complete the usability drill and independent read-only audit before push or merge. |
+| `governance/repository-architecture` | primary | `codex/governance-repository-architecture` | `/private/tmp/wingman-repository-architecture-20260807-01` | corrections_locally_committed_awaiting_fresh_independent_audit | A fresh independent read-only audit must pass on the correction commits; publication remains separately blocked until Maverick dispositions the eight antecedent commits. |
 
 ## Canonical homes
 

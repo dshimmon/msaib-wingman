@@ -25,12 +25,12 @@ the reviewer should then reach the generated `CURRENT_MISSION.md` entry point.
   Architecture.
 - Lifecycle: `active`.
 - Authorization gate:
-  `publication_blocked_pending_antecedent_authority_and_independent_review`.
+  `previous_independent_audit_failed_corrections_committed_fresh_audit_and_antecedent_disposition_required`.
 - Record: `docs/missions/governance/repository-architecture/mission.md`.
 - Last completed work: `atlas/bulk-ingestion` at `c88a226`.
-- Next gate: Maverick must disposition publication of the eight antecedent
-  commits; then an approved fresh reviewer must complete this drill and the
-  independent read-only audit before push or merge.
+- Next gate: a fresh independent read-only audit must pass on the correction
+  commits; publication remains separately blocked until Maverick dispositions
+  the eight antecedent commits.
 
 ## Status
 

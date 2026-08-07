@@ -7,8 +7,8 @@
 - Authority: Maverick has final authority; Codex is the repository builder/operator.
 - First repository read: `AGENTS.md`
 - Portfolio-primary: `governance/repository-architecture` (active)
-- Authorization gate: `publication_blocked_pending_antecedent_authority_and_independent_review`
+- Authorization gate: `previous_independent_audit_failed_corrections_committed_fresh_audit_and_antecedent_disposition_required`
 - Official record: `docs/missions/governance/repository-architecture/mission.md`
 - Last completed: `atlas/bulk-ingestion` at `c88a226ac13e69e235ed5df1347a3872e3330554`
-- Next gate: Maverick must disposition publication of the eight antecedent commits; then an approved fresh reviewer must complete the usability drill and independent read-only audit before push or merge.
+- Next gate: A fresh independent read-only audit must pass on the correction commits; publication remains separately blocked until Maverick dispositions the eight antecedent commits.
 - Crew Chief: required future capability; no independent Crew Chief audit has occurred.

@@ -33,3 +33,24 @@
   disposition.
 - Prepared the fresh-context drill and independent-audit handoff. Neither was
   represented as executed or independent.
+
+## 2026-08-07 — Independent-audit corrections
+
+- Received an independent repository-organization audit with blocking
+  findings; the prior audit result is failed, not passed.
+- Inspected all 29 completed-mission journals before relocation. Eighteen
+  contained historical architectural-decision sections; surviving principles
+  were already covered by accepted architecture/data decisions, Product
+  Contract documentation, or current tested implementation. No unratified
+  still-governing policy required a stop.
+- Reconciled 30 completed missions to Maverick's dated GOV-003 ratification and
+  moved 29 historical journals into the classified archive.
+- Added Draft 2020-12 metadata validation, cached-Git publication checks,
+  root-confined links, archive/status authority checks, and exact thin-facade
+  AST enforcement with the auditor's negative cases.
+- Compared the intact foreground checkout post-hoc against correction commit
+  `0bc7be1`. Five protected pathnames were moved, three deleted, and three
+  retained at the same path; none of the 11 exact foreground working versions
+  appears in the tracked correction tree.
+- Publication and merge remain prohibited pending a fresh independent audit
+  and Maverick's separate disposition of the eight antecedent commits.

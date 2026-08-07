@@ -1,6 +1,8 @@
 """Executable checks for canonical repository-governance records."""
 
 import copy
+import hashlib
+import json
 import unittest
 from unittest.mock import patch
 
@@ -150,6 +152,38 @@ _expose(__name__, "knowledge")
         self.assertTrue(
             any("archive classification" in error for error in errors), errors
         )
+
+    def test_foreground_preservation_manifest_is_self_consistent(self):
+        path = (
+            repository.MISSION_ROOT
+            / "governance/repository-architecture/artifacts"
+            / "foreground-preservation-manifest.json"
+        )
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(manifest["schema_version"], 1)
+        self.assertEqual(len(manifest["entries"]), 11)
+        self.assertEqual(
+            manifest["path_disposition_counts"],
+            {"deleted": 3, "moved": 5, "unchanged": 3},
+        )
+        self.assertTrue(manifest["protected_foreground_versions_excluded"])
+        self.assertTrue(
+            repository._commit_is_reachable(manifest["correction_comparison_head"])
+        )
+        for entry in manifest["entries"]:
+            with self.subTest(path=entry["path"]):
+                self.assertFalse(entry["foreground_version_incorporated"])
+                self.assertEqual(
+                    entry["exact_working_version_matches_in_correction"], []
+                )
+                target = entry["target_path"]
+                if target is None:
+                    self.assertIsNone(entry["target_path_sha256"])
+                    continue
+                digest = hashlib.sha256(
+                    (repository.ROOT / target).read_bytes()
+                ).hexdigest()
+                self.assertEqual(digest, entry["target_path_sha256"])
 
     def test_duplicate_ids_and_aliases_are_rejected(self):
         duplicate = self.missions[0]

@@ -24,9 +24,15 @@ remain protected. No foreground path is part of a mission commit.
 2. `1052f17` — Classify repository documentation and history.
 3. `b2a6177` — Separate Wingman and product packages.
 4. `99f0ef3` — Enforce repository governance in CI.
+5. `bf73134` — Reconcile repository architecture evidence.
 
-The final reconciliation record is intentionally a fifth bounded commit. Its
-hash cannot self-identify inside that commit and belongs in the final operator
+Independent-audit correction commits preserved after those five:
+
+1. `60134f7` — Reconcile historical mission authority.
+2. `0bc7be1` — Enforce repository record invariants.
+
+The third correction commit is the final correction-evidence record. Its hash
+cannot self-identify inside that commit and belongs in the final operator
 report.
 
 ## Validation evidence
@@ -153,21 +159,128 @@ acceptable substitute.
 
 ## Review and remaining gates
 
-The [30-second usability drill](usability-drill.md) is prepared but has not
-been executed by a fresh-context reviewer. The Development Flightline is in
-maintenance-pending state, and no other approved independent-review mechanism
-was available in this session. Therefore:
+The prior independent repository-organization audit failed and its blocking
+findings produced Maverick's correction brief. The
+[30-second usability drill](usability-drill.md) remains prepared but has not
+been rerun by a fresh-context reviewer. Therefore:
 
 - Codex implementation and self-review: complete;
 - local tests and governance validation: complete;
-- bounded commits: four complete before this reconciliation commit;
-- fresh-context usability drill: pending;
-- independent read-only audit: pending; no findings exist yet;
+- original bounded commits: five complete;
+- correction commits: two complete before the final correction-evidence commit;
+- prior independent read-only audit: failed; corrections locally implemented;
+- fresh-context usability drill: pending rerun;
+- fresh independent read-only correction audit: pending;
 - push: not performed;
 - merge: not performed; and
 - mission completion: not declared.
 
-After Maverick resolves the publication ancestry, an approved fresh reviewer
-must execute the usability drill and independently audit `c88a226..HEAD`, the
-mission brief, this evidence, governance output, and exact diff. Every finding
-must be resolved, disputed with evidence, or escalated before merge.
+An approved fresh reviewer must now execute the usability drill and
+independently audit `c88a226..HEAD`, the mission brief, this evidence,
+governance output, and exact diff. Every finding must be resolved, disputed
+with evidence, or escalated. Separately, Maverick must resolve the publication
+ancestry before any push or merge.
+
+## Independent-audit correction evidence
+
+Maverick's dated GOV-003 ratification now supports all 30 missions classified
+completed at correction start. Twenty-nine historical journals moved from
+completed mission directories into `docs/archive/mission-history/`; Flightline
+Setup had no journal. All archived bodies preserve their substantive starting
+content: 17 are byte-exact below the new banner, and 12 only normalize a
+previously missing final newline.
+
+All 54 retained archive files now carry a machine classification, a visible
+file-local noncanonical warning, and either a canonical replacement link or an
+explicit no-replacement statement. `airframe-at-c88.md` explicitly identifies
+itself as historical rather than current.
+
+The machine-readable
+[`foreground-preservation-manifest.json`](artifacts/foreground-preservation-manifest.json)
+records all 11 protected versions. Eight pathnames changed disposition in the
+correction tree (five moved, three deleted); three remain at the same path.
+No exact foreground working-version SHA-256 appears in a tracked file at
+comparison commit `0bc7be1`.
+
+This is a post-hoc exact-byte comparison against the still-intact read-only
+foreground checkout, anchored to the original aggregate binary-diff hash. No
+immutable per-file preflight manifest existed, so the evidence does not claim
+one.
+
+### Correction validation
+
+Relevant negative tests were run first:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src \
+OPENAI_API_KEY=repository-governance-offline-placeholder \
+PYTHON_DOTENV_DISABLED=1 \
+/Users/davidshimmon/Developer/Wingman/msaib-wingman/.venv/flightline-py312/bin/python \
+-m unittest tests.governance.test_repository_governance
+```
+
+Result: **20 tests passed** in 2.391 seconds. These include Bulk Ingestion and
+Prompt Optimizer authority conflicts, a completed journal, malformed priority,
+unexpected fields, malformed approval evidence, false publication claims, an
+unreachable active commit, root escape, disguised facade implementation,
+unlabeled archive, and preservation-manifest consistency.
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src \
+/Users/davidshimmon/Developer/Wingman/msaib-wingman/.venv/flightline-py312/bin/python \
+-m tools.governance validate
+```
+
+Result: passed. This performs Draft 2020-12 validation, GOV-003 inventory,
+commit reachability, cached publication/merge evidence, completed-journal,
+archive, status-authority, link, generated-view, compatibility AST, first-read,
+schema, and hygiene checks without fetching.
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src \
+OPENAI_API_KEY=repository-governance-offline-placeholder \
+PYTHON_DOTENV_DISABLED=1 \
+/Users/davidshimmon/Developer/Wingman/msaib-wingman/.venv/flightline-py312/bin/python \
+-m unittest tests.governance.test_architecture_boundaries \
+tests.wingman.test_product_contract \
+tests.governance.test_compatibility_facades
+```
+
+Result: **33 tests passed** in 0.308 seconds.
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src \
+OPENAI_API_KEY=repository-governance-offline-placeholder \
+PYTHON_DOTENV_DISABLED=1 \
+/Users/davidshimmon/Developer/Wingman/msaib-wingman/.venv/flightline-py312/bin/python \
+-m unittest tests.products.atlas.test_airframe_composition
+```
+
+Result: **12 tests passed** in 0.009 seconds.
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src \
+OPENAI_API_KEY=repository-governance-offline-placeholder \
+PYTHON_DOTENV_DISABLED=1 \
+/Users/davidshimmon/Developer/Wingman/msaib-wingman/.venv/flightline-py312/bin/python \
+-m unittest discover -s tests -t . -p 'test_*.py'
+```
+
+Result: **295 tests passed** in 8.636 seconds. Expected negative-path
+Flightline/diagnostic logs, bare-Streamlit warnings, and the optional
+`pymupdf_layout` suggestion appeared; there were no failures or skips.
+
+Additional correction checks:
+
+- `PYTHONPYCACHEPREFIX=/private/tmp/wingman-repository-correction-pycache-20260807
+  python -m compileall -q src tests tools` — passed.
+- `python -m pip check` — `No broken requirements found`; pip emitted only its
+  unwritable user-cache warning.
+- `ruff check tools/governance/repository.py
+  tests/governance/test_repository_governance.py
+  tests/governance/test_compatibility_facades.py` — passed.
+- `git diff --check bf73134` — passed before the final correction commit and is
+  repeated against the final HEAD during closeout.
+
+No runtime, Product Contract, Ledger, Radar, or dependency file changed in the
+correction commits.

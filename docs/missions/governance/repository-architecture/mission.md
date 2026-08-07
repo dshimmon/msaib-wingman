@@ -11,12 +11,17 @@
   "lifecycle": "active",
   "priority": "high",
   "portfolio_primary": true,
-  "authorization_gate": "publication_blocked_pending_antecedent_authority_and_independent_review",
+  "authorization_gate": "previous_independent_audit_failed_corrections_committed_fresh_audit_and_antecedent_disposition_required",
   "approval_evidence": [
     {
       "date": "2026-08-07",
       "authority": "Maverick",
       "scope": "Mission brief authorizes implementation, testing, bounded commits, branch publication, and gated merge."
+    },
+    {
+      "date": "2026-08-07",
+      "authority": "Maverick",
+      "scope": "Correction brief authorizes bounded local audit corrections, nondestructive tests, and exactly three local commits; push and merge are prohibited."
     }
   ],
   "baseline_commit": "c88a226ac13e69e235ed5df1347a3872e3330554",
@@ -24,7 +29,9 @@
     "a26ca3a1cae1c6f7269c873127c06b8ee1454b8e",
     "1052f17c5627861091d9df87ee31141f7d440f46",
     "b2a61773335a20725e1d33a911e4133d4f01e29e",
-    "99f0ef308cef30b42e4bb557c6e76e723aaff014"
+    "99f0ef308cef30b42e4bb557c6e76e723aaff014",
+    "60134f7c6ea9b5fa6de2756bbe8424e94445bb03",
+    "0bc7be1e88d5a7c70d4485d49264c02fc8d95b81"
   ],
   "pushed": false,
   "merged": false,
@@ -41,10 +48,10 @@
     "writable_scope": [
       "/private/tmp/wingman-repository-architecture-20260807-01"
     ],
-    "state": "validated_pending_external_gates",
-    "next_gate": "Maverick must disposition publication of the eight antecedent commits; then an approved fresh reviewer must complete the usability drill and independent read-only audit before push or merge."
+    "state": "corrections_locally_committed_awaiting_fresh_independent_audit",
+    "next_gate": "A fresh independent read-only audit must pass on the correction commits; publication remains separately blocked until Maverick dispositions the eight antecedent commits."
   },
-  "next_gate": "Maverick must disposition publication of the eight antecedent commits; then an approved fresh reviewer must complete the usability drill and independent read-only audit before push or merge.",
+  "next_gate": "A fresh independent read-only audit must pass on the correction commits; publication remains separately blocked until Maverick dispositions the eight antecedent commits.",
   "supersedes": null,
   "superseded_by": null,
   "paused": false,
@@ -54,6 +61,11 @@
 -->
 
 Lifecycle: **active** and **portfolio-primary**.
+
+The previous independent repository-organization audit failed. Its bounded
+corrections are locally committed and await a fresh independent read-only
+audit. Publication remains a separate blocked gate pending Maverick's
+disposition of the eight antecedent commits.
 
 ## Objective
 
@@ -75,4 +87,6 @@ The authorized baseline is `c88a226`. The isolated clean baseline measured on
 2026-08-07 is 271 passing offline tests. Work-package and final evidence belongs
 in [`evidence.md`](evidence.md); chronological implementation notes are in
 [`journal.md`](journal.md). The fresh-context handoff is defined in
-[`usability-drill.md`](usability-drill.md).
+[`usability-drill.md`](usability-drill.md). Foreground exclusion is recorded in
+the machine-readable
+[`foreground-preservation-manifest.json`](artifacts/foreground-preservation-manifest.json).
