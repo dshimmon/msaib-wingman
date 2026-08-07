@@ -7,6 +7,9 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 
+from product_config import create_atlas_context
+from product_contract import ProductCapability
+
 from concept_registry_storage import (
     load_registry,
     save_registry,
@@ -222,10 +225,22 @@ def require_registered_source(source_id, registry):
     return registry[source_id]
 
 
-def reprocess_library_source(source_id):
+def reprocess_library_source(
+    source_id,
+    *,
+    product_context=None,
+):
     """
     Rebuild one registered source while preserving its identity.
     """
+    explicit_context = product_context is not None
+    context = (
+        product_context
+        if explicit_context
+        else create_atlas_context()
+    )
+    context.require(ProductCapability.SOURCE_LIBRARY)
+    context.require(ProductCapability.SOURCE_INGESTION)
     source_registry = load_source_registry()
     metadata = require_registered_source(
         source_id,
@@ -295,11 +310,19 @@ def reprocess_library_source(source_id):
     try:
         save_embeddings(cleaned_embeddings)
         save_registry(cleaned_concepts)
+        ingestion_arguments = {
+            "file_path": original_path,
+            "domain": (
+                metadata.get("domain")
+                or context.product.default_domain
+            ),
+            "output_path": knowledge_path,
+            "source_id": source_id,
+        }
+        if explicit_context:
+            ingestion_arguments["product_context"] = context
         knowledge_objects = ingest_document(
-            file_path=original_path,
-            domain=metadata.get("domain") or "General",
-            output_path=knowledge_path,
-            source_id=source_id,
+            **ingestion_arguments
         )
         reprocessed_at = datetime.now(
             timezone.utc
@@ -349,10 +372,20 @@ def reprocess_library_source(source_id):
     }
 
 
-def remove_library_source(source_id):
+def remove_library_source(
+    source_id,
+    *,
+    product_context=None,
+):
     """
     Remove one uploaded source using transactional persistence.
     """
+    context = (
+        product_context
+        if product_context is not None
+        else create_atlas_context()
+    )
+    context.require(ProductCapability.SOURCE_LIBRARY)
     source_registry = load_source_registry()
     metadata = require_registered_source(
         source_id,

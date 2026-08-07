@@ -39,6 +39,16 @@ PRODUCT_WORDS = frozenset({
     "student",
 })
 LEGACY_COLUMNS = ("academic_year", "program")
+TEST_PRODUCT_TERMS = frozenset(
+    {
+        "beacon",
+        "field-note",
+        "field-notes",
+        "field_note",
+        "field_notes",
+        "observation_kind",
+    }
+)
 
 
 def module_name(path):
@@ -262,6 +272,37 @@ def dynamic_import_calls(source):
     return violations
 
 
+def product_identity_conditionals(source):
+    """Find static product-ID behavior branches in ordinary Python."""
+    tree = ast.parse(source)
+    violations = []
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.If, ast.IfExp)):
+            continue
+        names = {
+            value
+            for child in ast.walk(node.test)
+            for value in (
+                getattr(child, "id", None),
+                getattr(child, "attr", None),
+            )
+            if value in {"product_id", "product_key"}
+        }
+        static_values = {
+            child.value
+            for child in ast.walk(node.test)
+            if (
+                isinstance(child, ast.Constant)
+                and isinstance(child.value, str)
+            )
+        }
+        if names and static_values:
+            violations.append(
+                (node.lineno, tuple(sorted(static_values)))
+            )
+    return violations
+
+
 def vocabulary_occurrences(module, source):
     tree = ast.parse(source)
     migration_identities = migration_statement_identities(tree)
@@ -447,6 +488,33 @@ class ArchitectureBoundaryTests(unittest.TestCase):
         self.assertEqual(observed, ALLOWED_PRODUCT_VOCABULARY)
         self.assertEqual(dynamic_imports, {})
 
+    def test_core_and_shared_have_no_product_identity_conditionals(self):
+        violations = {}
+        for module, path in source_modules().items():
+            if MODULE_OWNERS[module] not in {CORE, SHARED}:
+                continue
+            conditions = product_identity_conditionals(
+                path.read_text(encoding="utf-8")
+            )
+            if conditions:
+                violations[module] = conditions
+        self.assertEqual(violations, {})
+
+    def test_core_and_shared_have_no_test_product_vocabulary(self):
+        violations = {}
+        for module, path in source_modules().items():
+            if MODULE_OWNERS[module] not in {CORE, SHARED}:
+                continue
+            source = path.read_text(encoding="utf-8").lower()
+            matches = sorted(
+                term
+                for term in TEST_PRODUCT_TERMS
+                if term in source
+            )
+            if matches:
+                violations[module] = matches
+        self.assertEqual(violations, {})
+
     def test_static_strings_identifiers_and_dynamic_imports_are_caught(self):
         sources = (
             'VALUE = "academic"\n',
@@ -471,6 +539,14 @@ class ArchitectureBoundaryTests(unittest.TestCase):
         self.assertEqual(
             dynamic_import_calls(constructed_imports),
             ["__import__", "loader.import_module"],
+        )
+        identity_branch = (
+            "if context.product_id == 'example':\n"
+            "    select_behavior()\n"
+        )
+        self.assertEqual(
+            product_identity_conditionals(identity_branch),
+            [(1, ("example",))],
         )
 
     def test_semantic_exception_identity_is_stable_and_exact(self):

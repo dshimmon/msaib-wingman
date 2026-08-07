@@ -11,6 +11,8 @@ from briefing_planner import (
     create_briefing_plan,
     create_module_briefing_plan,
 )
+from product_config import create_atlas_context
+from product_contract import ProductCapability
 from retrieval_pipeline import (
     retrieve_question_evidence,
 )
@@ -56,11 +58,26 @@ def evidence_identity(item):
     )
 
 
-def gather_briefing_evidence(topic):
+def gather_briefing_evidence(
+    topic,
+    *,
+    product_context=None,
+):
     """
     Plan and execute the retrievals required for a briefing.
     """
-    briefing_plan = create_briefing_plan(topic)
+    explicit_context = product_context is not None
+    context = (
+        product_context
+        if explicit_context
+        else create_atlas_context()
+    )
+    context.require(ProductCapability.BRIEFING)
+    briefing_plan = (
+        context.product.briefing.plan_briefing(topic)
+        if explicit_context
+        else create_briefing_plan(topic)
+    )
     planner_type = briefing_plan.get("planner_type")
     if planner_type is None:
         planner_type = (
@@ -79,11 +96,15 @@ def gather_briefing_evidence(topic):
         category = planned_query["category"]
         question = planned_query["question"]
 
-        query_plan, evidence = (
-            retrieve_question_evidence(
+        if explicit_context:
+            query_plan, evidence = retrieve_question_evidence(
+                question,
+                product_context=context,
+            )
+        else:
+            query_plan, evidence = retrieve_question_evidence(
                 question
             )
-        )
 
         retrieval_results.append(
             {
@@ -126,14 +147,32 @@ def create_study_briefing(
     *,
     briefing_id=None,
     persist=True,
+    product_context=None,
 ):
     """
     Gather evidence and create one complete study briefing.
     """
+    explicit_context = product_context is not None
+    context = (
+        product_context
+        if explicit_context
+        else create_atlas_context()
+    )
+    context.require(ProductCapability.BRIEFING)
     trace_id = new_trace_id()
     try:
-        gathered_result = gather_briefing_evidence(topic)
-        generated_result = generate_study_briefing(
+        if explicit_context:
+            gathered_result = gather_briefing_evidence(
+                topic,
+                product_context=context,
+            )
+            briefing_generator = (
+                context.product.briefing.generate_briefing
+            )
+        else:
+            gathered_result = gather_briefing_evidence(topic)
+            briefing_generator = generate_study_briefing
+        generated_result = briefing_generator(
             topic=topic,
             briefing_title=gathered_result["briefing_title"],
             evidence=gathered_result["evidence"],

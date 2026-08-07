@@ -6,16 +6,20 @@ from interface import (
     show_header,
     show_topic,
 )
-from product_config import ATLAS_PRODUCT
+from product_config import create_atlas_context
 from wingman_service import ask_wingman
 
 
 def main():
-    show_header(ATLAS_PRODUCT)
+    product_context = create_atlas_context()
+    show_header(product_context)
 
     mission = get_mission()
     show_topic(mission)
-    result = ask_wingman(mission)
+    result = ask_wingman(
+        mission,
+        product_context=product_context,
+    )
 
     print()
     print("Wingman's Summary")

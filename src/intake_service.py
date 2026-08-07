@@ -7,7 +7,8 @@ from pathlib import Path
 
 from document_ingestion import ingest_document
 from document_router import SUPPORTED_EXTENSIONS
-from product_contract import validate_product_metadata_key
+from product_config import create_atlas_context
+from product_runtime import normalize_source_metadata
 from source_registry import (
     find_source_by_content_hash,
     register_source,
@@ -80,6 +81,7 @@ def normalize_product_metadata(
     *,
     program=None,
     academic_year=None,
+    product_context=None,
 ):
     """Validate and normalize product-owned source metadata."""
     if (
@@ -90,38 +92,75 @@ def normalize_product_metadata(
             "Product metadata must contain a dictionary."
         )
 
-    for key in product_metadata or {}:
-        validate_product_metadata_key(key)
-
-    normalized = {
-        "program": normalize_optional_metadata_value(
-            program
-        ),
-        "academic_year": (
-            normalize_optional_metadata_value(
-                academic_year
+    if product_context is None:
+        normalized = {
+            "program": normalize_optional_metadata_value(
+                program
+            ),
+            "academic_year": (
+                normalize_optional_metadata_value(
+                    academic_year
+                )
+            ),
+        }
+        for key, value in (
+            product_metadata or {}
+        ).items():
+            normalized_value = (
+                normalize_optional_metadata_value(
+                    value
+                )
             )
-        ),
-    }
-    for key, value in (
-        product_metadata or {}
-    ).items():
-        normalized_value = (
-            normalize_optional_metadata_value(
-                value
-            )
+            if (
+                normalized.get(key) is not None
+                and normalized_value
+                != normalized[key]
+            ):
+                raise ValueError(
+                    "Product metadata conflicts with the "
+                    f"legacy argument for {key!r}."
+                )
+            normalized[key] = normalized_value
+        return normalize_source_metadata(
+            create_atlas_context(),
+            normalized,
         )
-        if (
-            normalized.get(key) is not None
-            and normalized_value
-            != normalized[key]
+
+    normalized = normalize_source_metadata(
+        product_context,
+        dict(product_metadata or {}),
+    )
+    declarations = {
+        field.key: field
+        for field in (
+            product_context.product.source_metadata_fields
+        )
+    }
+    for key, legacy_value in (
+        ("program", program),
+        ("academic_year", academic_year),
+    ):
+        declaration = declarations.get(key)
+        if declaration is None:
+            if legacy_value is not None:
+                raise ValueError(
+                    f"Product {product_context.product_id!r} does not "
+                    f"declare legacy Atlas metadata field {key!r}."
+                )
+            continue
+        normalized_legacy_value = declaration.normalizer(
+            legacy_value
+        )
+        if key not in normalized:
+            normalized[key] = normalized_legacy_value
+        elif (
+            normalized_legacy_value is not None
+            and normalized[key] != normalized_legacy_value
         ):
             raise ValueError(
                 "Product metadata conflicts with the "
                 f"legacy argument for {key!r}."
             )
-        normalized[key] = normalized_value
-
     return normalized
 
 
@@ -129,14 +168,24 @@ def ingest_uploaded_document(
     file_name,
     file_bytes,
     display_name=None,
-    domain="General",
+    domain=None,
     program=None,
     academic_year=None,
     product_metadata=None,
+    product_context=None,
 ):
     """
     Store, ingest, and register one uploaded document.
     """
+    explicit_context = product_context is not None
+    context = (
+        product_context
+        if explicit_context
+        else create_atlas_context()
+    )
+    if domain is None:
+        domain = context.product.default_domain
+
     safe_file_name = Path(file_name).name
     extension = Path(safe_file_name).suffix.lower()
 
@@ -159,6 +208,9 @@ def ingest_uploaded_document(
             product_metadata,
             program=program,
             academic_year=academic_year,
+            product_context=(
+                context if explicit_context else None
+            ),
         )
     )
 
@@ -211,11 +263,16 @@ def ingest_uploaded_document(
     )
 
     try:
+        ingestion_arguments = {
+            "file_path": original_path,
+            "domain": domain,
+            "output_path": output_path,
+            "source_id": source_id,
+        }
+        if explicit_context:
+            ingestion_arguments["product_context"] = context
         knowledge_objects = ingest_document(
-            file_path=original_path,
-            domain=domain,
-            output_path=output_path,
-            source_id=source_id,
+            **ingestion_arguments
         )
 
         final_display_name = (

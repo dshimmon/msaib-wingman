@@ -1,12 +1,20 @@
+from product_contract import ProductContext
+
+
 def show_header(configuration=None):
+    product = (
+        configuration.product
+        if isinstance(configuration, ProductContext)
+        else configuration
+    )
     title = (
-        configuration.terminal_title
-        if configuration is not None
+        product.terminal_title
+        if product is not None
         else "MSAIB WINGMAN"
     )
     welcome = (
-        configuration.terminal_welcome
-        if configuration is not None
+        product.terminal_welcome
+        if product is not None
         else "Welcome aboard, Maverick."
     )
 

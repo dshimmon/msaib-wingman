@@ -18,8 +18,12 @@ from intake_service import (
     ingest_uploaded_document,
 )
 from library_service import list_library_sources
-from product_config import ATLAS_PRODUCT
+from product_config import create_atlas_context
 from wingman_service import ask_wingman
+
+
+PRODUCT_CONTEXT = create_atlas_context()
+ATLAS_PRODUCT = PRODUCT_CONTEXT.product
 
 
 st.set_page_config(
@@ -300,7 +304,10 @@ def display_library_source(source, source_index):
                         ):
                             result = (
                                 reprocess_library_source(
-                                    source["source_id"]
+                                    source["source_id"],
+                                    product_context=(
+                                        PRODUCT_CONTEXT
+                                    ),
                                 )
                             )
 
@@ -351,7 +358,10 @@ def display_library_source(source, source_index):
                     ):
                         try:
                             result = remove_library_source(
-                                source["source_id"]
+                                source["source_id"],
+                                product_context=(
+                                    PRODUCT_CONTEXT
+                                ),
                             )
 
                             if result["cleanup_warning"]:
@@ -480,7 +490,8 @@ def display_briefing_workspace():
             ):
                 st.session_state.briefing_result = (
                     create_study_briefing(
-                        briefing_topic
+                        briefing_topic,
+                        product_context=PRODUCT_CONTEXT,
                     )
                 )
 
@@ -629,6 +640,7 @@ def display_chat_workspace():
                     conversation_history=(
                         st.session_state.messages
                     ),
+                    product_context=PRODUCT_CONTEXT,
                 )
 
             st.write(result["answer"])
@@ -661,9 +673,9 @@ with st.sidebar:
     workspace = st.radio(
         "Workspace",
         [
-            "Chat",
-            "Briefing",
-            "Library",
+            ATLAS_PRODUCT.chat_label,
+            ATLAS_PRODUCT.briefing_label,
+            ATLAS_PRODUCT.library_label,
         ],
     )
 
@@ -724,6 +736,7 @@ with st.sidebar:
                             display_name=display_name,
                             domain=domain,
                             product_metadata=product_metadata,
+                            product_context=PRODUCT_CONTEXT,
                         )
                     )
 
@@ -751,9 +764,9 @@ with st.sidebar:
                 )
 
 
-if workspace == "Library":
+if workspace == ATLAS_PRODUCT.library_label:
     display_library_workspace()
-elif workspace == "Briefing":
+elif workspace == ATLAS_PRODUCT.briefing_label:
     display_briefing_workspace()
 else:
     display_chat_workspace()

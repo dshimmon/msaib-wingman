@@ -47,6 +47,7 @@ MODULE_OWNERS = {
     "diagnostic_service": SHARED,
     "library_service": SHARED,
     "product_contract": SHARED,
+    "product_runtime": SHARED,
     "source_registry": SHARED,
 
     # Atlas-Specific
@@ -62,15 +63,13 @@ MODULE_OWNERS = {
     "library_management_service": PRODUCT_SPECIFIC,
     "llm": PRODUCT_SPECIFIC,
     "main": PRODUCT_SPECIFIC,
+    "product_config": PRODUCT_SPECIFIC,
     "query_interpreter": PRODUCT_SPECIFIC,
     "reasoning": PRODUCT_SPECIFIC,
     "record_extractor": PRODUCT_SPECIFIC,
     "retrieval_pipeline": PRODUCT_SPECIFIC,
     "streamlit_app": PRODUCT_SPECIFIC,
     "wingman_service": PRODUCT_SPECIFIC,
-
-    # Product Configuration
-    "product_config": CONFIGURATION,
 }
 
 
@@ -91,13 +90,11 @@ ALLOWED_LAYER_DEPENDENCIES = {
 }
 
 
-# A configuration import is an explicit composition-root decision. Adding
-# another consumer requires an architecture review and manifest change.
+# Hardpoints moved Atlas contract composition into Atlas ownership. The
+# historical layer name remains for manifest compatibility but has no runtime
+# module or consumer.
 DECLARED_CONFIGURATION_CONSUMERS = frozenset(
-    {
-        "main",
-        "streamlit_app",
-    }
+    ()
 )
 
 
@@ -133,8 +130,8 @@ TRANSITIONAL_EXCEPTIONS = {
             "those mechanisms."
         ),
         "removal_stage": (
-            "Mission 028 Hardpoints, after stable product contracts expose "
-            "replacement package entrypoints."
+            "A future caller-migration mission, after supported imports and "
+            "patch surfaces have documented replacements."
         ),
     },
     "historical_source_columns": {

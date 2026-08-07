@@ -2,9 +2,12 @@
 
 Mission 027, call sign **Airframe**
 
-Status: complete and committed in
+Mission 027 status: complete and committed in
 `e1570b0c0d759933eaa0d2d0b48839051337d441` (`Establish product-neutral
 Wingman Airframe`).
+
+Mission 028 Hardpoints status: implemented and under review in the current
+working tree; unapproved and uncommitted.
 
 This document is the practical engineering guide for the current repository.
 `src/airframe_manifest.py` is its machine-readable ownership inventory.
@@ -25,25 +28,26 @@ creating Git commits or merges. Mission 027 exercises none of them.
 
 ```text
 Wingman OS Core <- Shared Product Framework <- Atlas
-                          ^
-                          |
-                Product Configuration
+                          ^                    |
+                          |                    |
+                 Product Contract v1 <--------+
 ```
 
 The repository keeps its flat public module names for compatibility:
 
 - Core owns product-neutral Ledger, document, knowledge, retrieval,
   embedding, and evidence mechanisms.
-- Shared owns reusable application services, the configuration contract,
-  source-registry behavior, conversation context, and ownership inventory.
+- Shared owns reusable application services, Product Contract v1, scoped
+  Product Context composition, source-registry behavior, conversation
+  context, and ownership inventory.
 - Atlas owns academic interpretation, enrichment, prompts, recommendations,
-  interfaces, source-management policy, and composition.
-- Product Configuration supplies Atlas identity, visible labels, defaults,
-  and its optional source-metadata fields.
+  interfaces, source-management policy, contract composition, and production
+  registration.
 
-Core may import Core. Shared may import Core and Shared. Atlas may import all
-four layers. Configuration may import Shared and Configuration. Active
-configuration is selected only by `main` and `streamlit_app`.
+Core may import Core. Shared may import Core and Shared. Atlas may import Core,
+Shared, and Atlas. Product selection is explicit at Atlas-owned composition
+roots. The historical Product Configuration layer has no runtime module after
+Hardpoints; `product_config` is Atlas-owned because it supplies Atlas policy.
 
 Mission 027 does not add agents, plugins, Radar, authentication, cloud
 storage, a new persistence engine, or Mission 028 packaging.
@@ -70,8 +74,20 @@ remains in `query_interpreter` and is composed by `retrieval_pipeline`.
 continues to re-export the established names while composing fresh retrieval
 and Atlas reasoning.
 
-`ProductConfiguration` is intentionally small. It is not the Mission 028
-plugin or extension contract.
+`product_contract` is the single authoritative Product Contract v1. It
+contains immutable typed definitions, exact-version validation, explicit
+capabilities, record and metadata declarations, retrieval and briefing
+composition, bounded UI terms, Product Registry, and Product Context.
+
+`product_runtime` applies an explicit Product Context to the existing Core
+ingestion and retrieval seams. It validates declared records and metadata
+rules without interpreting product meaning. Core receives only callbacks,
+plans, values, and opaque metadata.
+
+`product_config` supplies Atlas's academic record declarations, metadata
+normalizers, retrieval interpreter, briefing planner/generator, vocabulary,
+defaults, and the closed production registry. The registry contains Atlas
+only. It performs no scanning or dynamic loading.
 
 ## Version-3 Ledger compatibility
 
@@ -139,6 +155,7 @@ The following inventory must exactly match `MODULE_OWNERS`.
 - `diagnostic_service`
 - `library_service`
 - `product_contract`
+- `product_runtime`
 - `source_registry`
 
 ### Atlas-Specific
@@ -155,6 +172,7 @@ The following inventory must exactly match `MODULE_OWNERS`.
 - `library_management_service`
 - `llm`
 - `main`
+- `product_config`
 - `query_interpreter`
 - `reasoning`
 - `record_extractor`
@@ -164,7 +182,8 @@ The following inventory must exactly match `MODULE_OWNERS`.
 
 ### Product Configuration
 
-- `product_config`
+No runtime modules. The heading remains so the manifest/document parser and
+historical ownership vocabulary stay explicit.
 
 ## Static review automation
 
@@ -173,23 +192,30 @@ The architecture test checks:
 1. Every runtime Python module has exactly one manifest owner.
 2. This inventory and the manifest contain the same modules and owners.
 3. Local imports follow the declared dependency direction.
-4. Configuration has only the two declared composition-root consumers.
+4. The historical configuration layer has no runtime consumers, and explicit
+   product selection remains in Atlas-owned composition.
 5. Core third-party dependencies remain in the reviewed allowlist.
 6. Streamlit remains Atlas-owned.
 7. High-signal product vocabulary is absent from executable Core and Shared
    string literals and identifiers except for exact version-3 storage
    locations. The historical SQL exception is bound to migration 1 and its
    statement identity; moving or duplicating it fails review.
+8. Core and Shared contain no static behavior condition on a product ID.
 
 These checks are useful review automation. They do not inspect runtime
 values, authorize actions, sandbox code, or establish a security boundary.
 
 ## Transition register
 
-- Flat compatibility modules remain until Mission 028 Hardpoints provides
-  stable package entrypoints.
-- The minimal configuration type remains intentionally incomplete until
-  Mission 028.
+- Flat compatibility modules remain after Hardpoints because supported callers
+  still import and patch them. Their owners, reasons, and objective removal
+  conditions are recorded in `Compatibility-Surfaces.md`.
+- The historical `ProductConfiguration` constructor remains as a deprecated
+  input adapter. It requires explicit completion into the authoritative
+  `ProductContract` and is not accepted by Product Context or Product Registry.
+- Atlas-owned facades may create a fresh Atlas context only when an older
+  supported caller omits the new explicit context. Shared and Core never
+  discover an Atlas default.
 - The two physical source columns remain until Ledger Transition after
   Assurance v1.
 - Ledger Transition must independently define authorization, quiescence,

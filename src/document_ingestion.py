@@ -12,6 +12,8 @@ from knowledge_ingestion import (
     ingest_document as ingest_core_document,
 )
 from knowledge_ingestion import save_knowledge_objects
+from product_config import create_atlas_context
+from product_runtime import create_product_knowledge_objects
 from section_resolver import resolve_section
 
 
@@ -35,16 +37,28 @@ def create_knowledge_objects(
     enricher=None,
     unit_extractor=None,
     section_selector=None,
+    product_context=None,
 ):
     """Create objects using Atlas's concept and record enrichment."""
-    return create_core_knowledge_objects(
+    explicit_context = product_context is not None
+    context = (
+        product_context
+        if explicit_context
+        else create_atlas_context()
+    )
+    return create_product_knowledge_objects(
+        context,
         file_path,
         domain,
         source_id=source_id,
         enricher=(
             enricher
             if enricher is not None
-            else enrich_concepts
+            else (
+                context.product.records.enrich_knowledge
+                if explicit_context
+                else enrich_concepts
+            )
         ),
         unit_extractor=(
             unit_extractor
@@ -56,6 +70,7 @@ def create_knowledge_objects(
             if section_selector is not None
             else resolve_section
         ),
+        core_creator=create_core_knowledge_objects,
     )
 
 
@@ -66,15 +81,42 @@ def ingest_document(
     source_id=None,
     *,
     indexer=None,
+    product_context=None,
 ):
     """Run ingestion with Atlas enrichment injected into Core."""
+    explicit_context = product_context is not None
+    context = (
+        product_context
+        if explicit_context
+        else create_atlas_context()
+    )
+
+    def configured_creator(
+        composed_file_path,
+        composed_domain,
+        source_id=None,
+        *,
+        enricher=None,
+    ):
+        return create_knowledge_objects(
+            composed_file_path,
+            composed_domain,
+            source_id=source_id,
+            enricher=enricher,
+            product_context=context,
+        )
+
     return ingest_core_document(
         file_path,
         domain,
         output_path=output_path,
         source_id=source_id,
-        enricher=enrich_concepts,
-        object_creator=create_knowledge_objects,
+        enricher=(
+            context.product.records.enrich_knowledge
+            if explicit_context
+            else enrich_concepts
+        ),
+        object_creator=configured_creator,
         object_saver=save_knowledge_objects,
         indexer=(
             indexer
@@ -84,8 +126,13 @@ def ingest_document(
     )
 
 
-def build_argument_parser():
+def build_argument_parser(product_context=None):
     """Build the supported ingestion command-line interface."""
+    context = (
+        product_context
+        if product_context is not None
+        else create_atlas_context()
+    )
     parser = argparse.ArgumentParser(
         description=(
             "Ingest one document through the Atlas "
@@ -95,7 +142,7 @@ def build_argument_parser():
     parser.add_argument("file_path")
     parser.add_argument(
         "--domain",
-        default="General",
+        default=context.product.default_domain,
     )
     parser.add_argument("--output-path")
     parser.add_argument("--source-id")
@@ -112,7 +159,10 @@ def build_argument_parser():
 
 def main(arguments=None):
     """Run the public compatibility wrapper from the command line."""
-    options = build_argument_parser().parse_args(
+    product_context = create_atlas_context()
+    options = build_argument_parser(
+        product_context
+    ).parse_args(
         arguments
     )
     indexer = (
@@ -126,6 +176,7 @@ def main(arguments=None):
         output_path=options.output_path,
         source_id=options.source_id,
         indexer=indexer,
+        product_context=product_context,
     )
     print(f"Saved {len(chunks)} chunks.")
     return 0
