@@ -362,17 +362,12 @@ replace the requirement for a complete, approved mission brief.
 
 | Capability | Destination | State |
 |---|---|---|
-| Hardpoints / explicit product contract | Mission 028 | Anticipated next mission; not launched in this document |
 | Wingman Assurance v1 | Mission 029 — Rangefinder | Planned direction |
 | Retrieval Test Range | Mission 029 — Rangefinder | Planned component |
 | Flight Recorder | Mission 029 — Rangefinder | Planned component |
 | Error Log | Mission 029 — Rangefinder | Planned component |
 | Efficiency Analysis | Mission 029 — Rangefinder | Planned component |
 | Retrieval Scalability | Mission 030 direction | Exact brief must be selected from Rangefinder evidence |
-
-Hardpoints must define an explicit, versioned attachment contract between
-Wingman OS and products such as Atlas while preserving a clean path for Radar
-and other future products. It must not implement Radar.
 
 Rangefinder must establish measurable quality, execution, failure, and
 efficiency evidence before major retrieval scaling, storage migration,
@@ -411,39 +406,17 @@ be migrated beyond schema version 3.
 
 ---
 
-## 7. Completed or Superseded Records
+## 7. Mission and Archive Boundary
 
-### Completed Infrastructure
+The Vault is not an archive and does not own completed mission status.
+Completed histories, commit evidence, and legacy aliases live in the
+[authoritative mission index](docs/missions/README.md). Superseded planning
+documents live under `docs/archive/` and remain noncanonical.
 
-| Item | Correct treatment |
-|---|---|
-| Wingman Ledger, local file-backed scope | Completed for its defined current scope; future storage, concurrency, and Black Box work extend it without invalidating that completion |
-| Mission 027 — Airframe | Complete; logical boundaries established while schema version 3 remains behind a private adapter |
-
-### Mission 027 Evidence Preserved
-
-- 141 unchanged baseline tests
-- 26 additive Airframe tests
-- 167 passing tests in total
-- No live migration
-- Migration 4 removed
-- Schema version 3 retained behind a private adapter
-- Reported Airframe implementation commit:
-  `e1570b0c0d759933eaa0d2d0b48839051337d441`
-- Reported canonical-record reconciliation commit:
-  `7c3402cce5e9a476d18e3b23b8248a9d4793b562`
-
-The supplied canonical Mission 027 journal supports the test counts, no-live-
-migration boundary, and completion status. The commit hashes are preserved as
-reported repository evidence from transferred records; this recovery workspace
-does not independently verify the repository objects.
-
-### Superseded Planning Labels
-
-Logbook, Flight Plan, Rebrief, and Connects Courses are superseded mission
-names or sequencing. Their underlying ideas may be recovered into correctly
-classified entries, but the former names and mission numbers are not active
-commitments.
+Hardpoints fulfilled its promoted product-contract destination. Its outcome is
+recorded in [`wingman-os/hardpoints`](docs/missions/wingman-os/hardpoints/mission.md)
+rather than duplicated here. Future Product Contract changes still require a
+separately approved mission.
 
 ---
 
@@ -487,17 +460,14 @@ future-ideas list.
 
 ---
 
-## 9. Next Gate
+## 9. Boundary and Authority
 
 Maverick approved the Vault on August 1, 2026, and it was committed as
 `726dbbe981364e3e58a6650d176d0b7edf436286`. Root `AGENTS.md` was subsequently
-committed as `7518bf717ce9974dcbb9d24fefe6a1b91bfee7b3`. Crew Chief is required but
-has not yet been implemented, and no independent Crew Chief audit has occurred.
-Mission 028 has not begun. Maverick subsequently approved the separately
-bounded Development Flightline setup and harmless safety validation, then
-authorized the bounded correction required after a fresh Independent Auditor
-correctly rejected the missing controller-issued Auditor activation path. The
-next gate is a new Auditor session launched from the controller's expiring,
-single-use envelope bound to the refreshed frozen evidence. Crew Chief is not
-a Mission 028 prerequisite; its exact roadmap placement must be decided after
-Hardpoints and before the relevant Assurance mission.
+committed as `7518bf717ce9974dcbb9d24fefe6a1b91bfee7b3`.
+
+This document owns approved future capabilities, strategic ideas, and deferred
+obligations. It does not own the current mission or next execution gate. Use
+[`CURRENT_MISSION.md`](CURRENT_MISSION.md) for the generated entry point and
+[`docs/roadmap.md`](docs/roadmap.md) for approved sequence. Crew Chief remains
+required and unimplemented; no independent Crew Chief audit has occurred.

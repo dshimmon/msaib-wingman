@@ -1,4 +1,11 @@
-# Wingman Pre-Mission 028 Planning Package
+# Archived — Wingman Pre-Mission 028 Planning Package
+
+> Archived on 2026-08-07 by `governance/repository-architecture`. This package
+> is preserved as dated planning evidence and does not own current mission
+> status. Its still-governing decisions are extracted to
+> [GOV-002](../../decisions/governance/roadmap-sequencing.md),
+> [OPS-001](../../decisions/governance/development-flightline.md), and the
+> completed [Hardpoints mission record](../../missions/wingman-os/hardpoints/mission.md).
 
 **Prepared by:** Goose, Wingman Mission Control
 **For:** Maverick — David Shimmon

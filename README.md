@@ -3,26 +3,34 @@
 Wingman is a source-grounded knowledge operating system. Atlas is the
 academic product currently composed on it.
 
+Repository work begins with [`AGENTS.md`](AGENTS.md). The generated
+[`CURRENT_MISSION.md`](CURRENT_MISSION.md) then identifies current authority,
+the official mission record, last completed work, and next gate. README is not
+a mission-status authority.
+
 ## Runtime
 
 Use Python 3.10 or newer and install `requirements.txt`.
 
-Terminal:
+Canonical Atlas terminal:
 
 ```bash
-python3 src/main.py
+PYTHONPATH=src python3 -m products.atlas.main
 ```
 
-Streamlit:
+The historical `python3 src/main.py` entry point remains supported through a
+registered compatibility facade.
+
+Canonical Atlas Streamlit composition:
 
 ```bash
-python3 -m streamlit run src/streamlit_app.py
+python3 -m streamlit run src/products/atlas/streamlit_app.py
 ```
 
 Preview a bounded folder batch (non-recursive by default):
 
 ```bash
-PYTHONPATH=src python3 -m bulk_ingestion ./selected-folder \
+PYTHONPATH=src python3 -m products.atlas.bulk_ingestion ./selected-folder \
   --course-id AI-101
 ```
 
@@ -38,22 +46,23 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 
 `tests/run_retrieval_tests.py` is a separate API-backed diagnostic.
 
-## Airframe and Product Contract
+## Architecture and governance
 
-[`docs/architecture/Airframe.md`](docs/architecture/Airframe.md) records
-the current Core, Shared Product Framework, Atlas, and Product Configuration
-boundary. `src/airframe_manifest.py` is the matching machine-readable
-inventory used by static architecture tests.
+[`docs/wingman-os/architecture.md`](docs/wingman-os/architecture.md) records the
+current Core, Shared Product Framework, and product boundary.
+`src/wingman/shared/airframe_manifest.py` is the matching machine-readable
+ownership inventory.
 
-[`docs/architecture/Product-Contract-v1.md`](docs/architecture/Product-Contract-v1.md)
+[`docs/wingman-os/product-contract-v1.md`](docs/wingman-os/product-contract-v1.md)
 defines the explicit typed Hardpoints seam. Atlas owns its immutable definition
 and the closed production registry; Shared applies an explicit Product Context
-to neutral Core ingestion and retrieval. A concise attachment walkthrough is in
-[`docs/Product-Attachment-Guide.md`](docs/Product-Attachment-Guide.md).
+to neutral Core ingestion and retrieval. The attachment procedure is in
+[`docs/runbooks/product-attachment.md`](docs/runbooks/product-attachment.md).
 
-[`docs/journal/Wingman-Ingests-Documents-in-Bulk.md`](docs/journal/Wingman-Ingests-Documents-in-Bulk.md)
-records the unnumbered bulk-ingestion architecture, folder safety, manifest,
-retry, failure isolation, and offline scale procedures.
+Documentation homes are indexed in [`docs/README.md`](docs/README.md).
+Authoritative missions live under [`docs/missions/`](docs/missions/), enduring
+decisions under [`docs/decisions/`](docs/decisions/), and approved sequence in
+[`docs/roadmap.md`](docs/roadmap.md).
 
 The Ledger remains physically at migrations 1–3. The temporary `program`
 and `academic_year` columns are translated privately by the source

@@ -1,3 +1,7 @@
+ARCHIVED NONCANONICAL MESSAGE — preserved for historical evidence only.
+Current repository workflow is controlled by AGENTS.md and the authoritative
+mission record under docs/missions/.
+
 🛫 Goose, let's begin Mission XX.
 
 Mission status:

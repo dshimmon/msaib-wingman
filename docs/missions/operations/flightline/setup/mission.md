@@ -43,5 +43,5 @@ Lifecycle: **completed**. Call sign: **Flightline**.
 Delivered the historical Flightline setup; capability maintenance is pending in protected foreground work.
 
 The machine-readable block above is the authoritative current status. The
-historical journal is preserved as `journal.md`; dated statements there remain
-historical evidence and do not override this record.
+approved historical setup brief is preserved under `artifacts/`; dated
+statements there do not override this record.

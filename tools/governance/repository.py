@@ -248,10 +248,6 @@ def _latest_completed(missions: list[Record]) -> Record:
     )
 
 
-def _mission_link(record: Record, source: Path) -> str:
-    return Path("/").joinpath(record.path.relative_to(ROOT)).as_posix()
-
-
 def render_current_mission(missions: list[Record]) -> str:
     primary = next(
         record for record in missions
@@ -332,7 +328,7 @@ def render_mission_index(missions: list[Record]) -> str:
         lines.append(
             f"| `{metadata['id']}` | {aliases} | {metadata['lifecycle']} | "
             f"{'yes' if metadata['portfolio_primary'] else 'no'} | {commit_state} | "
-            f"[{metadata['title']}]({_relative(record.path)}) |"
+            f"[{metadata['title']}]({record.path.relative_to(MISSION_ROOT).as_posix()}) |"
         )
     return "\n".join([*lines, ""])
 
@@ -351,7 +347,7 @@ def render_decision_index(decisions: list[Record]) -> str:
         lines.append(
             f"| `{metadata['id']}` | {', '.join(metadata['namespaces'])} | "
             f"{metadata['status']} | {metadata['date']} | "
-            f"[{metadata['title']}]({_relative(record.path)}) |"
+            f"[{metadata['title']}]({record.path.relative_to(DECISION_ROOT).as_posix()}) |"
         )
     return "\n".join([*lines, ""])
 

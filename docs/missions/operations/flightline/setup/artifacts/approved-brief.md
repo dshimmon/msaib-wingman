@@ -1,4 +1,9 @@
-# Development Flightline Setup Brief
+# Historical Artifact — Development Flightline Setup Brief
+
+> This approved setup brief is preserved inside its authoritative mission
+> record. Its authorization and Mission 028 statements describe the 2026-08-01
+> setup gate; they are not current status. See the parent
+> [`mission.md`](../mission.md) for current state.
 
 **Call sign:** Flightline
 **Status:** Approved by Maverick for setup implementation and harmless safety validation

@@ -3,6 +3,10 @@
 This is a documentation-only boundary note. Mission 028 adds no Radar code,
 schema, vocabulary, workflow, production registration, or selection path.
 
+The repository now reserves `src/products/radar/`, `tests/products/radar/`,
+and `docs/products/radar/` as distinct namespaces. That physical separation is
+not Radar implementation authority.
+
 If Maverick later authorizes a separate Radar product mission, that product
 must attach through Product Contract v1 or an explicitly approved later
 version. Its product layer—not Core—would own its stable ID and display name,
@@ -17,3 +21,7 @@ terminology to support the attachment.
 
 No future product may bypass source IDs, evidence, provenance, original-source
 paths, human review, or the Ledger schema and migration gates.
+
+[ARCH-002](../../decisions/architecture/product-separation.md) and
+[ARCH-003](../../decisions/architecture/source-traceability.md) are the official
+decisions and control if this note conflicts.

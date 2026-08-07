@@ -3,6 +3,10 @@
 This guide describes the Product Contract v1 seam without defining any future
 product's domain behavior.
 
+Canonical definitions live in `src/wingman/shared/`; product composition lives
+under `src/products/<product>/`. New internal imports use those package paths.
+Historical flat imports remain compatibility-only.
+
 ## 1. Keep product meaning in the product layer
 
 Create product-owned functions for record enrichment, retrieval interpretation,
@@ -65,3 +69,8 @@ Keep source IDs, evidence references, source metadata, original paths/URLs, and
 uploaded originals intact. If a supported import or patch surface still has
 callers, retain a thin product-owned facade and record its owner, reason, and
 objective removal condition in the compatibility register.
+
+[ARCH-001](../decisions/architecture/airframe-boundaries.md),
+[ARCH-002](../decisions/architecture/product-separation.md), and
+[ARCH-004](../decisions/architecture/compatibility-facades.md) control if this
+runbook conflicts with a decision summary.

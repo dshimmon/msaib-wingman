@@ -1,7 +1,15 @@
 # Development Flightline
 
-Status: setup implementation and harmless validation only. Mission 028 has not
-begun.
+> **Capability health: maintenance pending.** The historical setup delivery is
+> preserved at commit `ea9f3e0`, but its bounded correction remains uncommitted
+> in the protected foreground checkout as of 2026-08-07. Do not launch a new
+> Engineer or Auditor from this runbook until that correction is committed and
+> independently verified. Current status is authoritative in
+> [`operations/flightline/setup`](../missions/operations/flightline/setup/mission.md).
+
+The implementation details below describe the committed `ea9f3e0` setup. Any
+statement that Mission 028 had not begun is historical: Hardpoints was later
+completed at `2b3b9a6`.
 
 The Development Flightline is a deterministic development-plane control system
 for launching one mutable Codex Development Engineer in an isolated worktree,
@@ -22,7 +30,7 @@ be created only by the explicit `prepare-worktree` operation with its exact
 confirmation phrase. Worktree removal remains a later Maverick-authorized
 operation.
 
-Mission 028 implementation still requires its own implementation prompt,
+Every future mission still requires its own implementation prompt,
 authorization envelope, verified current baseline, isolated worktree,
 Engineer report, frozen evidence, fresh Independent Auditor session, and
 Maverick review. Commit, push, and merge remain separate gates.

@@ -43,11 +43,17 @@ conservatively:
 Before editing, read:
 
 - every applicable `AGENTS.md`;
+- then the generated `CURRENT_MISSION.md` entry point;
 - the repository-root `WINGMAN_VAULT.md`;
 - the approved active mission brief or Maverick's explicit instruction;
 - relevant canonical architecture records;
 - the current or relevant mission journal, when one exists; and
 - any other files directly required by the task.
+
+`AGENTS.md` is always the first repository read in supported Codex and
+Flightline workflows. `CURRENT_MISSION.md` is generated from authoritative
+mission metadata and does not override these instructions or its linked
+`mission.md` record.
 
 Treat drafts, recovered planning documents, conversation summaries, and
 transferred context as useful evidence, not canonical authority, unless
