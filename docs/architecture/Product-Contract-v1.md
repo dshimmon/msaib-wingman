@@ -35,7 +35,7 @@ validation, not a migration platform.
 | `source_metadata_fields` | Upload and Library UI use declared fields and product rules while generic metadata remains opaque. | Program and academic-year fields with blank-text normalization and explicit-null preservation. |
 | `retrieval` | Current queries require product interpretation before Core executes a neutral plan. | Academic query interpreter; all four retrieval modes still execute in Core. |
 | `briefing` | Current Briefing requires product-owned evidence planning and source-grounded generation. | Atlas briefing planner and generator. |
-| page, call-sign, terminal, and workspace terms | Current terminal and Streamlit roots display this bounded vocabulary. | Existing Atlas page, terminal, Chat, Briefing, and Library terms. |
+| product page, call-sign, terminal, and workspace terms | Product-scoped terminal and Streamlit paths display this bounded vocabulary. | Existing Atlas page, terminal, Chat, Briefing, and Library terms. |
 | `default_domain` | Upload, CLI, and reprocessing need the current product default when no source domain is supplied. | `General`. |
 | `ProductRegistry` | Selection must be explicit, deterministic, closed, and duplicate-safe. | Production registry contains Atlas only. |
 | `ProductContext` | Shared work needs immutable per-composition scope without mutable global selection. | Fresh contexts are created by terminal, Streamlit, CLI, and compatibility boundaries. |
@@ -123,6 +123,22 @@ does not place an Atlas default in Shared or Core. The no-context upload facade
 retains its historical Atlas metadata merging and blank-text behavior; explicit
 Atlas selection produces parity for the declared Atlas fields through the
 Atlas contract normalizers.
+
+## Global shell workspaces
+
+Product Contract v1 governs product-scoped behavior and vocabulary. A
+product-neutral shell utility may remain outside the contract only when the
+shell declares it explicitly, its behavior is identical across products, it
+receives no Product Context, and it contains no product-specific policy or
+vocabulary.
+
+Prompt Optimizer satisfies that boundary. `prompt_optimizer.py` is a Core
+service over user-authored text, and the Streamlit composition root lists its
+label in `GLOBAL_SHELL_WORKSPACES` separately from Atlas's contract-declared
+Chat, Briefing, and Library workspaces. It is not a `ProductCapability` because
+products neither supply nor select its behavior. Product-specific optimizer
+configuration would cross this boundary and require a separately approved
+contract change.
 
 ## Source and Ledger invariants
 

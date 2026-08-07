@@ -34,6 +34,7 @@ MODULE_OWNERS = {
     "openai_client": CORE,
     "pdf_adapter": CORE,
     "powerpoint_adapter": CORE,
+    "prompt_optimizer": CORE,
     "retrieval_engine": CORE,
     "section_resolver": CORE,
     "semantic_retriever": CORE,

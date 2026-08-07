@@ -18,12 +18,15 @@ from intake_service import (
     ingest_uploaded_document,
 )
 from library_service import list_library_sources
+from prompt_optimizer import optimize_prompt
 from product_config import create_atlas_context
 from wingman_service import ask_wingman
 
 
 PRODUCT_CONTEXT = create_atlas_context()
 ATLAS_PRODUCT = PRODUCT_CONTEXT.product
+PROMPT_OPTIMIZER_LABEL = "Prompt Optimizer"
+GLOBAL_SHELL_WORKSPACES = (PROMPT_OPTIMIZER_LABEL,)
 
 
 st.set_page_config(
@@ -662,6 +665,64 @@ def display_chat_workspace():
         )
 
 
+def clear_prompt_optimizer_result():
+    """Invalidate output when its source prompt changes."""
+    st.session_state.optimized_prompt = None
+
+
+def edit_optimized_prompt():
+    """Apply output to the editor before keyed widgets are instantiated."""
+    optimized_prompt = st.session_state.get("optimized_prompt")
+    if optimized_prompt:
+        st.session_state.prompt_optimizer_input = optimized_prompt
+    st.session_state.optimized_prompt = None
+
+
+def display_prompt_optimizer_workspace():
+    """Display the product-neutral prompt optimization tool."""
+    st.title(PROMPT_OPTIMIZER_LABEL)
+    st.caption(
+        "Turn a rough prompt into a clearer, more specific prompt "
+        "without changing its intent."
+    )
+
+    prompt = st.text_area(
+        "Prompt to optimize",
+        key="prompt_optimizer_input",
+        height=240,
+        placeholder=(
+            "Example: Help me make a launch plan for my new product."
+        ),
+        on_change=clear_prompt_optimizer_result,
+    )
+
+    if st.button(
+        "Optimize Prompt",
+        type="primary",
+        disabled=not prompt.strip(),
+    ):
+        st.session_state.optimized_prompt = None
+        try:
+            with st.spinner("Improving your prompt..."):
+                st.session_state.optimized_prompt = optimize_prompt(prompt)
+        except Exception as error:
+            st.error(f"The prompt could not be optimized: {error}")
+
+    optimized_prompt = st.session_state.get("optimized_prompt")
+    if not optimized_prompt:
+        return
+
+    st.divider()
+    st.subheader("Optimized Prompt")
+    st.caption("Use the copy button to copy this prompt.")
+    st.code(optimized_prompt, language=None, wrap_lines=True)
+
+    st.button(
+        "Edit Optimized Prompt",
+        on_click=edit_optimized_prompt,
+    )
+
+
 with st.sidebar:
     st.markdown(
         f"## {ATLAS_PRODUCT.product_name}"
@@ -676,6 +737,7 @@ with st.sidebar:
             ATLAS_PRODUCT.chat_label,
             ATLAS_PRODUCT.briefing_label,
             ATLAS_PRODUCT.library_label,
+            *GLOBAL_SHELL_WORKSPACES,
         ],
     )
 
@@ -764,7 +826,9 @@ with st.sidebar:
                 )
 
 
-if workspace == ATLAS_PRODUCT.library_label:
+if workspace == PROMPT_OPTIMIZER_LABEL:
+    display_prompt_optimizer_workspace()
+elif workspace == ATLAS_PRODUCT.library_label:
     display_library_workspace()
 elif workspace == ATLAS_PRODUCT.briefing_label:
     display_briefing_workspace()

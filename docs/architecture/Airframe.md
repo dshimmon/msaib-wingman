@@ -40,7 +40,7 @@ The repository keeps its flat public module names for compatibility:
 - Shared owns reusable application services, Product Contract v1, scoped
   Product Context composition, source-registry behavior, conversation
   context, and ownership inventory.
-- Atlas owns academic interpretation, enrichment, prompts, recommendations,
+- Atlas owns academic interpretation, enrichment, product-specific prompts,
   interfaces, source-management policy, contract composition, and production
   registration.
 
@@ -88,6 +88,13 @@ plans, values, and opaque metadata.
 normalizers, retrieval interpreter, briefing planner/generator, vocabulary,
 defaults, and the closed production registry. The registry contains Atlas
 only. It performs no scanning or dynamic loading.
+
+`prompt_optimizer` is a product-neutral Core utility. It uses the existing
+Core OpenAI client and receives only user-authored prompt text; it receives no
+Product Context and contains no product vocabulary. The Atlas-owned Streamlit
+composition root exposes it through an explicitly declared global shell
+workspace, separate from the Chat, Briefing, and Library terms governed by
+Product Contract v1.
 
 ## Version-3 Ledger compatibility
 
@@ -141,6 +148,7 @@ The following inventory must exactly match `MODULE_OWNERS`.
 - `openai_client`
 - `pdf_adapter`
 - `powerpoint_adapter`
+- `prompt_optimizer`
 - `retrieval_engine`
 - `section_resolver`
 - `semantic_retriever`
