@@ -11,7 +11,7 @@
   "lifecycle": "active",
   "priority": "high",
   "portfolio_primary": true,
-  "authorization_gate": "implementation_testing_and_bounded_work_package_commits_authorized",
+  "authorization_gate": "publication_blocked_pending_antecedent_authority_and_independent_review",
   "approval_evidence": [
     {
       "date": "2026-08-07",
@@ -20,7 +20,12 @@
     }
   ],
   "baseline_commit": "c88a226ac13e69e235ed5df1347a3872e3330554",
-  "implementation_commits": [],
+  "implementation_commits": [
+    "a26ca3a1cae1c6f7269c873127c06b8ee1454b8e",
+    "1052f17c5627861091d9df87ee31141f7d440f46",
+    "b2a61773335a20725e1d33a911e4133d4f01e29e",
+    "99f0ef308cef30b42e4bb557c6e76e723aaff014"
+  ],
   "pushed": false,
   "merged": false,
   "official_decisions": [
@@ -36,10 +41,10 @@
     "writable_scope": [
       "/private/tmp/wingman-repository-architecture-20260807-01"
     ],
-    "state": "implementing",
-    "next_gate": "Complete work packages and validation, then reconcile publication ancestry and obtain independent review."
+    "state": "validated_pending_external_gates",
+    "next_gate": "Maverick must disposition publication of the eight antecedent commits; then an approved fresh reviewer must complete the usability drill and independent read-only audit before push or merge."
   },
-  "next_gate": "Complete work packages and validation, then reconcile publication ancestry and obtain independent review.",
+  "next_gate": "Maverick must disposition publication of the eight antecedent commits; then an approved fresh reviewer must complete the usability drill and independent read-only audit before push or merge.",
   "supersedes": null,
   "superseded_by": null,
   "paused": false,
@@ -68,5 +73,6 @@ plugin infrastructure, broad capability work, and unrelated refactoring.
 
 The authorized baseline is `c88a226`. The isolated clean baseline measured on
 2026-08-07 is 271 passing offline tests. Work-package and final evidence belongs
-in `evidence.md`; chronological implementation notes belong in `journal.md`
-only when they add material history.
+in [`evidence.md`](evidence.md); chronological implementation notes are in
+[`journal.md`](journal.md). The fresh-context handoff is defined in
+[`usability-drill.md`](usability-drill.md).

@@ -11,7 +11,7 @@
 | `atlas/intake` | Mission 022 | completed | no | committed=yes; pushed=yes; merged=yes | [Atlas Accepts New Documents](atlas/intake/mission.md) |
 | `atlas/library` | Mission 023 | completed | no | committed=yes; pushed=yes; merged=yes | [Atlas Manages Its Knowledge](atlas/library/mission.md) |
 | `atlas/traceback` | Mission 021 | completed | no | committed=yes; pushed=yes; merged=yes | [Atlas Opens Its Sources](atlas/traceback/mission.md) |
-| `governance/repository-architecture` | — | active | yes | committed=no; pushed=no; merged=no | [Wingman Repository Architecture](governance/repository-architecture/mission.md) |
+| `governance/repository-architecture` | — | active | yes | committed=yes; pushed=no; merged=no | [Wingman Repository Architecture](governance/repository-architecture/mission.md) |
 | `operations/flightline/setup` | — | completed | no | committed=yes; pushed=no; merged=no | [Development Flightline Setup](operations/flightline/setup/mission.md) |
 | `wingman-os/airframe` | Mission 027 | completed | no | committed=yes; pushed=no; merged=no | [Wingman Defines the Boundary](wingman-os/airframe/mission.md) |
 | `wingman-os/checkpoint` | Mission 019 | completed | no | committed=yes; pushed=yes; merged=yes | [Wingman Tests Its Retrieval](wingman-os/checkpoint/mission.md) |

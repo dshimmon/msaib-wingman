@@ -397,9 +397,13 @@ transition:
 Additional deferred Airframe obligations:
 
 - retire compatibility facades only after replacement contracts and callers are
-  proven; and
-- establish final package boundaries without smuggling the physical Ledger
-  transition into product-contract work.
+  proven.
+
+The final package-boundary obligation was fulfilled without a physical Ledger
+transition by the active
+[`governance/repository-architecture`](docs/missions/governance/repository-architecture/mission.md)
+mission at implementation commit `b2a6177`. The compatibility-facade retirement
+obligation remains deferred.
 
 Until these prerequisites and approvals are satisfied, the live Ledger may not
 be migrated beyond schema version 3.
