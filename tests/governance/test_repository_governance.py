@@ -160,6 +160,9 @@ _expose(__name__, "knowledge")
             / "foreground-preservation-manifest.json"
         )
         manifest = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(
+            repository.validate_foreground_preservation_manifest(manifest), []
+        )
         self.assertEqual(manifest["schema_version"], 1)
         self.assertEqual(len(manifest["entries"]), 11)
         self.assertEqual(
@@ -184,6 +187,29 @@ _expose(__name__, "knowledge")
                     (repository.ROOT / target).read_bytes()
                 ).hexdigest()
                 self.assertEqual(digest, entry["target_path_sha256"])
+
+    def test_wrong_existing_foreground_rename_target_is_rejected(self):
+        path = repository.FOREGROUND_PRESERVATION_MANIFEST
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        wrong_target = "docs/archive/governance/pre-mission-message.txt"
+        entry = next(
+            item for item in manifest["entries"]
+            if item["path"] == "docs/Mission-brief.md"
+        )
+        entry["target_path"] = wrong_target
+        entry["target_path_sha256"] = hashlib.sha256(
+            (repository.ROOT / wrong_target).read_bytes()
+        ).hexdigest()
+
+        errors = repository.validate_foreground_preservation_manifest(manifest)
+
+        self.assertIn(
+            "docs/Mission-brief.md: declared moved target "
+            "docs/archive/governance/pre-mission-message.txt disagrees with Git "
+            "rename destination docs/missions/operations/flightline/setup/"
+            "artifacts/approved-brief.md",
+            errors,
+        )
 
     def test_duplicate_ids_and_aliases_are_rejected(self):
         duplicate = self.missions[0]

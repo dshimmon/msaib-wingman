@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import hashlib
 import json
 import re
 import subprocess
@@ -22,6 +23,11 @@ ARCHIVE_ROOT = ROOT / "docs" / "archive"
 CANONICAL_MERGE_TARGET = "refs/remotes/origin/main"
 RATIFICATION_DECISION = (
     ROOT / "docs/decisions/governance/historical-mission-ratification.md"
+)
+FOREGROUND_PRESERVATION_MANIFEST = (
+    MISSION_ROOT
+    / "governance/repository-architecture/artifacts"
+    / "foreground-preservation-manifest.json"
 )
 MISSION_MARKER = "wingman-mission-metadata"
 DECISION_MARKER = "wingman-decision-metadata"
@@ -176,6 +182,129 @@ def _merge_target_contains(commit: str) -> bool:
     return _git_result(
         "merge-base", "--is-ancestor", commit, CANONICAL_MERGE_TARGET
     ).returncode == 0
+
+
+def _git_rename_destinations(baseline: str, comparison: str) -> dict[str, str]:
+    """Return Git-detected source-to-destination renames for an exact range."""
+    result = _git_result(
+        "diff", "--name-status", "--find-renames", baseline, comparison
+    )
+    if result.returncode != 0:
+        raise GovernanceError(
+            "could not obtain foreground preservation rename evidence: "
+            f"{result.stderr.strip()}"
+        )
+    destinations: dict[str, str] = {}
+    for line in result.stdout.splitlines():
+        fields = line.split("\t")
+        if len(fields) == 3 and re.fullmatch(r"R\d{3}", fields[0]):
+            destinations[fields[1]] = fields[2]
+    return destinations
+
+
+def _git_blob_sha256(commit: str, path: str) -> str | None:
+    result = subprocess.run(
+        ["git", "show", f"{commit}:{path}"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        return None
+    return hashlib.sha256(result.stdout).hexdigest()
+
+
+def validate_foreground_preservation_manifest(
+    manifest: dict | None = None,
+) -> list[str]:
+    """Bind protected foreground dispositions to exact Git and byte evidence."""
+    errors: list[str] = []
+    if manifest is None:
+        try:
+            manifest = json.loads(
+                FOREGROUND_PRESERVATION_MANIFEST.read_text(encoding="utf-8")
+            )
+        except (OSError, json.JSONDecodeError) as error:
+            return [f"foreground preservation manifest is unreadable: {error}"]
+    if not isinstance(manifest, dict):
+        return ["foreground preservation manifest must be an object"]
+
+    entries = manifest.get("entries")
+    baseline = manifest.get("foreground_head")
+    comparison = manifest.get("correction_comparison_head")
+    if not isinstance(entries, list) or not isinstance(baseline, str) or not isinstance(
+        comparison, str
+    ):
+        return ["foreground preservation manifest has incomplete range evidence"]
+
+    if manifest.get("schema_version") != 1:
+        errors.append("foreground preservation manifest schema_version must be 1")
+    if len(entries) != 11:
+        errors.append("foreground preservation manifest must contain 11 entries")
+    observed_counts = {
+        disposition: sum(
+            entry.get("correction_disposition") == disposition
+            for entry in entries
+            if isinstance(entry, dict)
+        )
+        for disposition in ("deleted", "moved", "unchanged")
+    }
+    if manifest.get("path_disposition_counts") != observed_counts:
+        errors.append("foreground preservation disposition counts disagree")
+    if manifest.get("protected_foreground_versions_excluded") is not True:
+        errors.append("foreground preservation exclusion claim must be true")
+    for commit, label in ((baseline, "baseline"), (comparison, "comparison")):
+        if not _commit_exists(commit):
+            errors.append(f"foreground preservation {label} commit is missing: {commit}")
+        elif not _commit_is_reachable(commit):
+            errors.append(
+                f"foreground preservation {label} commit is unreachable: {commit}"
+            )
+
+    try:
+        rename_destinations = _git_rename_destinations(baseline, comparison)
+    except GovernanceError as error:
+        errors.append(str(error))
+        rename_destinations = {}
+
+    for entry in entries:
+        if not isinstance(entry, dict):
+            errors.append("foreground preservation entry must be an object")
+            continue
+        source = entry.get("path")
+        disposition = entry.get("correction_disposition")
+        target = entry.get("target_path")
+        if not isinstance(source, str):
+            errors.append("foreground preservation entry path must be a string")
+            continue
+        if entry.get("foreground_version_incorporated") is not False:
+            errors.append(f"{source}: foreground version must remain excluded")
+        if entry.get("exact_working_version_matches_in_correction") != []:
+            errors.append(f"{source}: foreground exact-byte matches must be empty")
+        if disposition == "deleted":
+            if target is not None or entry.get("target_path_sha256") is not None:
+                errors.append(f"{source}: deleted disposition must have no target")
+            continue
+        if not isinstance(target, str) or not target:
+            errors.append(f"{source}: {disposition} disposition needs a target")
+            continue
+        if disposition == "moved":
+            git_target = rename_destinations.get(source)
+            if git_target is None:
+                errors.append(f"{source}: Git records no rename destination")
+            elif target != git_target:
+                errors.append(
+                    f"{source}: declared moved target {target} disagrees with "
+                    f"Git rename destination {git_target}"
+                )
+        digest = _git_blob_sha256(comparison, target)
+        if digest is None:
+            errors.append(f"{source}: target is absent at comparison commit: {target}")
+        elif entry.get("target_path_sha256") != digest:
+            errors.append(
+                f"{source}: target SHA-256 disagrees with comparison commit"
+            )
+    return errors
 
 
 def validate_metadata(
@@ -950,6 +1079,7 @@ def validate() -> list[str]:
     errors.extend(validate_archive_documents())
     errors.extend(validate_status_authority())
     errors.extend(validate_repository_hygiene())
+    errors.extend(validate_foreground_preservation_manifest())
     errors.extend(validate_compatibility_facades())
     errors.extend(validate_schemas_and_first_reads())
     return errors

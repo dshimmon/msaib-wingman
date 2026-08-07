@@ -54,3 +54,19 @@
   appears in the tracked correction tree.
 - Publication and merge remain prohibited pending a fresh independent audit
   and Maverick's separate disposition of the eight antecedent commits.
+
+## 2026-08-07 — Foreground lineage follow-up
+
+- Maverick confirmed that the preservation manifest incorrectly associated
+  `docs/Mission-brief.md` with the separately archived pre-mission message and
+  authorized one bounded evidence-correction commit.
+- Git rename detection across `c88a226..0bc7be1` identifies the actual
+  destination as the Flightline Setup approved brief with similarity `R096`.
+- Rechecked all five moved entries against the same exact Git range and their
+  comparison-commit blob SHA-256 values.
+- Added governance enforcement that binds every moved manifest source to its
+  Git-detected destination and rejects an arbitrary existing target even when
+  its declared hash matches.
+- Mission state and next gate remain unchanged: fresh independent read-only
+  audit is pending, with publication separately blocked on antecedent
+  disposition.

@@ -22,6 +22,11 @@
       "date": "2026-08-07",
       "authority": "Maverick",
       "scope": "Correction brief authorizes bounded local audit corrections, nondestructive tests, and exactly three local commits; push and merge are prohibited."
+    },
+    {
+      "date": "2026-08-07",
+      "authority": "Maverick",
+      "scope": "Follow-up evidence-correction brief authorizes corrected foreground rename lineage, strengthened automated proof, validation, and exactly one additional local commit; push and merge are prohibited."
     }
   ],
   "baseline_commit": "c88a226ac13e69e235ed5df1347a3872e3330554",

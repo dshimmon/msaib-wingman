@@ -66,8 +66,8 @@
       "foreground_working_tree_sha256": "eaf3d009a4cdba5a4a8ec4a1f15887d9a1f5924f98e9666cc82df698ba7be379",
       "foreground_head_baseline_sha256": "4cc4e85ab00b4203a8bbf2e5b1063b82144e705804f2a8657dcbf368ec766b29",
       "correction_disposition": "moved",
-      "target_path": "docs/archive/governance/pre-mission-message.txt",
-      "target_path_sha256": "47b335f21ac7bc90a971429220b5d28b9833afa04032a63e0419d7711ae90be8",
+      "target_path": "docs/missions/operations/flightline/setup/artifacts/approved-brief.md",
+      "target_path_sha256": "cb844e5c6f91efe5b256d4bf39a483713f963ab18f186ffe57decbeec58974eb",
       "exact_working_version_matches_in_correction": [],
       "foreground_version_incorporated": false
     },

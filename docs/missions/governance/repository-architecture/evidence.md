@@ -30,10 +30,11 @@ Independent-audit correction commits preserved after those five:
 
 1. `60134f7` — Reconcile historical mission authority.
 2. `0bc7be1` — Enforce repository record invariants.
+3. `ea774b0` — Reconcile repository correction evidence.
 
-The third correction commit is the final correction-evidence record. Its hash
-cannot self-identify inside that commit and belongs in the final operator
-report.
+The single authorized foreground-lineage follow-up commit is the next bounded
+record. Its hash cannot self-identify inside that commit and belongs in the
+final operator report.
 
 ## Validation evidence
 
@@ -167,7 +168,7 @@ been rerun by a fresh-context reviewer. Therefore:
 - Codex implementation and self-review: complete;
 - local tests and governance validation: complete;
 - original bounded commits: five complete;
-- correction commits: two complete before the final correction-evidence commit;
+- correction commits: three complete before the foreground-lineage follow-up;
 - prior independent read-only audit: failed; corrections locally implemented;
 - fresh-context usability drill: pending rerun;
 - fresh independent read-only correction audit: pending;
@@ -284,3 +285,71 @@ Additional correction checks:
 
 No runtime, Product Contract, Ledger, Radar, or dependency file changed in the
 correction commits.
+
+## Foreground rename lineage follow-up
+
+Maverick authorized exactly one additional local evidence-correction commit on
+2026-08-07 after confirming that the manifest mapped `docs/Mission-brief.md`
+to an unrelated archive file. The corrected mapping is:
+
+`docs/Mission-brief.md` →
+`docs/missions/operations/flightline/setup/artifacts/approved-brief.md`
+
+The destination's SHA-256 at comparison commit `0bc7be1` is
+`cb844e5c6f91efe5b256d4bf39a483713f963ab18f186ffe57decbeec58974eb`.
+The separately added `docs/archive/governance/pre-mission-message.txt` is not
+the Mission brief's Git successor.
+
+### Five moved-path checks
+
+`git diff --name-status --find-renames c88a226 0bc7be1` reports:
+
+| Git | Source | Destination | Destination SHA-256 at `0bc7be1` |
+|---|---|---|---|
+| `R095` | `docs/Development-Flightline.md` | `docs/runbooks/development-flightline.md` | `8443320e69b8d735d2c712c9a19453b845f26c47ca557a566081c918fafd81aa` |
+| `R096` | `docs/Mission-brief.md` | `docs/missions/operations/flightline/setup/artifacts/approved-brief.md` | `cb844e5c6f91efe5b256d4bf39a483713f963ab18f186ffe57decbeec58974eb` |
+| `R098` | `docs/Wingman_Pre-Mission_028_Planning_Package.md` | `docs/archive/governance/pre-mission-028-planning-package.md` | `21c947f82a890323f346d4ade257dc8014d837bc71ce1c2bba727b6d10cf5a4c` |
+| `R093` | `docs/architecture/Airframe.md` | `docs/archive/architecture/airframe-at-c88.md` | `b2f01fa6522e0b22eb7d1274bb98c87a90e4f9db200591ead2792e188855224e` |
+| `R099` | `tests/test_flightline.py` | `tests/governance/test_flightline.py` | `8affa07ce6aec9ca49e1b1f5edff866c1ad9c0e4c03055528567e4c7f06590b1` |
+
+Governance validation now derives the rename map from that exact Git range,
+requires every manifest entry classified `moved` to declare Git's detected
+destination, and computes the destination SHA-256 from the comparison-commit
+blob. The existing exact foreground working-version exclusion assertions are
+unchanged. A negative test substitutes the wrong but existing pre-mission
+message and its correct hash; rejection proves that target existence and a
+self-consistent declared hash are insufficient.
+
+### Follow-up validation
+
+The new negative test was run first:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src \
+OPENAI_API_KEY=repository-governance-offline-placeholder \
+PYTHON_DOTENV_DISABLED=1 \
+/Users/davidshimmon/Developer/Wingman/msaib-wingman/.venv/flightline-py312/bin/python \
+-m unittest tests.governance.test_repository_governance.RepositoryGovernanceTests.test_wrong_existing_foreground_rename_target_is_rejected
+```
+
+Result: **1 test passed** in 0.331 seconds.
+
+- Complete repository-governance suite: **21 tests passed** in 3.466 seconds.
+- `python -m tools.governance validate`: passed.
+- Architecture-boundary, Product Contract, and compatibility-facade suite:
+  **33 tests passed** in 0.332 seconds.
+- Complete repository suite: **296 tests passed** in 9.320 seconds. Expected
+  negative-path Flightline/diagnostic logs, bare-Streamlit warnings, and the
+  optional `pymupdf_layout` suggestion appeared; there were no failures or
+  skips.
+- `ruff check tools/governance/repository.py
+  tests/governance/test_repository_governance.py`: passed. An initial attempt
+  to invoke Ruff from `.venv/flightline-py312/bin/ruff` returned exit 127
+  because that path does not exist; it performed no linting and the available
+  repository command was then used successfully.
+- `git diff --check ea774b0` is run before commit; the required
+  `git diff --check ea774b0..HEAD` is repeated after the follow-up commit.
+
+The mission remains active and awaiting fresh independent read-only audit.
+Publication remains separately blocked pending Maverick's disposition of the
+eight antecedent commits. This follow-up does not authorize push or merge.
