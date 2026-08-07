@@ -1,0 +1,31 @@
+name: Repository governance
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Validate canonical governance records
+        env:
+          PYTHONPATH: src
+        run: python -m tools.governance validate
+      - name: Test governance and package boundaries
+        env:
+          PYTHONPATH: src
+          OPENAI_API_KEY: repository-governance-ci-placeholder
+          PYTHON_DOTENV_DISABLED: "1"
+        run: >-
+          python -m unittest
+          tests.governance.test_repository_governance
+          tests.governance.test_architecture_boundaries
+          tests.governance.test_compatibility_facades

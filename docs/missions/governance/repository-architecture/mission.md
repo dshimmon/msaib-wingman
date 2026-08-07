@@ -34,7 +34,7 @@
     "branch": "codex/governance-repository-architecture",
     "worktree": "/private/tmp/wingman-repository-architecture-20260807-01",
     "writable_scope": [
-      "repository mission worktree"
+      "/private/tmp/wingman-repository-architecture-20260807-01"
     ],
     "state": "implementing",
     "next_gate": "Complete work packages and validation, then reconcile publication ancestry and obtain independent review."

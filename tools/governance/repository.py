@@ -6,6 +6,7 @@ import argparse
 import json
 import re
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -20,6 +21,12 @@ DECISION_ID = re.compile(r"^[A-Z]+-[0-9]{3}$")
 COMMIT_ID = re.compile(r"^[0-9a-f]{7,40}$")
 LIFECYCLES = frozenset({"draft", "active", "completed", "archived"})
 DECISION_STATES = frozenset({"proposed", "accepted", "superseded"})
+MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
+STATUS_CLAIM = re.compile(
+    r"(?im)^.*(?:\*\*status:\*\*|\bcurrent (?:mission )?status\b|"
+    r"\bmission (?:is )?(?:complete|completed|active)\b).*$"
+)
+JUNK_NAMES = frozenset({".DS_Store", "Thumbs.db", "Desktop.ini"})
 
 
 class GovernanceError(ValueError):
@@ -145,6 +152,11 @@ def validate_metadata(
     for record in missions:
         metadata = record.metadata
         mission_id = metadata["id"]
+        expected_path = MISSION_ROOT.joinpath(*mission_id.split("/"), "mission.md")
+        if record.path != expected_path:
+            errors.append(
+                f"{mission_id}: record path must be {_relative(expected_path)}"
+            )
         if metadata["schema_version"] != 1:
             errors.append(f"{mission_id}: unsupported schema_version")
         if not MISSION_ID.fullmatch(mission_id):
@@ -177,6 +189,11 @@ def validate_metadata(
                     errors.append(f"{mission_id}: writable_scope must be non-empty")
                 else:
                     active_workstreams.append((record, scopes))
+        if (
+            metadata["lifecycle"] == "completed"
+            and not metadata["implementation_commits"]
+        ):
+            errors.append(f"{mission_id}: completed mission needs an implementation commit")
         for commit in [metadata["baseline_commit"], *metadata["implementation_commits"]]:
             if commit is None:
                 continue
@@ -413,12 +430,190 @@ def validate_generated(missions: list[Record], decisions: list[Record]) -> list[
     return errors
 
 
+def _canonical_markdown_files() -> list[Path]:
+    files = [
+        ROOT / "README.md",
+        ROOT / "AGENTS.md",
+        ROOT / "WINGMAN_VAULT.md",
+        ROOT / "CURRENT_MISSION.md",
+    ]
+    files.extend(
+        path
+        for path in (ROOT / "docs").rglob("*.md")
+        if "archive" not in path.relative_to(ROOT / "docs").parts
+        and path.name != "journal.md"
+        and "artifacts" not in path.parts
+    )
+    return sorted(set(files))
+
+
+def validate_links_and_documents() -> list[str]:
+    """Keep canonical documents non-empty, linked, and source-attributed."""
+    errors: list[str] = []
+    trusted_status = {
+        ROOT / "CURRENT_MISSION.md",
+        ROOT / "WINGMAN_VAULT.md",
+    }
+    for path in _canonical_markdown_files():
+        if not path.is_file():
+            errors.append(f"missing canonical document: {_relative(path)}")
+            continue
+        text = path.read_text(encoding="utf-8")
+        if not text.strip():
+            errors.append(f"empty canonical document: {_relative(path)}")
+            continue
+        for target in MARKDOWN_LINK.findall(text):
+            target = target.strip().split(maxsplit=1)[0].strip("<>")
+            target = target.split("#", 1)[0]
+            if not target or re.match(r"^[a-z][a-z0-9+.-]*:", target, re.I):
+                continue
+            resolved = (
+                ROOT / target.lstrip("/")
+                if target.startswith("/")
+                else path.parent / target
+            ).resolve()
+            if not resolved.exists():
+                errors.append(
+                    f"{_relative(path)}: link does not resolve: {target}"
+                )
+        if (
+            path not in trusted_status
+            and "missions" not in path.relative_to(ROOT).parts
+            and "decisions" not in path.relative_to(ROOT).parts
+        ):
+            claims = STATUS_CLAIM.findall(text)
+            if claims and not (
+                "CURRENT_MISSION.md" in text
+                or "docs/missions/" in text
+                or "/missions/" in text
+            ):
+                errors.append(
+                    f"{_relative(path)}: current-status claim lacks a canonical source"
+                )
+    return errors
+
+
+def _tracked_files() -> list[Path]:
+    result = subprocess.run(
+        ["git", "ls-files", "-z"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+    )
+    return [ROOT / item.decode() for item in result.stdout.split(b"\0") if item]
+
+
+def validate_repository_hygiene() -> list[str]:
+    errors = []
+    for path in _tracked_files():
+        if path.name in JUNK_NAMES or path.name.startswith("._"):
+            errors.append(f"tracked operating-system junk: {_relative(path)}")
+    for path in (ROOT / "docs").rglob("*"):
+        if (
+            path.is_file()
+            and "archive" not in path.relative_to(ROOT / "docs").parts
+            and path.stat().st_size == 0
+        ):
+            errors.append(f"empty canonical document: {_relative(path)}")
+    return errors
+
+
+def _facade_path(historical: str) -> Path:
+    if historical == "ledger":
+        return ROOT / "src" / "ledger" / "__init__.py"
+    if historical.startswith("ledger."):
+        return ROOT.joinpath("src", *historical.split(".")).with_suffix(".py")
+    return ROOT / "src" / f"{historical}.py"
+
+
+def _canonical_module_path(canonical: str) -> Path:
+    base = ROOT.joinpath("src", *canonical.split("."))
+    package = base / "__init__.py"
+    return package if package.is_file() else base.with_suffix(".py")
+
+
+def validate_compatibility_facades() -> list[str]:
+    errors: list[str] = []
+    source = str(ROOT / "src")
+    if source not in sys.path:
+        sys.path.insert(0, source)
+    from wingman.shared.compatibility import COMPATIBILITY_FACADES
+
+    registered = {facade.historical for facade in COMPATIBILITY_FACADES}
+    physical = {path.stem for path in (ROOT / "src").glob("*.py")}
+    physical.update(
+        "ledger" if path.name == "__init__.py" else f"ledger.{path.stem}"
+        for path in (ROOT / "src" / "ledger").glob("*.py")
+    )
+    for missing in sorted(physical - registered):
+        errors.append(f"historical facade is not registered: {missing}")
+    for stale in sorted(registered - physical):
+        errors.append(f"registered facade is missing: {stale}")
+    for facade in COMPATIBILITY_FACADES:
+        path = _facade_path(facade.historical)
+        expected = f'_expose(__name__, "{facade.historical}")'
+        if not path.is_file():
+            continue
+        if expected not in path.read_text(encoding="utf-8"):
+            errors.append(f"{_relative(path)}: facade does not use the registry")
+        if not _canonical_module_path(facade.canonical).is_file():
+            errors.append(
+                f"{facade.historical}: canonical target is missing: {facade.canonical}"
+            )
+        for field in (
+            facade.owner,
+            facade.reason,
+            facade.supported_callers,
+            facade.removal_condition,
+        ):
+            if not field:
+                errors.append(f"{facade.historical}: registry metadata is incomplete")
+                break
+    coverage = ROOT / "tests" / "governance" / "test_compatibility_facades.py"
+    if not coverage.is_file():
+        errors.append("compatibility facade coverage test is missing")
+    return errors
+
+
+def validate_schemas_and_first_reads() -> list[str]:
+    errors: list[str] = []
+    for path in sorted(ROOT.rglob("*.schema.json")):
+        if ".git" in path.parts:
+            continue
+        try:
+            json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as error:
+            errors.append(f"{_relative(path)}: invalid JSON schema: {error}")
+    first_reads = {
+        ROOT / "README.md": ("AGENTS.md", "CURRENT_MISSION.md"),
+        ROOT / "docs" / "README.md": ("AGENTS.md", "CURRENT_MISSION.md"),
+        ROOT / "tools" / "flightline" / "roles" / "development-engineer.md": (
+            "first repository read", "AGENTS.md"
+        ),
+        ROOT / "tools" / "flightline" / "roles" / "independent-auditor.md": (
+            "first repository read", "AGENTS.md"
+        ),
+    }
+    for path, needles in first_reads.items():
+        text = path.read_text(encoding="utf-8") if path.is_file() else ""
+        if any(needle not in text for needle in needles):
+            errors.append(f"{_relative(path)}: first-read instructions are incomplete")
+        elif len(needles) == 2 and needles == ("AGENTS.md", "CURRENT_MISSION.md"):
+            if text.index(needles[0]) > text.index(needles[1]):
+                errors.append(f"{_relative(path)}: AGENTS.md must be read first")
+    return errors
+
+
 def validate() -> list[str]:
     missions = load_missions()
     decisions = load_decisions()
     errors = validate_metadata(missions, decisions)
     if not errors:
         errors.extend(validate_generated(missions, decisions))
+    errors.extend(validate_links_and_documents())
+    errors.extend(validate_repository_hygiene())
+    errors.extend(validate_compatibility_facades())
+    errors.extend(validate_schemas_and_first_reads())
     return errors
 
 
