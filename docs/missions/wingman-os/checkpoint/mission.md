@@ -16,9 +16,9 @@
   "authorization_gate": "closed",
   "approval_evidence": [
     {
-      "date": "2026-07-24",
-      "authority": "Maverick / canonical historical mission record",
-      "scope": "Completed mission state preserved by the listed implementation commit(s)."
+      "date": "2026-08-07",
+      "authority": "Maverick",
+      "scope": "Completion ratified by GOV-003; publication state remains controlled by Git evidence."
     }
   ],
   "baseline_commit": null,
@@ -28,6 +28,7 @@
   "pushed": true,
   "merged": true,
   "official_decisions": [
+    "docs/decisions/governance/historical-mission-ratification.md",
     "docs/decisions/architecture/airframe-boundaries.md",
     "docs/decisions/architecture/source-traceability.md"
   ],

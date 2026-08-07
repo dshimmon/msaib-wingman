@@ -415,7 +415,9 @@ be migrated beyond schema version 3.
 The Vault is not an archive and does not own completed mission status.
 Completed histories, commit evidence, and legacy aliases live in the
 [authoritative mission index](docs/missions/README.md). Superseded planning
-documents live under `docs/archive/` and remain noncanonical.
+documents live under `docs/archive/` and remain noncanonical. The retained
+historical journals have one compact
+[archive index](docs/archive/mission-history/README.md).
 
 Hardpoints fulfilled its promoted product-contract destination. Its outcome is
 recorded in [`wingman-os/hardpoints`](docs/missions/wingman-os/hardpoints/mission.md)

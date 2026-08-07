@@ -1,5 +1,10 @@
 # Repository Architecture Journal
 
+> [!IMPORTANT]
+> This is a subordinate chronological execution log for the active mission.
+> All current lifecycle, authority, commit, publication, and next-gate state is
+> controlled by the sole canonical [`mission.md`](mission.md) record.
+
 ## 2026-08-07
 
 - Verified the foreground repository at `c88a226`, recorded its 11 protected
