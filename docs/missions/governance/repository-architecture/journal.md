@@ -87,3 +87,25 @@
 - This work is implemented and fully validated for the authorized local
   commit. Maverick's map review, fresh independent audit, and every publication
   action remain later gates.
+
+## 2026-08-08 — Credential-free offline-suite correction
+
+- A fresh independent audit passed every repository-architecture criterion
+  except the advertised credential-free offline suite: seven test modules
+  failed during import when no `OPENAI_API_KEY` was available and dotenv
+  loading was disabled.
+- Reproduced the exact failure without reading or loading any `.env` file. The
+  import chain reached `wingman.core.openai_client`, which constructs the
+  shared OpenAI client at module import with a missing key.
+- Kept the correction test-only. Test-package initialization now supplies a
+  clearly fake placeholder with set-if-missing behavior before discovery
+  imports production modules; caller-supplied values remain untouched.
+- Added an isolated subprocess regression for the formerly failing import
+  boundary and documented the test-only behavior without changing the
+  advertised offline-suite command.
+- Maverick subsequently authorized exactly one local corrective commit on
+  2026-08-08 with subject `Make offline test suite credential-free`. The commit
+  containing this journal locally commits the correction on parent
+  `99accba8b3433b6f9485881f4033f507bd6ae3ef` without self-recording its hash.
+- The next gate is a fresh independent read-only audit. Publication remains
+  separately blocked, and push and merge remain unauthorized.

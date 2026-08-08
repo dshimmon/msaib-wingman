@@ -419,3 +419,76 @@ The authorized local commit does not change the canonical mission gate: a
 fresh independent read-only audit must pass on the committed correction state.
 Maverick's map review remains later, and every publication, push, and merge
 decision remains separate.
+
+## Credential-free offline-suite audit correction
+
+The 2026-08-08 independent audit passed the filing, map, lifecycle, lineage,
+duplication, and governance criteria but failed the exact offline-suite command
+documented in `README.md`. With `OPENAI_API_KEY` absent and dotenv loading
+disabled, discovery ran 253 tests and reported seven import errors in 9.182
+seconds. Each failing import reached `src/wingman/core/openai_client.py`, where
+the production module constructs `OpenAI(api_key=os.getenv("OPENAI_API_KEY"))`
+during import; the SDK rejects the resulting missing credential before the
+affected tests can run.
+
+Maverick first authorized a bounded implementation and validation correction
+without commit, push, or merge authority, then authorized exactly one local
+corrective commit on 2026-08-08 with subject
+`Make offline test suite credential-free`. The correction remains test-only:
+
+- `tests/__init__.py` uses `os.environ.setdefault` to establish the clearly
+  fake value `wingman-offline-tests-no-credential` before test discovery
+  imports modules that construct the shared client and disables dotenv loading
+  by default;
+- a caller-supplied environment value is never overwritten;
+- `tests/governance/test_offline_suite.py` uses bounded subprocess imports to
+  prove both the credential-absent case and caller-value preservation without
+  recursively running the test suite;
+- `README.md` keeps the advertised command unchanged and explains that the
+  placeholder is test-only, nonsecret, and not an application default; and
+- no production file under `src/` changed, no real credential was added or
+  loaded, no test was weakened or bypassed, and the isolated import regression
+  performs no API request.
+
+The exact changed-file set is:
+
+- `CURRENT_MISSION.md` (generated);
+- `README.md`;
+- `docs/governance/mission-control-context.md` (generated);
+- `docs/missions/governance/repository-architecture/evidence.md`;
+- `docs/missions/governance/repository-architecture/journal.md`;
+- `docs/missions/governance/repository-architecture/mission.md`;
+- `tests/__init__.py`; and
+- `tests/governance/test_offline_suite.py`.
+
+### Credential-free correction validation
+
+- Exact credential-free suite — `env -u OPENAI_API_KEY
+  PYTHON_DOTENV_DISABLED=1 PYTHONDONTWRITEBYTECODE=1 python -m unittest
+  discover -s tests -t . -p 'test_*.py'`: **302 tests passed** in 10.563
+  seconds, with no failures or skips.
+- Documented suite — `PYTHONDONTWRITEBYTECODE=1 python -m unittest discover
+  -s tests -t . -p 'test_*.py'`: **302 tests passed** in 10.563 seconds, with
+  no failures or skips.
+- Focused isolated regression — `env -u OPENAI_API_KEY
+  PYTHON_DOTENV_DISABLED=1 PYTHONDONTWRITEBYTECODE=1 python -m unittest
+  tests.governance.test_offline_suite`: **2 tests passed** in 2.579 seconds.
+- `PYTHONDONTWRITEBYTECODE=1 python -m tools.governance validate`: passed.
+- `PYTHONDONTWRITEBYTECODE=1 python -m unittest
+  tests.governance.test_repository_governance`: **25 tests passed** in 3.418
+  seconds.
+- `ruff check tests/__init__.py tests/governance/test_offline_suite.py`:
+  passed.
+- `git diff --check`: passed.
+
+Expected Flightline cancellation/time-budget messages, mocked diagnostic
+failure traces, bare-Streamlit warnings, and the optional `pymupdf_layout`
+suggestion appeared in the successful full suites. They are exercised
+negative-path output, not failures.
+
+The commit containing this evidence locally commits the implemented and
+validated correction on parent
+`99accba8b3433b6f9485881f4033f507bd6ae3ef`; it cannot self-record its own
+hash. The exact next gate is a fresh independent read-only audit of that
+commit. Publication remains separately blocked pending Maverick's disposition
+of the eight antecedent commits; push and merge are not authorized.

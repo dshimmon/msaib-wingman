@@ -11,7 +11,7 @@
   "lifecycle": "active",
   "priority": "high",
   "portfolio_primary": true,
-  "authorization_gate": "previous_independent_audit_failed_corrections_committed_fresh_audit_and_antecedent_disposition_required",
+  "authorization_gate": "credential_free_offline_suite_correction_locally_committed_fresh_audit_and_antecedent_disposition_required",
   "approval_evidence": [
     {
       "date": "2026-08-07",
@@ -27,6 +27,16 @@
       "date": "2026-08-07",
       "authority": "Maverick",
       "scope": "Follow-up evidence-correction brief authorizes corrected foreground rename lineage, strengthened automated proof, validation, and exactly one additional local commit; push and merge are prohibited."
+    },
+    {
+      "date": "2026-08-08",
+      "authority": "Maverick",
+      "scope": "Credential-free offline-suite correction authorizes bounded implementation, testing, mission evidence updates, and generated-record refresh; commit, push, and merge are prohibited."
+    },
+    {
+      "date": "2026-08-08",
+      "authority": "Maverick",
+      "scope": "Credential-free offline-suite correction authorizes exactly one local commit with subject 'Make offline test suite credential-free'; push, merge, amend, rebase, fetch, and unrelated changes remain prohibited."
     }
   ],
   "baseline_commit": "c88a226ac13e69e235ed5df1347a3872e3330554",
@@ -53,10 +63,10 @@
     "writable_scope": [
       "/private/tmp/wingman-repository-architecture-20260807-01"
     ],
-    "state": "corrections_locally_committed_awaiting_fresh_independent_audit",
-    "next_gate": "A fresh independent read-only audit must pass on the correction commits; publication remains separately blocked until Maverick dispositions the eight antecedent commits."
+    "state": "credential_free_offline_suite_correction_locally_committed_awaiting_fresh_independent_audit",
+    "next_gate": "A fresh independent read-only audit must pass on the commit containing the credential-free offline-suite correction; publication remains separately blocked until Maverick dispositions the eight antecedent commits."
   },
-  "next_gate": "A fresh independent read-only audit must pass on the correction commits; publication remains separately blocked until Maverick dispositions the eight antecedent commits.",
+  "next_gate": "A fresh independent read-only audit must pass on the commit containing the credential-free offline-suite correction; publication remains separately blocked until Maverick dispositions the eight antecedent commits.",
   "supersedes": null,
   "superseded_by": null,
   "paused": false,
@@ -67,10 +77,14 @@
 
 Lifecycle: **active** and **portfolio-primary**.
 
-The previous independent repository-organization audit failed. Its bounded
-corrections are locally committed and await a fresh independent read-only
-audit. Publication remains a separate blocked gate pending Maverick's
-disposition of the eight antecedent commits.
+The latest independent repository-organization audit passed the filing, map,
+lifecycle, lineage, duplication, and governance criteria but failed because
+the documented offline suite could not import seven test modules without an
+API credential. The commit containing this record locally commits the bounded
+test-only correction on parent
+`99accba8b3433b6f9485881f4033f507bd6ae3ef` and awaits a fresh independent
+read-only audit. Publication remains a separate blocked gate pending
+Maverick's disposition of the eight antecedent commits.
 
 ## Objective
 

@@ -44,6 +44,12 @@ Run the offline suite:
 python3 -m unittest discover -s tests -t . -p 'test_*.py'
 ```
 
+When no `OPENAI_API_KEY` is supplied, the test package establishes a
+nonsecret, test-only placeholder before importing modules that construct the
+OpenAI client and disables dotenv loading by default. It never replaces a
+caller-supplied value and is not an application default; offline tests mock API
+behavior rather than making real OpenAI requests.
+
 `tests/products/atlas/run_retrieval_tests.py` is a separate API-backed
 diagnostic.
 
