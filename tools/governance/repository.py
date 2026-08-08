@@ -29,6 +29,54 @@ FOREGROUND_PRESERVATION_MANIFEST = (
     / "governance/repository-architecture/artifacts"
     / "foreground-preservation-manifest.json"
 )
+REPOSITORY_MAP = ROOT / "docs" / "README.md"
+REPOSITORY_MAP_LOCATIONS = (
+    ("AGENTS.md", "file"),
+    ("CURRENT_MISSION.md", "file"),
+    ("WINGMAN_VAULT.md", "file"),
+    ("README.md", "file"),
+    ("src/", "directory"),
+    ("src/wingman/", "directory"),
+    ("src/wingman/core/", "directory"),
+    ("src/wingman/core/ledger/", "directory"),
+    ("src/wingman/shared/", "directory"),
+    ("src/products/", "directory"),
+    ("src/products/atlas/", "directory"),
+    ("src/products/radar/", "directory"),
+    ("src/ledger/", "directory"),
+    ("docs/", "directory"),
+    ("docs/wingman-os/", "directory"),
+    ("docs/products/", "directory"),
+    ("docs/products/atlas/", "directory"),
+    ("docs/products/radar/", "directory"),
+    ("docs/governance/", "directory"),
+    ("docs/missions/", "directory"),
+    ("docs/missions/wingman-os/", "directory"),
+    ("docs/missions/atlas/", "directory"),
+    ("docs/missions/operations/", "directory"),
+    ("docs/missions/governance/", "directory"),
+    ("docs/decisions/", "directory"),
+    ("docs/decisions/architecture/", "directory"),
+    ("docs/decisions/governance/", "directory"),
+    ("docs/decisions/security/", "directory"),
+    ("docs/runbooks/", "directory"),
+    ("docs/archive/", "directory"),
+    ("docs/roadmap.md", "file"),
+    ("tests/", "directory"),
+    ("tests/wingman/", "directory"),
+    ("tests/products/", "directory"),
+    ("tests/products/atlas/", "directory"),
+    ("tests/products/radar/", "directory"),
+    ("tests/governance/", "directory"),
+    ("tools/", "directory"),
+    ("tools/flightline/", "directory"),
+    ("tools/governance/", "directory"),
+    ("data/", "directory"),
+)
+REPOSITORY_MAP_COMPATIBILITY_WARNING = (
+    "Historical flat `src/` modules and `src/ledger/` are compatibility "
+    "façades only; no new implementation belongs there."
+)
 MISSION_MARKER = "wingman-mission-metadata"
 DECISION_MARKER = "wingman-decision-metadata"
 ARCHIVE_MARKER = "wingman-archive-metadata"
@@ -800,6 +848,44 @@ def validate_link_target(source: Path, target: str) -> list[str]:
     return []
 
 
+def validate_repository_map(
+    text: str | None = None,
+) -> list[str]:
+    """Keep the human filing map synchronized with canonical filesystem homes."""
+    if text is None:
+        text = REPOSITORY_MAP.read_text(encoding="utf-8")
+    errors: list[str] = []
+    for location, kind in REPOSITORY_MAP_LOCATIONS:
+        if f"`{location}`" not in text:
+            errors.append(f"repository map omits canonical location: {location}")
+        path = ROOT / location.rstrip("/")
+        exists = path.is_dir() if kind == "directory" else path.is_file()
+        if not exists:
+            errors.append(
+                f"repository map canonical {kind} does not exist: {location}"
+            )
+    try:
+        tree = text.split("### Annotated tree", 1)[1]
+        tree = tree.split("```text", 1)[1].split("```", 1)[0]
+    except IndexError:
+        errors.append("repository map has no annotated tree")
+    else:
+        mapped_directories = sorted(set(re.findall(r"`([^`\n]+/)`", tree)))
+        for location in mapped_directories:
+            if not (ROOT / location.rstrip("/")).is_dir():
+                errors.append(
+                    f"repository map mapped directory does not exist: {location}"
+                )
+    normalized = " ".join(text.split())
+    if REPOSITORY_MAP_COMPATIBILITY_WARNING not in normalized:
+        errors.append(
+            "repository map must identify historical flat src modules and "
+            "src/ledger/ as compatibility facades only; no new implementation "
+            "belongs there"
+        )
+    return errors
+
+
 def _archive_metadata(path: Path, text: str) -> dict:
     prefix = f"<!-- {ARCHIVE_MARKER}\n"
     try:
@@ -1075,6 +1161,7 @@ def validate() -> list[str]:
     if not errors:
         errors.extend(validate_generated(missions, decisions))
     errors.extend(validate_links_and_documents())
+    errors.extend(validate_repository_map())
     errors.extend(validate_mission_journal_authority(missions))
     errors.extend(validate_archive_documents())
     errors.extend(validate_status_authority())

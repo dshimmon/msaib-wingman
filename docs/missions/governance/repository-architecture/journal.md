@@ -70,3 +70,20 @@
 - Mission state and next gate remain unchanged: fresh independent read-only
   audit is pending, with publication separately blocked on antecedent
   disposition.
+
+## 2026-08-07 — Repository map finalization
+
+- Maverick first authorized one bounded, uncommitted repository-map
+  improvement, then explicitly authorized finalization and one local commit of
+  the five map-related files without waiting for map review.
+- Expanded `docs/README.md` in place as the single canonical human-readable
+  filing map; no second map document was created.
+- Added an annotated source, documentation, test, tool, data, and root-entry
+  tree plus explicit placement rules and links to current architecture and
+  Product Contract documentation.
+- Added a data-driven governance invariant for required mapped homes,
+  filesystem existence, and the compatibility-facade implementation warning,
+  with three corresponding negative cases.
+- This work is implemented and fully validated for the authorized local
+  commit. Maverick's map review, fresh independent audit, and every publication
+  action remain later gates.

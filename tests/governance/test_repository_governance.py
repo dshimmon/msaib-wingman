@@ -132,6 +132,44 @@ class RepositoryGovernanceTests(unittest.TestCase):
         )
         self.assertTrue(any("escapes root" in error for error in errors), errors)
 
+    def test_repository_map_matches_canonical_locations(self):
+        self.assertEqual(repository.validate_repository_map(), [])
+
+    def test_repository_map_rejects_missing_canonical_location(self):
+        text = repository.REPOSITORY_MAP.read_text(encoding="utf-8").replace(
+            "`docs/missions/operations/`",
+            "`docs/missions/ops/`",
+        )
+        errors = repository.validate_repository_map(text)
+        self.assertIn(
+            "repository map omits canonical location: docs/missions/operations/",
+            errors,
+        )
+
+    def test_repository_map_rejects_nonexistent_mapped_directory(self):
+        location = "src/products/vector/"
+        text = repository.REPOSITORY_MAP.read_text(encoding="utf-8").replace(
+            "    radar/                                # `src/products/radar/`",
+            "    radar/                                # `src/products/radar/`"
+            f"\n    vector/                               # `{location}`",
+        )
+        errors = repository.validate_repository_map(text)
+        self.assertIn(
+            "repository map mapped directory does not exist: " + location,
+            errors,
+        )
+
+    def test_repository_map_requires_compatibility_facade_warning(self):
+        text = repository.REPOSITORY_MAP.read_text(encoding="utf-8").replace(
+            "no new implementation belongs there.",
+            "legacy imports remain supported.",
+        )
+        errors = repository.validate_repository_map(text)
+        self.assertTrue(
+            any("compatibility facades only" in error for error in errors),
+            errors,
+        )
+
     def test_full_implementation_disguised_as_facade_is_rejected(self):
         source = '''"""Compatibility facade for the historical `knowledge` module."""
 from wingman.shared.compatibility import expose as _expose

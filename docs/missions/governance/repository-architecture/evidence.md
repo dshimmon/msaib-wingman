@@ -353,3 +353,69 @@ Result: **1 test passed** in 0.331 seconds.
 The mission remains active and awaiting fresh independent read-only audit.
 Publication remains separately blocked pending Maverick's disposition of the
 eight antecedent commits. This follow-up does not authorize push or merge.
+
+## Repository-map finalization
+
+Maverick first authorized a bounded, uncommitted repository-map improvement on
+2026-08-07, then explicitly authorized finalization and one local commit of the
+five map-related files without waiting for map review. The finalized map
+expands `docs/README.md` in place as the single canonical human-readable filing
+map; no competing map document was created. It preserves the first-read
+directions and canonical-home links, adds the required annotated ownership tree
+and placement rules, and links to the current architecture and Product
+Contract instead of restating those technical contracts.
+
+The governance validator now consumes one extensible inventory of canonical
+files and directories. It requires every inventory path to be named verbatim
+in `docs/README.md`, verifies the corresponding file or directory exists, and
+requires the explicit warning that historical flat `src/` modules and
+`src/ledger/` are compatibility facades where no new implementation belongs.
+Negative tests remove a canonical map entry, introduce a mapped directory that
+does not exist, and remove the compatibility-facade warning.
+
+The finalization changes only:
+
+- `docs/README.md`;
+- `tools/governance/repository.py`;
+- `tests/governance/test_repository_governance.py`;
+- `docs/missions/governance/repository-architecture/journal.md`; and
+- this evidence package.
+
+No runtime, Product Contract, Ledger, Radar, dependency, or data file changed.
+The work is implemented, validated, and authorized for exactly one local
+commit of these five files. It is not included in the independent review of
+committed HEAD `1250e8c`; map review and publication remain later gates.
+
+### Repository-map finalization validation
+
+- Map invariant plus the three required negative tests: **4 tests passed** in
+  0.013 seconds.
+- Repository-governance module: **25 tests passed** in 3.239 seconds.
+- Complete governance test directory: **71 tests passed** in 5.417 seconds.
+  Expected Flightline cancellation and time-budget negative-path messages
+  appeared; there were no failures or skips.
+- Documentation/link checks: **2 tests passed** in 0.059 seconds.
+- `python -m tools.governance validate`: passed.
+- Complete repository suite, using the repository-supported discovery root
+  (`-s tests -t .`): **300 tests passed** in 9.099 seconds. Expected
+  negative-path Flightline and diagnostic logs, bare-Streamlit warnings, and
+  the optional `pymupdf_layout` suggestion appeared; there were no failures or
+  skips.
+- `ruff check tools/governance/repository.py
+  tests/governance/test_repository_governance.py`: passed.
+- `git diff --check 1250e8c`: passed against the finalized diff before staging;
+  `git diff --cached --check` is repeated after staging.
+
+Two intermediate command failures were corrected before the successful matrix:
+the first four-test invocation found an indentation error in the newly wired
+validator before test collection, and a complete-suite discovery command that
+omitted the documented `-t .` produced 26 package-resolution import errors.
+After the indentation fix and the supported discovery root were applied, the
+results above passed.
+
+Authorized commit message: `Document canonical repository filing map`.
+
+The authorized local commit does not change the canonical mission gate: a
+fresh independent read-only audit must pass on the committed correction state.
+Maverick's map review remains later, and every publication, push, and merge
+decision remains separate.
