@@ -9,8 +9,8 @@
   "status": "accepted",
   "date": "2026-08-01",
   "authority": "Maverick",
-  "scope": "Dependency order after Hardpoints",
-  "approval_evidence": "Decision A in the archived pre-Mission-028 planning package",
+  "scope": "Dependency order after Hardpoints and Crew Chief successor promotion",
+  "approval_evidence": "Decision A in the archived pre-Mission-028 planning package; Maverick's 2026-08-08 approval of Crew Chief as the successor portfolio-primary planning mission",
   "supersedes": [],
   "superseded_by": null
 }
@@ -31,3 +31,12 @@ separate future product attached through the product contract. Crew Chief is
 required, is not the Flightline Auditor, and is not automatically deferred
 until after Mission 037; Maverick will decide its exact placement before the
 relevant Assurance mission.
+
+## 2026-08-08 amendment — Crew Chief promotion
+
+Maverick completed `governance/repository-architecture` and promoted
+`governance/crew-chief` as the successor portfolio-primary planning mission,
+after Repository Architecture and before the relevant Assurance mission. The
+promotion approves planning only. Crew Chief implementation requires a
+separate build prompt, and no Crew Chief operational capability or audit is
+claimed by this amendment.

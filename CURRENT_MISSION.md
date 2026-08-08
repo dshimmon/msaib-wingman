@@ -5,23 +5,23 @@
 
 ## Portfolio primary
 
-- Mission: **governance/repository-architecture — Wingman Repository Architecture**
+- Mission: **governance/crew-chief — Crew Chief Independent Audit**
 - Lifecycle: **active**
-- Authorization gate: `published_to_main_awaiting_maverick_mission_completion_declaration`
-- Official record: [docs/missions/governance/repository-architecture/mission.md](docs/missions/governance/repository-architecture/mission.md)
-- Next gate: Maverick must decide whether to declare governance/repository-architecture complete and select or authorize the next portfolio-primary mission; no further implementation is authorized.
+- Authorization gate: `planning approved; implementation requires a separate Crew Chief build prompt`
+- Official record: [docs/missions/governance/crew-chief/mission.md](docs/missions/governance/crew-chief/mission.md)
+- Next gate: Execute a separately authorized Crew Chief implementation mission.
 
 ## Last completed work
 
-- **atlas/bulk-ingestion — Atlas Ingests Documents in Bulk**
-- Commit: `c88a226ac13e69e235ed5df1347a3872e3330554`
-- Official record: [docs/missions/atlas/bulk-ingestion/mission.md](docs/missions/atlas/bulk-ingestion/mission.md)
+- **governance/repository-architecture — Wingman Repository Architecture**
+- Commit: `cff8222fbe6092e0c145f7d8d7cabe8963cd66e6`
+- Official record: [docs/missions/governance/repository-architecture/mission.md](docs/missions/governance/repository-architecture/mission.md)
 
 ## Active workstreams
 
 | Mission | Role | Branch | Worktree | State | Next gate |
 |---|---|---|---|---|---|
-| `governance/repository-architecture` | primary | `codex/governance-repository-architecture` | `/private/tmp/wingman-repository-architecture-20260807-01` | published_to_main_awaiting_maverick_mission_completion_declaration | Maverick must decide whether to declare governance/repository-architecture complete and select or authorize the next portfolio-primary mission; no further implementation is authorized. |
+| `governance/crew-chief` | primary | `Not assigned; implementation not authorized` | `Not assigned; implementation not authorized` | planning_approved_implementation_not_authorized | Execute a separately authorized Crew Chief implementation mission. |
 
 ## Canonical homes
 

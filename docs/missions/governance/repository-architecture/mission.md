@@ -8,10 +8,10 @@
   "title": "Wingman Repository Architecture",
   "call_sign": null,
   "namespace": "governance",
-  "lifecycle": "active",
+  "lifecycle": "completed",
   "priority": "high",
-  "portfolio_primary": true,
-  "authorization_gate": "published_to_main_awaiting_maverick_mission_completion_declaration",
+  "portfolio_primary": false,
+  "authorization_gate": "closed",
   "approval_evidence": [
     {
       "date": "2026-08-07",
@@ -42,6 +42,11 @@
       "date": "2026-08-08",
       "authority": "Maverick",
       "scope": "Approved publication of all eight antecedent commits and the independently audited repository-architecture history to main, including exactly one bounded closeout commit."
+    },
+    {
+      "date": "2026-08-08",
+      "authority": "Maverick",
+      "scope": "Declared governance/repository-architecture complete, approved governance/crew-chief as the successor portfolio-primary planning mission, and authorized one records-only closeout commit plus one non-force fast-forward push to main; Crew Chief implementation remains unauthorized."
     }
   ],
   "baseline_commit": "c88a226ac13e69e235ed5df1347a3872e3330554",
@@ -56,27 +61,19 @@
     "ea774b088f2886d2b34b79d8a177b95f326616b9",
     "1250e8c070c3b3f17644adf3bac1fcb381702c0c",
     "99accba8b3433b6f9485881f4033f507bd6ae3ef",
-    "6661712ca325d9fd47a9cf436fd3b11e04c53b62"
+    "6661712ca325d9fd47a9cf436fd3b11e04c53b62",
+    "cff8222fbe6092e0c145f7d8d7cabe8963cd66e6"
   ],
   "pushed": true,
   "merged": true,
   "official_decisions": [
     "docs/decisions/governance/repository-records.md",
+    "docs/decisions/governance/roadmap-sequencing.md",
     "docs/decisions/architecture/airframe-boundaries.md",
     "docs/decisions/architecture/product-separation.md",
     "docs/decisions/architecture/source-traceability.md"
   ],
-  "workstream": {
-    "owner_session": "Codex /root",
-    "branch": "codex/governance-repository-architecture",
-    "worktree": "/private/tmp/wingman-repository-architecture-20260807-01",
-    "writable_scope": [
-      "/private/tmp/wingman-repository-architecture-20260807-01"
-    ],
-    "state": "published_to_main_awaiting_maverick_mission_completion_declaration",
-    "next_gate": "Maverick must decide whether to declare governance/repository-architecture complete and select or authorize the next portfolio-primary mission; no further implementation is authorized."
-  },
-  "next_gate": "Maverick must decide whether to declare governance/repository-architecture complete and select or authorize the next portfolio-primary mission; no further implementation is authorized.",
+  "next_gate": "Later changes require a separately approved mission.",
   "supersedes": null,
   "superseded_by": null,
   "paused": false,
@@ -85,16 +82,19 @@
 }
 -->
 
-Lifecycle: **active** and **portfolio-primary**.
+Lifecycle: **completed**. Authorization gate: **closed**.
 
-The fresh independent read-only audit passed the complete repository-
-architecture state at credential-free correction commit `6661712`. Maverick
-then approved all eight antecedent commits and authorized publication of the
-audited history to `main`, including one bounded closeout commit. Every listed
-implementation and correction commit through `6661712` is published and
-contained by `origin/main`. The mission remains active until Maverick
-separately declares it complete and selects or authorizes the next portfolio-
-primary mission; no further implementation is authorized by this closeout.
+Maverick declared `governance/repository-architecture` complete on 2026-08-08.
+The final independent technical review passed, including the 12-second current-
+mission discovery drill and the 302-test credential-free suite. The complete
+implementation history through `cff8222fbe6092e0c145f7d8d7cabe8963cd66e6`
+was published to and verified on clean `origin/main`. The commit containing
+this closeout evidence is intentionally not self-recorded.
+
+`governance/crew-chief` is the approved successor portfolio-primary planning
+mission. Crew Chief has not been implemented or operated, and no independent
+Crew Chief audit occurred during this mission. Later Repository Architecture
+changes require a separately approved mission.
 
 ## Objective
 
@@ -114,8 +114,10 @@ plugin infrastructure, broad capability work, and unrelated refactoring.
 
 The authorized baseline is `c88a226`. The isolated clean baseline measured on
 2026-08-07 is 271 passing offline tests. Work-package and final evidence belongs
-in [`evidence.md`](evidence.md); chronological implementation notes are in
-[`journal.md`](journal.md). The fresh-context handoff is defined in
+in [`evidence.md`](evidence.md); chronological implementation notes are
+preserved as a
+[historical journal](../../../archive/mission-history/governance/repository-architecture/journal.md).
+The fresh-context handoff is defined in
 [`usability-drill.md`](usability-drill.md). Foreground exclusion is recorded in
 the machine-readable
 [`foreground-preservation-manifest.json`](artifacts/foreground-preservation-manifest.json).

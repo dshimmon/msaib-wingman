@@ -8,7 +8,9 @@ obligations.
 | Direction | State | Dependency or gate |
 |---|---|---|
 | Hardpoints / Product Contract v1 | Completed at `2b3b9a6` | Later contract changes require a separate mission. |
-| Rangefinder / Wingman Assurance v1 | Established direction; no active brief | Maverick must approve the complete mission brief and Crew Chief placement. |
+| Repository Architecture | Completed and published at `cff8222f` | Later changes require a separately approved mission. |
+| Crew Chief Independent Audit | Active portfolio-primary planning shell | Implementation requires a separately authorized Crew Chief build prompt. |
+| Rangefinder / Wingman Assurance v1 | Established direction; no active brief | Maverick must approve the complete mission brief after Crew Chief's separately authorized implementation gate. |
 | Retrieval Scalability | Intended evidence-gated direction | Scope must be selected from Rangefinder evidence. |
 | Storage Port | Provisional working sequence | Requires a separate approved brief; no migration is implied. |
 | Ledger Concurrency | Provisional working sequence | Follows stable storage interfaces. |
@@ -19,6 +21,8 @@ obligations.
 | Secure Hangar | Provisional formal trust boundary | Required before sensitive third-party material or governed product expansion. |
 
 Crew Chief is required but is not the Development Flightline Independent
-Auditor. Maverick will decide its exact placement after Hardpoints and before
-the relevant Assurance mission. Radar, governed agents, and Chief of Staff are
-not numbered or authorized by this roadmap.
+Auditor. On 2026-08-08 Maverick promoted it as the successor portfolio-primary
+planning mission after Repository Architecture and before the relevant
+Assurance mission. This placement does not authorize implementation. Radar,
+governed agents, and Chief of Staff are not numbered or authorized by this
+roadmap.

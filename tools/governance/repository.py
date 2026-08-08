@@ -514,18 +514,16 @@ def validate_historical_ratification(
     ratified = {entry["id"]: entry["implementation_commits"] for entry in entries}
     if len(entries) != 30 or len(ratified) != 30:
         errors.append("GOV-003 must contain exactly 30 unique ratified missions")
-    completed = {
-        record.metadata["id"]: record
-        for record in missions
-        if record.metadata["lifecycle"] == "completed"
-    }
-    if set(ratified) != set(completed):
-        errors.append("GOV-003 ratified mission inventory does not match completed records")
+    mission_by_id = {record.metadata["id"]: record for record in missions}
     body = ratification.path.read_text(encoding="utf-8")
     decision_path = _relative(RATIFICATION_DECISION)
     for mission_id, commits in ratified.items():
-        record = completed.get(mission_id)
+        record = mission_by_id.get(mission_id)
         if record is None:
+            errors.append(f"{mission_id}: GOV-003 ratified mission is missing")
+            continue
+        if record.metadata["lifecycle"] != "completed":
+            errors.append(f"{mission_id}: GOV-003 ratified mission is not completed")
             continue
         if record.metadata["implementation_commits"] != commits:
             errors.append(f"{mission_id}: GOV-003 commit inventory disagrees")
@@ -717,7 +715,9 @@ def render_context(missions: list[Record]) -> str:
         f"- Official record: `{_relative(primary.path)}`",
         f"- Last completed: `{latest.metadata['id']}` at `{latest.metadata['implementation_commits'][-1]}`",
         f"- Next gate: {primary.metadata['next_gate']}",
-        "- Crew Chief: required future capability; no independent Crew Chief audit has occurred.",
+        "- Crew Chief: portfolio-primary planning mission; implementation "
+        "requires a separate build prompt and no independent Crew Chief audit "
+        "has occurred.",
         "",
     ])
 

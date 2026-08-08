@@ -518,7 +518,7 @@ including exactly one bounded closeout commit. A non-force fast-forward
 published `e1570b0..6661712` to `refs/heads/main`. The closeout updates only:
 
 - this evidence package;
-- [`journal.md`](journal.md);
+- the subsequently archived chronological journal;
 - [`mission.md`](mission.md);
 - [`usability-drill.md`](usability-drill.md); and
 - five completed antecedent mission records whose publication booleans became
@@ -530,3 +530,42 @@ file changes. The closeout commit cannot circularly record its own hash; the
 final operator report must record that hash and the live remote result. The
 mission remains active and published pending Maverick's separate completion
 declaration and successor-mission decision.
+
+## Mission completion and successor transition
+
+On 2026-08-08 Maverick declared `governance/repository-architecture` complete
+and authorized the records-only closeout, the minimal GOV-003 enforcement
+correction needed for post-ratification completions, one local commit with
+subject `Complete repository architecture mission`, and one non-force fast-
+forward push of that commit to `main`.
+
+The final independent technical result was **PASS**. The current-mission
+discovery drill completed in **12 seconds**, and the independently executed
+credential-free suite passed **302 tests** in 11.062 seconds. Publication commit
+`cff8222fbe6092e0c145f7d8d7cabe8963cd66e6` was verified as both clean local
+HEAD and live `origin/main` before this transition. The worktree and index were
+clean, and the branch had no configured upstream.
+
+The governance correction keeps GOV-003's dated ratification inventory fixed
+at its original 30 historical missions while allowing later missions to become
+completed under their own explicit authority. Focused tests prove both that a
+later completed mission is not claimed by GOV-003 and that every mission GOV-
+003 does claim must remain completed.
+
+Closeout validation on the completed records and successor planning shell:
+
+- exact credential-free complete suite: **304 tests passed** in 11.114
+  seconds, with no failures or skips;
+- repository governance validation: passed;
+- repository-governance suite: **27 tests passed** in 3.692 seconds;
+- focused GOV-003 completion-boundary tests: **2 tests passed** in 0.003
+  seconds;
+- focused Ruff on both changed governance Python files: passed; and
+- working-tree `git diff --check`: passed.
+
+Maverick approved `governance/crew-chief` as the successor portfolio-primary
+planning mission. Crew Chief is not implemented or operational, and no Crew
+Chief audit occurred during Repository Architecture because the capability did
+not exist. Its implementation requires a separately authorized Crew Chief
+build prompt. The commit containing this evidence cannot record its own hash;
+later Repository Architecture changes require a separately approved mission.

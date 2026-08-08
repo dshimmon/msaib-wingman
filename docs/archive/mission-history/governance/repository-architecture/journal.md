@@ -1,9 +1,25 @@
+<!-- wingman-archive-metadata
+{
+  "schema_version": 1,
+  "classification": "historical_noncanonical",
+  "canonical_replacement": "docs/missions/governance/repository-architecture/mission.md",
+  "archived_from": "docs/missions/governance/repository-architecture/journal.md"
+}
+-->
+
+> [!WARNING]
+> **HISTORICAL / NONCANONICAL MISSION EVIDENCE.** The sole canonical mission
+> record is
+> [`docs/missions/governance/repository-architecture/mission.md`](../../../../missions/governance/repository-architecture/mission.md).
+> Every lifecycle, approval, commit, publication, and next-gate claim in the
+> preserved body below is time-bound historical evidence and is not
+> authoritative current status.
+
 # Repository Architecture Journal
 
 > [!IMPORTANT]
-> This is a subordinate chronological execution log for the active mission.
-> All current lifecycle, authority, commit, publication, and next-gate state is
-> controlled by the sole canonical [`mission.md`](mission.md) record.
+> This was the subordinate chronological execution log while the mission was
+> active. Its preserved entries do not override the canonical mission record.
 
 ## 2026-08-07
 
@@ -130,3 +146,24 @@
 - Mission completion remains a separate Maverick decision. No further
   implementation is authorized, and the next portfolio-primary mission has not
   been selected or authorized.
+
+## 2026-08-08 — Mission completion and Crew Chief succession
+
+- Maverick declared `governance/repository-architecture` complete and closed
+  its authorization gate.
+- The final independent technical review was PASS. The cold current-mission
+  discovery drill completed in 12 seconds, and the independent credential-free
+  suite passed all 302 tests.
+- Publication commit `cff8222fbe6092e0c145f7d8d7cabe8963cd66e6` was verified
+  as clean local HEAD and live `origin/main` before closeout.
+- The completion transition records that commit as known implementation
+  evidence, without attempting to self-record the closeout commit's hash.
+- The minimal governance correction preserves GOV-003 as the fixed 30-mission
+  historical ratification set while allowing later directly authorized mission
+  completions; focused positive and negative tests cover the distinction.
+- Maverick promoted `governance/crew-chief` as the successor portfolio-primary
+  planning mission. Crew Chief remains unimplemented and nonoperational; no
+  Crew Chief audit occurred during Repository Architecture.
+- This journal is archived as historical and noncanonical on completion. Later
+  Repository Architecture changes require a separately approved mission, and
+  Crew Chief implementation requires a separate build prompt.

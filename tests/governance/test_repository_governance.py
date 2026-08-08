@@ -291,6 +291,36 @@ _expose(__name__, "knowledge")
             errors,
         )
 
+    def test_gov_003_does_not_claim_later_completed_missions(self):
+        later = self._with_metadata(
+            self._mission("governance/repository-architecture"),
+            id="governance/later-completion",
+        )
+
+        errors = repository.validate_historical_ratification(
+            [*self.missions, later], self.decisions
+        )
+
+        self.assertEqual(errors, [])
+
+    def test_gov_003_ratified_mission_must_remain_completed(self):
+        mission_id = "atlas/briefing"
+        ratified = self._mission(mission_id)
+        replacement = self._with_metadata(ratified, lifecycle="archived")
+        missions = [
+            replacement if item.metadata["id"] == mission_id else item
+            for item in self.missions
+        ]
+
+        errors = repository.validate_historical_ratification(
+            missions, self.decisions
+        )
+
+        self.assertIn(
+            f"{mission_id}: GOV-003 ratified mission is not completed",
+            errors,
+        )
+
     def test_active_workstreams_may_not_overlap(self):
         primary = next(
             item for item in self.missions if item.metadata["portfolio_primary"]
