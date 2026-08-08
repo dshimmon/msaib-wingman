@@ -492,3 +492,41 @@ validated correction on parent
 hash. The exact next gate is a fresh independent read-only audit of that
 commit. Publication remains separately blocked pending Maverick's disposition
 of the eight antecedent commits; push and merge are not authorized.
+
+## Fresh audit, antecedent disposition, and publication closeout
+
+On 2026-08-08 a fresh Codex session that had not implemented or committed the
+credential-free correction performed the required independent read-only audit
+at `6661712ca325d9fd47a9cf436fd3b11e04c53b62`. This was not a Crew Chief audit.
+The audit returned `PASS — ELIGIBLE FOR MAVERICK'S PUBLICATION DECISION`.
+
+The cold-start drill opened `AGENTS.md` and then `CURRENT_MISSION.md` and
+identified the mission, lifecycle, authorization gate, official record, last
+completed work, and next gate in 12 seconds. The audited worktree and index
+were clean before and after validation. Independent results were:
+
+- credential-free complete suite: **302 tests passed** in 11.062 seconds;
+- repository governance validation: passed;
+- repository-governance suite: **25 tests passed** in 3.346 seconds;
+- focused offline regression: **2 tests passed** in 2.052 seconds;
+- correction-file Ruff check: passed; and
+- exact correction-range `git diff --check`: passed.
+
+Maverick then explicitly approved all eight antecedent commits and authorized
+publication of the audited repository-architecture history to `main`,
+including exactly one bounded closeout commit. A non-force fast-forward
+published `e1570b0..6661712` to `refs/heads/main`. The closeout updates only:
+
+- this evidence package;
+- [`journal.md`](journal.md);
+- [`mission.md`](mission.md);
+- [`usability-drill.md`](usability-drill.md); and
+- five completed antecedent mission records whose publication booleans became
+  true when `main` advanced; and
+- generated mission and Mission Control views.
+
+No runtime, test, product, data, dependency, or architecture implementation
+file changes. The closeout commit cannot circularly record its own hash; the
+final operator report must record that hash and the live remote result. The
+mission remains active and published pending Maverick's separate completion
+declaration and successor-mission decision.

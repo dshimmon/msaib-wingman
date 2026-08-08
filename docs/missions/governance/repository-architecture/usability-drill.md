@@ -25,14 +25,17 @@ the reviewer should then reach the generated `CURRENT_MISSION.md` entry point.
   Architecture.
 - Lifecycle: `active`.
 - Authorization gate:
-  `previous_independent_audit_failed_corrections_committed_fresh_audit_and_antecedent_disposition_required`.
+  `published_to_main_awaiting_maverick_mission_completion_declaration`.
 - Record: `docs/missions/governance/repository-architecture/mission.md`.
 - Last completed work: `atlas/bulk-ingestion` at `c88a226`.
-- Next gate: a fresh independent read-only audit must pass on the correction
-  commits; publication remains separately blocked until Maverick dispositions
-  the eight antecedent commits.
+- Next gate: Maverick must decide whether to declare the repository-
+  architecture mission complete and select or authorize the next portfolio-
+  primary mission; no further implementation is authorized.
 
 ## Status
 
-Prepared on 2026-08-07. Not yet executed. Automated governance checks are not
-a substitute for the fresh-context reviewer.
+Prepared on 2026-08-07 and executed by a fresh independent Codex session on
+2026-08-08. The reviewer opened `AGENTS.md` and then `CURRENT_MISSION.md`,
+reported every requested item correctly in 12 seconds, and passed all five
+checks. Automated governance checks supplemented but did not substitute for
+the fresh-context reviewer. This was not a Crew Chief audit.

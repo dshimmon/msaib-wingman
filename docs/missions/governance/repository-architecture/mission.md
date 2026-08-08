@@ -11,7 +11,7 @@
   "lifecycle": "active",
   "priority": "high",
   "portfolio_primary": true,
-  "authorization_gate": "credential_free_offline_suite_correction_locally_committed_fresh_audit_and_antecedent_disposition_required",
+  "authorization_gate": "published_to_main_awaiting_maverick_mission_completion_declaration",
   "approval_evidence": [
     {
       "date": "2026-08-07",
@@ -37,6 +37,11 @@
       "date": "2026-08-08",
       "authority": "Maverick",
       "scope": "Credential-free offline-suite correction authorizes exactly one local commit with subject 'Make offline test suite credential-free'; push, merge, amend, rebase, fetch, and unrelated changes remain prohibited."
+    },
+    {
+      "date": "2026-08-08",
+      "authority": "Maverick",
+      "scope": "Approved publication of all eight antecedent commits and the independently audited repository-architecture history to main, including exactly one bounded closeout commit."
     }
   ],
   "baseline_commit": "c88a226ac13e69e235ed5df1347a3872e3330554",
@@ -45,11 +50,16 @@
     "1052f17c5627861091d9df87ee31141f7d440f46",
     "b2a61773335a20725e1d33a911e4133d4f01e29e",
     "99f0ef308cef30b42e4bb557c6e76e723aaff014",
+    "bf73134d85b1fde9ffab1c6f0eddc07aabaead22",
     "60134f7c6ea9b5fa6de2756bbe8424e94445bb03",
-    "0bc7be1e88d5a7c70d4485d49264c02fc8d95b81"
+    "0bc7be1e88d5a7c70d4485d49264c02fc8d95b81",
+    "ea774b088f2886d2b34b79d8a177b95f326616b9",
+    "1250e8c070c3b3f17644adf3bac1fcb381702c0c",
+    "99accba8b3433b6f9485881f4033f507bd6ae3ef",
+    "6661712ca325d9fd47a9cf436fd3b11e04c53b62"
   ],
-  "pushed": false,
-  "merged": false,
+  "pushed": true,
+  "merged": true,
   "official_decisions": [
     "docs/decisions/governance/repository-records.md",
     "docs/decisions/architecture/airframe-boundaries.md",
@@ -63,10 +73,10 @@
     "writable_scope": [
       "/private/tmp/wingman-repository-architecture-20260807-01"
     ],
-    "state": "credential_free_offline_suite_correction_locally_committed_awaiting_fresh_independent_audit",
-    "next_gate": "A fresh independent read-only audit must pass on the commit containing the credential-free offline-suite correction; publication remains separately blocked until Maverick dispositions the eight antecedent commits."
+    "state": "published_to_main_awaiting_maverick_mission_completion_declaration",
+    "next_gate": "Maverick must decide whether to declare governance/repository-architecture complete and select or authorize the next portfolio-primary mission; no further implementation is authorized."
   },
-  "next_gate": "A fresh independent read-only audit must pass on the commit containing the credential-free offline-suite correction; publication remains separately blocked until Maverick dispositions the eight antecedent commits.",
+  "next_gate": "Maverick must decide whether to declare governance/repository-architecture complete and select or authorize the next portfolio-primary mission; no further implementation is authorized.",
   "supersedes": null,
   "superseded_by": null,
   "paused": false,
@@ -77,14 +87,14 @@
 
 Lifecycle: **active** and **portfolio-primary**.
 
-The latest independent repository-organization audit passed the filing, map,
-lifecycle, lineage, duplication, and governance criteria but failed because
-the documented offline suite could not import seven test modules without an
-API credential. The commit containing this record locally commits the bounded
-test-only correction on parent
-`99accba8b3433b6f9485881f4033f507bd6ae3ef` and awaits a fresh independent
-read-only audit. Publication remains a separate blocked gate pending
-Maverick's disposition of the eight antecedent commits.
+The fresh independent read-only audit passed the complete repository-
+architecture state at credential-free correction commit `6661712`. Maverick
+then approved all eight antecedent commits and authorized publication of the
+audited history to `main`, including one bounded closeout commit. Every listed
+implementation and correction commit through `6661712` is published and
+contained by `origin/main`. The mission remains active until Maverick
+separately declares it complete and selects or authorizes the next portfolio-
+primary mission; no further implementation is authorized by this closeout.
 
 ## Objective
 

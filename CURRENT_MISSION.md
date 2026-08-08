@@ -7,9 +7,9 @@
 
 - Mission: **governance/repository-architecture — Wingman Repository Architecture**
 - Lifecycle: **active**
-- Authorization gate: `credential_free_offline_suite_correction_locally_committed_fresh_audit_and_antecedent_disposition_required`
+- Authorization gate: `published_to_main_awaiting_maverick_mission_completion_declaration`
 - Official record: [docs/missions/governance/repository-architecture/mission.md](docs/missions/governance/repository-architecture/mission.md)
-- Next gate: A fresh independent read-only audit must pass on the commit containing the credential-free offline-suite correction; publication remains separately blocked until Maverick dispositions the eight antecedent commits.
+- Next gate: Maverick must decide whether to declare governance/repository-architecture complete and select or authorize the next portfolio-primary mission; no further implementation is authorized.
 
 ## Last completed work
 
@@ -21,7 +21,7 @@
 
 | Mission | Role | Branch | Worktree | State | Next gate |
 |---|---|---|---|---|---|
-| `governance/repository-architecture` | primary | `codex/governance-repository-architecture` | `/private/tmp/wingman-repository-architecture-20260807-01` | credential_free_offline_suite_correction_locally_committed_awaiting_fresh_independent_audit | A fresh independent read-only audit must pass on the commit containing the credential-free offline-suite correction; publication remains separately blocked until Maverick dispositions the eight antecedent commits. |
+| `governance/repository-architecture` | primary | `codex/governance-repository-architecture` | `/private/tmp/wingman-repository-architecture-20260807-01` | published_to_main_awaiting_maverick_mission_completion_declaration | Maverick must decide whether to declare governance/repository-architecture complete and select or authorize the next portfolio-primary mission; no further implementation is authorized. |
 
 ## Canonical homes
 
