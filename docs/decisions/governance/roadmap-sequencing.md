@@ -40,3 +40,13 @@ after Repository Architecture and before the relevant Assurance mission. The
 promotion approves planning only. Crew Chief implementation requires a
 separate build prompt, and no Crew Chief operational capability or audit is
 claimed by this amendment.
+
+## 2026-08-09 amendment — Crew Chief implementation candidate
+
+Maverick separately authorized Crew Chief v1 implementation, credential-free
+validation, and exactly one local commit. The resulting candidate is locally
+implemented and tested but remains active and portfolio-primary while it
+awaits a fresh ordinary-Codex bootstrap audit. It is not published,
+operational, independently audited, or mission-complete. A controlled real
+Crew Chief acceptance run requires later separate authorization; Rangefinder
+does not advance through this amendment.

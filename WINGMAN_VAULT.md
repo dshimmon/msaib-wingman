@@ -203,11 +203,12 @@ gates.
 
 #### Crew Chief
 
-**Status:** Promoted successor portfolio-primary planning mission
+**Status:** Active successor portfolio-primary mission; v1 implementation
+candidate locally committed and awaiting independent bootstrap audit
 **Priority:** High priority  
 **Requirement:** Required
 
-**Canonical planning record:**
+**Canonical mission record:**
 [`governance/crew-chief`](docs/missions/governance/crew-chief/mission.md)
 
 Crew Chief is the independent audit agent in the mandatory Codex review loop:
@@ -235,7 +236,10 @@ Mission 028. The Development Flightline Independent Auditor may audit Mission
 028, but it is not Crew Chief and may not claim that a Crew Chief audit
 occurred. On 2026-08-08 Maverick promoted Crew Chief as the successor
 portfolio-primary planning mission after Repository Architecture and before
-the relevant Assurance mission. Promotion does not authorize implementation.
+the relevant Assurance mission. On 2026-08-09 Maverick separately authorized
+the v1 implementation and one local commit. The candidate remains unpublished,
+non-operational, independently unaudited, and not mission-complete until its
+bootstrap and later controlled acceptance gates are satisfied.
 
 Crew Chief should measure mixed responsibilities, duplication, dependency
 complexity, circular imports, repeated navigation, excessive context or tool
@@ -365,7 +369,7 @@ replace the requirement for a complete, approved mission brief.
 
 | Capability | Destination | State |
 |---|---|---|
-| Crew Chief | `governance/crew-chief` | Active portfolio-primary planning shell; implementation requires a separate build prompt |
+| Crew Chief | `governance/crew-chief` | Active portfolio-primary; v1 implementation candidate locally committed and awaiting independent bootstrap audit |
 | Wingman Assurance v1 | Mission 029 — Rangefinder | Planned direction |
 | Retrieval Test Range | Mission 029 — Rangefinder | Planned component |
 | Flight Recorder | Mission 029 — Rangefinder | Planned component |
@@ -480,5 +484,6 @@ This document owns approved future capabilities, strategic ideas, and deferred
 obligations. It does not own the current mission or next execution gate. Use
 [`CURRENT_MISSION.md`](CURRENT_MISSION.md) for the generated entry point and
 [`docs/roadmap.md`](docs/roadmap.md) for approved sequence. Crew Chief is the
-required successor portfolio-primary planning mission but remains
-unimplemented; no independent Crew Chief audit has occurred.
+required successor portfolio-primary mission. Its v1 candidate is implemented,
+tested, and locally committed, but no independent bootstrap or Crew Chief audit
+has occurred; it is not published, operational, or mission-complete.

@@ -9,11 +9,13 @@ import json
 import re
 import subprocess
 import sys
+import tomllib
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
+from jsonschema.exceptions import SchemaError
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -31,6 +33,8 @@ FOREGROUND_PRESERVATION_MANIFEST = (
 )
 REPOSITORY_MAP = ROOT / "docs" / "README.md"
 REPOSITORY_MAP_LOCATIONS = (
+    (".codex/", "directory"),
+    (".codex/agents/", "directory"),
     ("AGENTS.md", "file"),
     ("CURRENT_MISSION.md", "file"),
     ("WINGMAN_VAULT.md", "file"),
@@ -69,6 +73,7 @@ REPOSITORY_MAP_LOCATIONS = (
     ("tests/products/radar/", "directory"),
     ("tests/governance/", "directory"),
     ("tools/", "directory"),
+    ("tools/crew_chief/", "directory"),
     ("tools/flightline/", "directory"),
     ("tools/governance/", "directory"),
     ("data/", "directory"),
@@ -662,9 +667,15 @@ def render_mission_index(missions: list[Record]) -> str:
     for record in sorted(missions, key=lambda item: item.metadata["id"]):
         metadata = record.metadata
         aliases = ", ".join(metadata["legacy_aliases"]) or "—"
+        locally_committed = "locally_committed" in metadata.get(
+            "workstream", {}
+        ).get("state", "")
+        if locally_committed and not metadata["implementation_commits"]:
+            committed = "local (hash intentionally not self-recorded)"
+        else:
+            committed = "yes" if metadata["implementation_commits"] else "no"
         commit_state = (
-            f"committed={'yes' if metadata['implementation_commits'] else 'no'}; "
-            f"pushed={'yes' if metadata['pushed'] else 'no'}; "
+            f"committed={committed}; pushed={'yes' if metadata['pushed'] else 'no'}; "
             f"merged={'yes' if metadata['merged'] else 'no'}"
         )
         lines.append(
@@ -715,9 +726,9 @@ def render_context(missions: list[Record]) -> str:
         f"- Official record: `{_relative(primary.path)}`",
         f"- Last completed: `{latest.metadata['id']}` at `{latest.metadata['implementation_commits'][-1]}`",
         f"- Next gate: {primary.metadata['next_gate']}",
-        "- Crew Chief: portfolio-primary planning mission; implementation "
-        "requires a separate build prompt and no independent Crew Chief audit "
-        "has occurred.",
+        "- Crew Chief: v1 implementation candidate locally committed; awaiting "
+        "a fresh ordinary-Codex bootstrap audit; not published, operational, "
+        "independently audited, or mission-complete.",
         "",
     ])
 
@@ -1129,9 +1140,36 @@ def validate_schemas_and_first_reads() -> list[str]:
         if ".git" in path.parts:
             continue
         try:
-            json.loads(path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError as error:
+            schema = json.loads(path.read_text(encoding="utf-8"))
+            Draft202012Validator.check_schema(schema)
+        except (json.JSONDecodeError, SchemaError) as error:
             errors.append(f"{_relative(path)}: invalid JSON schema: {error}")
+    agent_path = ROOT / ".codex" / "agents" / "crew-chief.toml"
+    try:
+        with agent_path.open("rb") as handle:
+            agent = tomllib.load(handle)
+    except (OSError, tomllib.TOMLDecodeError) as error:
+        errors.append(f"{_relative(agent_path)}: invalid Crew Chief agent: {error}")
+    else:
+        required_agent = {
+            "name": "crew_chief",
+            "sandbox_mode": "read-only",
+            "approval_policy": "never",
+            "model_reasoning_effort": "high",
+        }
+        for field, expected in required_agent.items():
+            if agent.get(field) != expected:
+                errors.append(
+                    f"{_relative(agent_path)}: {field} must be {expected!r}"
+                )
+        if "model" in agent:
+            errors.append(
+                f"{_relative(agent_path)}: model must be inherited, not pinned"
+            )
+        if not agent.get("description") or not agent.get("developer_instructions"):
+            errors.append(
+                f"{_relative(agent_path)}: description and instructions are required"
+            )
     first_reads = {
         ROOT / "README.md": ("AGENTS.md", "CURRENT_MISSION.md"),
         ROOT / "docs" / "README.md": ("AGENTS.md", "CURRENT_MISSION.md"),
@@ -1141,6 +1179,7 @@ def validate_schemas_and_first_reads() -> list[str]:
         ROOT / "tools" / "flightline" / "roles" / "independent-auditor.md": (
             "first repository read", "AGENTS.md"
         ),
+        agent_path: ("first repository read", "AGENTS.md"),
     }
     for path, needles in first_reads.items():
         text = path.read_text(encoding="utf-8") if path.is_file() else ""

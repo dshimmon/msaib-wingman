@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "finalized": true,
+  "subject": {
+    "base_commit": "b1910d0c69a52d73ddde93cb9722f12540c5d1e7",
+    "branch": "codex/crew-chief-v1-build-20260809"
+  },
+  "live_model_audit_performed": false,
+  "model_or_network_invocation_during_tests": false,
+  "results": [
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 python -m unittest tests.governance.test_crew_chief",
+      "tests": 49,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "duration_seconds": 29.017,
+      "result": "PASS"
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src OPENAI_API_KEY=repository-governance-offline-placeholder PYTHON_DOTENV_DISABLED=1 python -m unittest discover -s tests/governance -t . -p 'test_*.py'",
+      "tests": 125,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "duration_seconds": 39.958,
+      "result": "PASS"
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src OPENAI_API_KEY=repository-governance-offline-placeholder PYTHON_DOTENV_DISABLED=1 python -m unittest discover -s tests -t . -p 'test_*.py'",
+      "tests": 354,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "duration_seconds": 44.228,
+      "result": "PASS",
+      "note": "Expected negative-path Flightline and Atlas diagnostics and bare-Streamlit warnings were emitted; the suite remained green."
+    },
+    {
+      "command": "ruff check tools/crew_chief tools/governance/repository.py tests/governance/test_crew_chief.py tests/governance/test_repository_governance.py",
+      "result": "PASS",
+      "output": "All checks passed!"
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 python -m tools.governance validate",
+      "result": "PASS",
+      "output": "Repository governance validation passed."
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 python -m tools.crew_chief --help",
+      "result": "PASS",
+      "operations": ["prepare", "run", "validate-report", "reconcile"]
+    },
+    {
+      "command": "git diff --check",
+      "result": "PASS",
+      "output": ""
+    }
+  ],
+  "codex_capabilities": {
+    "version": "codex-cli 0.147.0-alpha.6.5",
+    "non_interactive_custom_agent_selector": false,
+    "shell_tool_disable_control": true,
+    "required_exec_flags": [
+      "--config",
+      "--ephemeral",
+      "--ignore-rules",
+      "--ignore-user-config",
+      "--output-schema",
+      "--sandbox"
+    ],
+    "effective_approval_config": "approval_policy=\"never\"",
+    "effective_sandbox": "read-only",
+    "automation_state": "validated fresh-session fallback prepared; no model process executed"
+  }
+}

@@ -26,6 +26,7 @@ jobs:
           PYTHON_DOTENV_DISABLED: "1"
         run: >-
           python -m unittest
+          tests.governance.test_crew_chief
           tests.governance.test_repository_governance
           tests.governance.test_architecture_boundaries
           tests.governance.test_compatibility_facades

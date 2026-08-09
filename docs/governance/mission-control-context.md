@@ -7,8 +7,8 @@
 - Authority: Maverick has final authority; Codex is the repository builder/operator.
 - First repository read: `AGENTS.md`
 - Portfolio-primary: `governance/crew-chief` (active)
-- Authorization gate: `planning approved; implementation requires a separate Crew Chief build prompt`
+- Authorization gate: `implementation locally committed; independent bootstrap audit required before controlled Crew Chief acceptance`
 - Official record: `docs/missions/governance/crew-chief/mission.md`
 - Last completed: `governance/repository-architecture` at `cff8222fbe6092e0c145f7d8d7cabe8963cd66e6`
-- Next gate: Execute a separately authorized Crew Chief implementation mission.
-- Crew Chief: portfolio-primary planning mission; implementation requires a separate build prompt and no independent Crew Chief audit has occurred.
+- Next gate: Conduct the separately controlled fresh ordinary-Codex bootstrap audit; do not run Crew Chief acceptance without later authorization.
+- Crew Chief: v1 implementation candidate locally committed; awaiting a fresh ordinary-Codex bootstrap audit; not published, operational, independently audited, or mission-complete.

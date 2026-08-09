@@ -1,0 +1,572 @@
+"""Fresh read-only Codex execution preparation for Crew Chief."""
+
+from __future__ import annotations
+
+import base64
+import os
+import shutil
+import subprocess
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Callable
+
+from tools.crew_chief.controller import verify_envelope
+from tools.crew_chief.core import (
+    CrewChiefError,
+    atomic_write,
+    bind_file,
+    canonical_json_bytes,
+    ensure_external_path,
+    new_external_directory,
+    normalize_repo_path,
+    read_json,
+    redact_text,
+    sha256_file,
+    utc_now,
+    write_canonical_json,
+)
+from tools.crew_chief.git_evidence import git_state
+from tools.crew_chief.validation import validate_report
+
+
+_DISABLED_REVIEW_FEATURES = (
+    "apps",
+    "auth_elicitation",
+    "browser_use",
+    "browser_use_external",
+    "browser_use_full_cdp_access",
+    "computer_use",
+    "image_generation",
+    "in_app_browser",
+    "hooks",
+    "multi_agent",
+    "multi_agent_v2",
+    "plugins",
+    "plugin_sharing",
+    "recommended_plugins",
+    "remote_plugin",
+    "shell_snapshot",
+    "shell_tool",
+    "skill_mcp_dependency_install",
+    "skill_search",
+    "standalone_web_search",
+    "web_search_cached",
+    "web_search_request",
+    "tool_call_mcp_elicitation",
+    "tool_search_always_defer_mcp_tools",
+    "tool_suggest",
+    "workspace_dependencies",
+)
+_REQUIRED_EXEC_FLAGS = frozenset(
+    {
+        "--config",
+        "--ephemeral",
+        "--ignore-rules",
+        "--ignore-user-config",
+        "--output-schema",
+        "--sandbox",
+    }
+)
+_MAX_EMBEDDED_EVIDENCE_BYTES = 16 * 1024 * 1024
+
+
+@dataclass(frozen=True)
+class CodexCapabilities:
+    executable: str
+    version: str
+    exec_flags: tuple[str, ...]
+    features: tuple[str, ...]
+    shell_tool_control: bool
+    custom_agent_selector: bool
+
+
+def _completed(
+    runner: Callable[..., subprocess.CompletedProcess[str]],
+    arguments: list[str],
+) -> subprocess.CompletedProcess[str]:
+    return runner(
+        arguments,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+
+def detect_codex_capabilities(
+    executable: str = "codex",
+    *,
+    runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+) -> CodexCapabilities:
+    resolved = shutil.which(executable)
+    if resolved is None:
+        candidate = Path(executable)
+        resolved = str(candidate.resolve()) if candidate.is_file() else None
+    if resolved is None:
+        raise CrewChiefError("Codex CLI is unavailable")
+    version_result = _completed(runner, [resolved, "--version"])
+    if version_result.returncode != 0:
+        raise CrewChiefError("Codex CLI version detection failed")
+    help_result = _completed(runner, [resolved, "exec", "--help"])
+    if help_result.returncode != 0:
+        raise CrewChiefError("Codex exec capability detection failed")
+    feature_result = _completed(runner, [resolved, "features", "list"])
+    features = []
+    available_features = set()
+    if feature_result.returncode == 0:
+        for line in feature_result.stdout.splitlines():
+            fields = line.split()
+            if fields and not fields[0].startswith("WARNING"):
+                available_features.add(fields[0])
+                if fields[-1].lower() == "true":
+                    features.append(fields[0])
+    help_text = help_result.stdout
+    flags = tuple(
+        sorted(flag for flag in _REQUIRED_EXEC_FLAGS if flag in help_text)
+    )
+    if set(flags) != set(_REQUIRED_EXEC_FLAGS):
+        missing = sorted(_REQUIRED_EXEC_FLAGS - set(flags))
+        raise CrewChiefError(
+            f"installed Codex exec lacks required controls: {missing}"
+        )
+    if "shell_tool" not in available_features:
+        raise CrewChiefError(
+            "installed Codex CLI exposes no supported shell-tool disable control"
+        )
+    return CodexCapabilities(
+        executable=resolved,
+        version=version_result.stdout.strip().splitlines()[-1],
+        exec_flags=flags,
+        features=tuple(sorted(set(features))),
+        shell_tool_control=True,
+        custom_agent_selector="--agent" in help_text,
+    )
+
+
+def build_launch_command(
+    capabilities: CodexCapabilities,
+    workspace: Path,
+    schema: Path,
+    report_output: Path,
+) -> list[str]:
+    if not capabilities.shell_tool_control:
+        raise CrewChiefError("Codex shell-tool disable control is unavailable")
+    command = [
+        capabilities.executable,
+        "exec",
+        "--ephemeral",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--strict-config",
+        "--config",
+        'approval_policy="never"',
+        "--sandbox",
+        "read-only",
+        "--output-schema",
+        str(schema),
+        "--output-last-message",
+        str(report_output),
+        "--color",
+        "never",
+        "-C",
+        str(workspace),
+    ]
+    for feature in _DISABLED_REVIEW_FEATURES:
+        if feature in capabilities.features:
+            command.extend(["--disable", feature])
+    if capabilities.custom_agent_selector:
+        command.extend(["--agent", "crew_chief"])
+    command.append("-")
+    return command
+
+
+def _copy_regular_tree(source: Path, target: Path) -> None:
+    for item in sorted(source.rglob("*")):
+        relative = item.relative_to(source)
+        destination = target / relative
+        if item.is_symlink():
+            raise CrewChiefError(f"frozen evidence contains a symlink: {relative}")
+        if item.is_dir():
+            destination.mkdir(parents=True, exist_ok=True)
+        elif item.is_file():
+            atomic_write(destination, item.read_bytes())
+        else:
+            raise CrewChiefError(
+                f"frozen evidence contains an unsupported file: {relative}"
+            )
+
+
+def _bundled_report_schema(frozen_root: Path) -> dict[str, Any]:
+    schema_root = frozen_root / "controls" / "schemas"
+    report = read_json(schema_root / "report-v1.schema.json")
+    finding = read_json(schema_root / "finding-v1.schema.json")
+    finding.pop("$schema", None)
+    finding.pop("$id", None)
+    finding_definitions = finding.pop("$defs")
+    report["$defs"] = {**finding_definitions, "finding": finding}
+    report["properties"]["findings"]["items"] = {"$ref": "#/$defs/finding"}
+    return report
+
+
+def _embedded_evidence(frozen_root: Path) -> str:
+    files = [item for item in sorted(frozen_root.rglob("*")) if item.is_file()]
+    total = sum(item.stat().st_size for item in files)
+    if total > _MAX_EMBEDDED_EVIDENCE_BYTES:
+        raise CrewChiefError(
+            "frozen evidence exceeds the 16 MiB standard-input safety limit"
+        )
+    blocks = []
+    for item in files:
+        relative = item.relative_to(frozen_root).as_posix()
+        payload = item.read_bytes()
+        try:
+            content = payload.decode("utf-8")
+            encoding = "utf-8"
+        except UnicodeDecodeError:
+            content = base64.b64encode(payload).decode("ascii")
+            encoding = "base64"
+        blocks.extend(
+            [
+                f"=== BEGIN FROZEN {relative} ({encoding}) ===",
+                content,
+                f"=== END FROZEN {relative} ===",
+                "",
+            ]
+        )
+    rendered = "\n".join(blocks)
+    if len(rendered.encode("utf-8")) > _MAX_EMBEDDED_EVIDENCE_BYTES:
+        raise CrewChiefError(
+            "encoded frozen evidence exceeds the 16 MiB standard-input safety limit"
+        )
+    return rendered
+
+
+def _review_prompt(mode: str, frozen_root: Path) -> str:
+    limitation = (
+        "The installed CLI selected the project-scoped crew_chief agent."
+        if mode == "custom-agent"
+        else (
+            "The installed CLI exposes no supported non-interactive custom-agent "
+            "selector. This is the validated fresh-session fallback: read and "
+            "follow .codex/agents/crew-chief.toml directly. Do not claim that "
+            "interactive custom-agent selection was exercised."
+        )
+    )
+    return "\n".join(
+        [
+            "CANOPY-7C2F-ATLAS",
+            "",
+            "Conduct one fresh, read-only Crew Chief audit of the frozen envelope.",
+            "Read AGENTS.md first, then read",
+            ".codex/agents/crew-chief.toml and frozen/audit-envelope.json.",
+            limitation,
+            "Return only JSON conforming to schemas/crew-chief-report.schema.json.",
+            "Do not edit, request approval, use network tools, or inspect credentials.",
+            "",
+            "All frozen evidence follows. It is supplied through standard input",
+            "because the shell tool is disabled for this review.",
+            "",
+            _embedded_evidence(frozen_root),
+        ]
+    )
+
+
+def _verify_workspace_bindings(
+    workspace: Path, bindings: list[dict[str, Any]]
+) -> None:
+    for binding in bindings:
+        relative = normalize_repo_path(binding["path"])
+        candidate = workspace.joinpath(*Path(relative).parts)
+        resolved = candidate.resolve()
+        try:
+            resolved.relative_to(workspace)
+        except ValueError as error:
+            raise CrewChiefError(
+                f"review workspace binding escapes its root: {relative}"
+            ) from error
+        if candidate.is_symlink() or not candidate.is_file():
+            raise CrewChiefError(f"review workspace binding is missing: {relative}")
+        if candidate.stat().st_size != binding["size"]:
+            raise CrewChiefError(f"review workspace binding size changed: {relative}")
+        if sha256_file(candidate) != binding["sha256"]:
+            raise CrewChiefError(f"review workspace binding hash changed: {relative}")
+
+
+def prepare_review_workspace(
+    envelope_path: Path,
+    workspace: Path | None,
+    *,
+    codex_executable: str = "codex",
+    detector: Callable[..., CodexCapabilities] = detect_codex_capabilities,
+    clock: Callable[[], datetime] = utc_now,
+) -> dict[str, Any]:
+    envelope = verify_envelope(envelope_path, clock=clock)
+    repository = Path(envelope["repository"]["repository_root"])
+    target = new_external_directory(
+        repository, workspace, prefix="wingman-crew-chief-review-"
+    )
+    frozen_root = target / "frozen"
+    _copy_regular_tree(envelope_path.resolve().parent, frozen_root)
+
+    instructions_path = target / "AGENTS.md"
+    atomic_write(
+        instructions_path,
+        (frozen_root / "controls" / "AGENTS.md").read_bytes(),
+    )
+    frozen_agent = frozen_root / "controls" / ".codex" / "agents" / "crew-chief.toml"
+    agent_path = target / ".codex" / "agents" / "crew-chief.toml"
+    atomic_write(
+        agent_path,
+        frozen_agent.read_bytes(),
+    )
+    bundled_schema = _bundled_report_schema(frozen_root)
+    schema_path = target / "schemas" / "crew-chief-report.schema.json"
+    write_canonical_json(schema_path, bundled_schema)
+    report_output = target / "output" / "crew-chief-report.json"
+    capabilities = detector(codex_executable)
+    mode = (
+        "custom-agent"
+        if capabilities.custom_agent_selector
+        else "fresh-session-fallback"
+    )
+    prompt_path = target / "audit-instructions.md"
+    atomic_write(prompt_path, _review_prompt(mode, frozen_root).encode("utf-8"))
+    command = build_launch_command(
+        capabilities, target, schema_path, report_output
+    )
+    invocation = {
+        "schema_version": "1.0",
+        "audit_id": envelope["audit_id"],
+        "envelope_id": envelope["envelope_id"],
+        "workspace": str(target),
+        "execution_mode": mode,
+        "capabilities": asdict(capabilities),
+        "argv": command,
+        "prompt_path": str(prompt_path),
+        "schema_path": str(schema_path),
+        "report_path": str(report_output),
+        "workspace_bindings": [
+            bind_file(instructions_path, "AGENTS.md"),
+            bind_file(agent_path, ".codex/agents/crew-chief.toml"),
+            bind_file(prompt_path, "audit-instructions.md"),
+            bind_file(schema_path, "schemas/crew-chief-report.schema.json"),
+        ],
+        "live_audit_performed": False,
+        "automation_limitation": (
+            None
+            if capabilities.custom_agent_selector
+            else (
+                "No supported non-interactive custom-agent selector was detected; "
+                "execution requires an explicit fresh-session fallback decision."
+            )
+        ),
+    }
+    write_canonical_json(target / "invocation.json", invocation)
+    return invocation
+
+
+def _authentication_available(
+    executable: str,
+    runner: Callable[..., subprocess.CompletedProcess[str]],
+) -> bool:
+    result = _completed(runner, [executable, "login", "status"])
+    return result.returncode == 0
+
+
+def _sanitized_environment() -> dict[str, str]:
+    allowed = {
+        "CODEX_HOME",
+        "HOME",
+        "LANG",
+        "LC_ALL",
+        "PATH",
+        "SSL_CERT_DIR",
+        "SSL_CERT_FILE",
+        "TERM",
+        "TMPDIR",
+    }
+    return {name: value for name, value in os.environ.items() if name in allowed}
+
+
+def _consume(workspace: Path, envelope: dict[str, Any]) -> Path:
+    marker = workspace / ".crew-chief-consumed.json"
+    try:
+        descriptor = os.open(marker, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError as error:
+        raise CrewChiefError(
+            "audit envelope was already consumed in this workspace"
+        ) from error
+    payload = canonical_json_bytes(
+        {
+            "audit_id": envelope["audit_id"],
+            "envelope_id": envelope["envelope_id"],
+            "consumed_at": utc_now().isoformat().replace("+00:00", "Z"),
+        }
+    ) + b"\n"
+    with os.fdopen(descriptor, "wb") as handle:
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
+    return marker
+
+
+def execute_prepared_review(
+    envelope_path: Path,
+    invocation: dict[str, Any],
+    *,
+    allow_fresh_session_fallback: bool = False,
+    runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+    timeout_seconds: int = 3600,
+    clock: Callable[[], datetime] = utc_now,
+) -> dict[str, Any]:
+    """Execute one explicitly authorized live audit; tests inject a fake runner."""
+    envelope = verify_envelope(envelope_path, clock=clock)
+    workspace = Path(invocation["workspace"]).resolve()
+    repository = Path(envelope["repository"]["repository_root"])
+    ensure_external_path(repository, workspace, "review workspace")
+    if invocation.get("audit_id") != envelope["audit_id"] or invocation.get(
+        "envelope_id"
+    ) != envelope["envelope_id"]:
+        raise CrewChiefError("review invocation does not match the audit envelope")
+    if invocation.get("live_audit_performed") is not False:
+        raise CrewChiefError("review invocation has an invalid execution state")
+    capabilities_value = invocation.get("capabilities", {})
+    try:
+        capabilities = CodexCapabilities(
+            executable=capabilities_value["executable"],
+            version=capabilities_value["version"],
+            exec_flags=tuple(capabilities_value["exec_flags"]),
+            features=tuple(capabilities_value["features"]),
+            shell_tool_control=capabilities_value["shell_tool_control"],
+            custom_agent_selector=capabilities_value["custom_agent_selector"],
+        )
+    except (KeyError, TypeError) as error:
+        raise CrewChiefError("review invocation capabilities are invalid") from error
+    expected_mode = (
+        "custom-agent"
+        if capabilities.custom_agent_selector
+        else "fresh-session-fallback"
+    )
+    if invocation.get("execution_mode") != expected_mode:
+        raise CrewChiefError("review invocation execution mode is invalid")
+    prompt_path = workspace / "audit-instructions.md"
+    schema_path = workspace / "schemas" / "crew-chief-report.schema.json"
+    report_path = workspace / "output" / "crew-chief-report.json"
+    if (
+        Path(invocation.get("prompt_path", "")).resolve() != prompt_path
+        or Path(invocation.get("schema_path", "")).resolve() != schema_path
+        or Path(invocation.get("report_path", "")).resolve() != report_path
+    ):
+        raise CrewChiefError("review invocation paths are invalid")
+    expected_argv = build_launch_command(
+        capabilities, workspace, schema_path, report_path
+    )
+    if invocation.get("argv") != expected_argv:
+        raise CrewChiefError("review invocation argv changed after preparation")
+    bindings = invocation.get("workspace_bindings")
+    if not isinstance(bindings, list):
+        raise CrewChiefError("review workspace bindings are invalid")
+    _verify_workspace_bindings(workspace, bindings)
+    if invocation["execution_mode"] == "fresh-session-fallback" and not allow_fresh_session_fallback:
+        raise CrewChiefError(
+            "installed CLI has no custom-agent selector; fresh-session fallback "
+            "requires explicit authorization"
+        )
+    executable = invocation["capabilities"]["executable"]
+    if not _authentication_available(executable, runner):
+        raise CrewChiefError("Codex authentication is unavailable")
+
+    before = git_state(repository)
+    _consume(workspace, envelope)
+    prompt = prompt_path.read_text(encoding="utf-8")
+    result: subprocess.CompletedProcess[str] | None = None
+    execution_failure: tuple[str, BaseException] | None = None
+    diagnostic = ""
+    try:
+        result = runner(
+            list(invocation["argv"]),
+            input=prompt,
+            cwd=workspace,
+            env=_sanitized_environment(),
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired as error:
+        if isinstance(error.stderr, bytes):
+            diagnostic = error.stderr.decode("utf-8", errors="replace")
+        elif isinstance(error.stderr, str):
+            diagnostic = error.stderr
+        execution_failure = (
+            "Crew Chief execution exceeded its time limit",
+            error,
+        )
+    except OSError as error:
+        diagnostic = str(error)
+        execution_failure = ("Crew Chief process could not be started", error)
+    finally:
+        after = git_state(repository)
+    if result is not None:
+        diagnostic = result.stderr
+    atomic_write(
+        workspace / "output" / "codex-stderr.log",
+        redact_text(diagnostic).encode("utf-8"),
+    )
+    if before != after:
+        raise CrewChiefError("unexpected repository mutation detected during review")
+    if execution_failure is not None:
+        message, cause = execution_failure
+        raise CrewChiefError(message) from cause
+    if result is None:
+        raise CrewChiefError("Crew Chief process returned no result")
+    verify_envelope(envelope_path, clock=clock)
+    if result.returncode != 0:
+        raise CrewChiefError(f"Codex review failed with exit code {result.returncode}")
+    report = read_json(report_path)
+    if not isinstance(report, dict):
+        raise CrewChiefError("Crew Chief report must be a JSON object")
+    validate_report(envelope, report)
+    record = {
+        "schema_version": "1.0",
+        "audit_id": envelope["audit_id"],
+        "envelope_id": envelope["envelope_id"],
+        "cli_version": invocation["capabilities"]["version"],
+        "argv": invocation["argv"],
+        "execution_mode": invocation["execution_mode"],
+        "repository_state_before": before,
+        "repository_state_after": after,
+        "report_path": str(report_path),
+        "live_audit_performed": True,
+    }
+    write_canonical_json(workspace / "output" / "run-record.json", record)
+    return record
+
+
+def run_audit(
+    envelope_path: Path,
+    workspace: Path | None,
+    *,
+    execute: bool = False,
+    allow_fresh_session_fallback: bool = False,
+    codex_executable: str = "codex",
+    detector: Callable[..., CodexCapabilities] = detect_codex_capabilities,
+    runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+    clock: Callable[[], datetime] = utc_now,
+) -> dict[str, Any]:
+    invocation = prepare_review_workspace(
+        envelope_path,
+        workspace,
+        codex_executable=codex_executable,
+        detector=detector,
+        clock=clock,
+    )
+    if not execute:
+        return invocation
+    return execute_prepared_review(
+        envelope_path,
+        invocation,
+        allow_fresh_session_fallback=allow_fresh_session_fallback,
+        runner=runner,
+        clock=clock,
+    )

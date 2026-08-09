@@ -7,9 +7,9 @@
 
 - Mission: **governance/crew-chief — Crew Chief Independent Audit**
 - Lifecycle: **active**
-- Authorization gate: `planning approved; implementation requires a separate Crew Chief build prompt`
+- Authorization gate: `implementation locally committed; independent bootstrap audit required before controlled Crew Chief acceptance`
 - Official record: [docs/missions/governance/crew-chief/mission.md](docs/missions/governance/crew-chief/mission.md)
-- Next gate: Execute a separately authorized Crew Chief implementation mission.
+- Next gate: Conduct the separately controlled fresh ordinary-Codex bootstrap audit; do not run Crew Chief acceptance without later authorization.
 
 ## Last completed work
 
@@ -21,7 +21,7 @@
 
 | Mission | Role | Branch | Worktree | State | Next gate |
 |---|---|---|---|---|---|
-| `governance/crew-chief` | primary | `Not assigned; implementation not authorized` | `Not assigned; implementation not authorized` | planning_approved_implementation_not_authorized | Execute a separately authorized Crew Chief implementation mission. |
+| `governance/crew-chief` | primary | `codex/crew-chief-v1-build-20260809` | `/Users/davidshimmon/.codex/worktrees/a83e/msaib-wingman` | implemented_tested_locally_committed_awaiting_independent_bootstrap_audit | A fresh ordinary Codex reviewer must conduct the read-only bootstrap audit and state that it is not a Crew Chief audit. |
 
 ## Canonical homes
 

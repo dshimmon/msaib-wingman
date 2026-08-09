@@ -134,6 +134,9 @@ class RepositoryGovernanceTests(unittest.TestCase):
 
     def test_repository_map_matches_canonical_locations(self):
         self.assertEqual(repository.validate_repository_map(), [])
+        mapped = dict(repository.REPOSITORY_MAP_LOCATIONS)
+        self.assertEqual(mapped[".codex/agents/"], "directory")
+        self.assertEqual(mapped["tools/crew_chief/"], "directory")
 
     def test_repository_map_rejects_missing_canonical_location(self):
         text = repository.REPOSITORY_MAP.read_text(encoding="utf-8").replace(
@@ -356,6 +359,17 @@ _expose(__name__, "knowledge")
     def test_compatibility_and_first_read_rules_are_valid(self):
         self.assertEqual(repository.validate_compatibility_facades(), [])
         self.assertEqual(repository.validate_schemas_and_first_reads(), [])
+
+    def test_crew_chief_is_discoverable_but_not_claimed_operational(self):
+        current = repository.generated_content(
+            self.missions, self.decisions
+        )[repository.ROOT / "CURRENT_MISSION.md"]
+        context = repository.render_context(self.missions)
+        index = repository.render_mission_index(self.missions)
+        self.assertIn("governance/crew-chief", current)
+        self.assertIn("awaiting_independent_bootstrap_audit", current)
+        self.assertIn("not published, operational", context)
+        self.assertIn("hash intentionally not self-recorded", index)
 
 
 if __name__ == "__main__":

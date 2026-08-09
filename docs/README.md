@@ -25,6 +25,9 @@ details rather than duplicating those contracts here.
 ### Annotated tree
 
 ```text
+.codex/                                   # `.codex/` — repository-scoped Codex configuration
+  agents/                                 # `.codex/agents/` — canonical project-scoped custom-agent definitions
+
 src/                                      # `src/` — production source and historical import surfaces
   wingman/                                # `src/wingman/` — Wingman-owned production namespace
     core/                                 # `src/wingman/core/` — product-neutral Wingman mechanisms
@@ -63,6 +66,7 @@ tests/                                    # `tests/` — tests mirror production
   governance/                             # `tests/governance/` — architecture and filing-policy enforcement
 
 tools/                                    # `tools/` — repository operations and governance tooling
+  crew_chief/                             # `tools/crew_chief/` — deterministic independent-audit controller and schemas
   flightline/                             # `tools/flightline/` — Development Flightline tooling
   governance/                             # `tools/governance/` — canonical-record and filing-policy enforcement
 
@@ -83,7 +87,9 @@ only; no new implementation belongs there.
 7. Enduring decisions → `docs/decisions/`.
 8. Operational procedures → `docs/runbooks/`.
 9. Superseded historical material → `docs/archive/`.
-10. New logic must never be added to compatibility façades.
+10. Project-scoped custom-agent definitions → `.codex/agents/`.
+11. Crew Chief controller logic and schemas → `tools/crew_chief/`.
+12. New logic must never be added to compatibility façades.
 
 ## Canonical homes
 
@@ -96,6 +102,10 @@ only; no new implementation belongs there.
 - [`runbooks/`](runbooks/) — operational procedures;
 - [`archive/`](archive/) — superseded or noncanonical historical material; and
 - [`roadmap.md`](roadmap.md) — approved future sequence and dependencies.
+
+`.codex/agents/crew-chief.toml` is the single canonical model-facing home for
+Crew Chief instructions. `docs/runbooks/crew-chief.md` owns its operator
+procedure; neither location owns current mission lifecycle.
 
 `WINGMAN_VAULT.md` preserves approved future capabilities, strategic ideas,
 and deferred obligations. It is neither a mission-status authority nor an

@@ -1,0 +1,958 @@
+"""Credential-free tests for the Crew Chief independent-audit workflow."""
+
+from __future__ import annotations
+
+import json
+import os
+import ast
+import shutil
+import subprocess
+import tempfile
+import tomllib
+import unittest
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from unittest import mock
+
+from jsonschema import Draft202012Validator, FormatChecker
+
+from tools.crew_chief.controller import (
+    prepare_audit,
+    reconcile_report,
+    verify_envelope,
+)
+from tools.crew_chief.core import (
+    CANARY,
+    CrewChiefError,
+    canonical_json_bytes,
+    read_json,
+    sha256_bytes,
+)
+from tools.crew_chief.runner import (
+    CodexCapabilities,
+    build_launch_command,
+    detect_codex_capabilities,
+    execute_prepared_review,
+    prepare_review_workspace,
+)
+from tools.crew_chief.validation import (
+    validate_instance,
+    validate_reconciliation,
+    validate_report,
+)
+from tools.governance import repository as governance
+
+
+ROOT = Path(__file__).resolve().parents[2]
+FIXED_TIME = datetime(2026, 8, 9, 12, 0, tzinfo=timezone.utc)
+
+
+class FixtureRepository:
+    """Disposable Git subject; tests never mutate the real repository."""
+
+    def __init__(self, root: Path):
+        self.root = root
+        self.repo = root / "repository"
+        self.inputs = root / "inputs"
+        self.repo.mkdir()
+        self.inputs.mkdir()
+        self.git("init", "-b", "main")
+        self.git("config", "user.name", "Crew Chief Tests")
+        self.git("config", "user.email", "crew-chief-tests@example.invalid")
+        self.git("config", "commit.gpgsign", "false")
+
+        self.write("docs/missions/example/mission.md", "# Example mission\n")
+        self.write("src/example.py", "VALUE = 1\n")
+        self.copy(ROOT / "AGENTS.md", "AGENTS.md")
+        agent = ROOT / ".codex" / "agents" / "crew-chief.toml"
+        self.copy(agent, ".codex/agents/crew-chief.toml")
+        schema_source = ROOT / "tools" / "crew_chief" / "schemas"
+        for schema in sorted(schema_source.glob("*.json")):
+            self.copy(schema, f"tools/crew_chief/schemas/{schema.name}")
+        self.git("add", ".")
+        self.git("commit", "-m", "fixture baseline")
+        self.base = self.rev("HEAD")
+
+        self.write("src/example.py", "VALUE = 2\n")
+        self.write("scripts/check.sh", "#!/bin/sh\nexit 0\n")
+        os.chmod(self.repo / "scripts" / "check.sh", 0o755)
+        self.git("add", ".")
+        self.git("commit", "-m", "fixture implementation")
+        self.head = self.rev("HEAD")
+
+        self.engineer_report = self.inputs / "engineer-report.json"
+        self.engineer_report.write_text(
+            json.dumps({"outcome": "implemented", "validation": ["tests passed"]}),
+            encoding="utf-8",
+        )
+        self.evidence = self.inputs / "validation.log"
+        self.evidence.write_text("2 tests passed\n", encoding="utf-8")
+        self.claims = {
+            "claims": [
+                {
+                    "command": "python -m unittest tests.example",
+                    "result": "PASS",
+                }
+            ]
+        }
+
+    def git(self, *arguments: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["git", *arguments],
+            cwd=self.repo,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+    def rev(self, revision: str) -> str:
+        return self.git("rev-parse", revision).stdout.strip()
+
+    def write(self, relative: str, content: str) -> Path:
+        path = self.repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+        return path
+
+    def copy(self, source: Path, relative: str) -> Path:
+        target = self.repo / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, target)
+        return target
+
+    def prepare(
+        self,
+        name: str,
+        *,
+        base: str | None = None,
+        head: str | None = None,
+        include_worktree: bool = False,
+        authorized_untracked: tuple[str, ...] = (),
+        profile: str = "standard",
+        justification: str | None = None,
+        claims: dict | None = None,
+    ) -> dict:
+        return prepare_audit(
+            self.repo,
+            mission_record=self.repo / "docs/missions/example/mission.md",
+            base=base or self.base,
+            head=head or self.head,
+            engineer_report=self.engineer_report,
+            evidence_artifacts=[self.evidence],
+            test_claims=claims or self.claims,
+            profile=profile,
+            profile_justification=justification,
+            output_root=self.root / name,
+            include_worktree=include_worktree,
+            authorized_untracked=authorized_untracked,
+            expires_in_seconds=3600,
+            clock=lambda: FIXED_TIME,
+        )
+
+
+def report_for(envelope: dict, findings=None, *, verdict="PASS", blocked=None):
+    return {
+        "schema_version": "1.0",
+        "canary": CANARY,
+        "role": "crew_chief",
+        "audit_id": envelope["audit_id"],
+        "envelope_id": envelope["envelope_id"],
+        "reviewer_context": {
+            "fresh_session": True,
+            "read_only": True,
+            "implementation_conversation_inherited": False,
+            "live_network_tools_enabled": False,
+        },
+        "verdict": verdict,
+        "blocked_reasons": blocked or [],
+        "findings": findings or [],
+        "audit_scope": ["approved mission and frozen diff"],
+        "validation_evidence": ["frozen/validation.log"],
+        "generated_at": "2026-08-09T12:30:00Z",
+        "authority_statement": (
+            "Crew Chief is advisory; Maverick retains final authority."
+        ),
+    }
+
+
+def finding(
+    finding_id="CC-0001",
+    *,
+    severity="high",
+    blocking=True,
+    rationale=None,
+):
+    value = {
+        "finding_id": finding_id,
+        "severity": severity,
+        "blocking": blocking,
+        "category": "correctness",
+        "evidence": [
+            {
+                "kind": "source",
+                "path": "src/example.py",
+                "line_start": 1,
+                "line_end": 1,
+                "detail": "exact failing line",
+            }
+        ],
+        "why_it_matters": "The behavior can regress.",
+        "action_kind": "required" if blocking else "recommended",
+        "action": "Correct and rerun the focused validation.",
+    }
+    if rationale is not None:
+        value["blocking_rationale"] = rationale
+    return value
+
+
+class CrewChiefAgentTests(unittest.TestCase):
+    def test_custom_agent_toml_parses_with_required_read_only_fields(self):
+        path = ROOT / ".codex" / "agents" / "crew-chief.toml"
+        with path.open("rb") as handle:
+            agent = tomllib.load(handle)
+        self.assertEqual(agent["name"], "crew_chief")
+        self.assertIn("independent", agent["description"].lower())
+        self.assertEqual(agent["sandbox_mode"], "read-only")
+        self.assertEqual(agent["model_reasoning_effort"], "high")
+        self.assertNotIn("model", agent)
+        self.assertIn("File length alone is not a defect", agent["developer_instructions"])
+
+    def test_role_identity_is_distinct_from_goose_and_flightline(self):
+        text = (ROOT / ".codex/agents/crew-chief.toml").read_text(encoding="utf-8")
+        self.assertIn("not\nMaverick, Goose, Mission Control", text)
+        self.assertIn("Development Flightline Independent\nAuditor", text)
+        self.assertIn("cannot approve lifecycle gates", text)
+
+
+class CrewChiefEnvelopeTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.fixture = FixtureRepository(Path(self.temporary.name))
+
+    def tearDown(self):
+        self.temporary.cleanup()
+
+    def test_committed_range_is_frozen_and_verifiable(self):
+        result = self.fixture.prepare("envelope")
+        envelope = verify_envelope(
+            Path(result["envelope_path"]), clock=lambda: FIXED_TIME
+        )
+        manifest = read_json(Path(result["manifest_path"]))
+        self.assertEqual(envelope["subject"]["base_commit"], self.fixture.base)
+        self.assertEqual(envelope["subject"]["head_commit"], self.fixture.head)
+        self.assertEqual(envelope["subject"]["mode"], "committed-range")
+        self.assertEqual(
+            {item["path"] for item in manifest["subject"]["changed_files"]},
+            {"scripts/check.sh", "src/example.py"},
+        )
+        script = next(
+            item for item in manifest["subject"]["changed_files"]
+            if item["path"] == "scripts/check.sh"
+        )
+        self.assertEqual(script["file_type"], "executable")
+        self.assertEqual(script["modes"]["head"], "100755")
+        self.assertEqual(
+            manifest["controls"]["repository_instructions"]["path"],
+            "controls/AGENTS.md",
+        )
+
+    def test_manifest_is_deterministic_with_fixed_clock(self):
+        first = self.fixture.prepare("first")
+        second = self.fixture.prepare("second")
+        first_manifest = Path(first["manifest_path"]).read_bytes()
+        second_manifest = Path(second["manifest_path"]).read_bytes()
+        self.assertEqual(first_manifest, second_manifest)
+        self.assertEqual(first["audit_id"], second["audit_id"])
+        self.assertEqual(first["envelope_id"], second["envelope_id"])
+
+    def test_fixed_clock_controls_creation_and_expiration(self):
+        result = self.fixture.prepare("envelope")
+        envelope = read_json(Path(result["envelope_path"]))
+        self.assertEqual(envelope["created_at"], "2026-08-09T12:00:00Z")
+        self.assertEqual(envelope["expires_at"], "2026-08-09T13:00:00Z")
+
+    def test_envelope_identifier_binds_time_window(self):
+        result = self.fixture.prepare("envelope")
+        envelope_path = Path(result["envelope_path"])
+        envelope = read_json(envelope_path)
+        envelope["envelope_id"] = "c" * 64
+        unhashed = dict(envelope)
+        unhashed.pop("envelope_hash")
+        envelope["envelope_hash"] = sha256_bytes(canonical_json_bytes(unhashed))
+        envelope_path.write_text(json.dumps(envelope), encoding="utf-8")
+        with self.assertRaisesRegex(CrewChiefError, "identifier"):
+            verify_envelope(envelope_path, clock=lambda: FIXED_TIME)
+
+    def test_staged_unstaged_and_authorized_untracked_are_bound(self):
+        self.fixture.write("src/example.py", "VALUE = 3\n")
+        self.fixture.git("add", "src/example.py")
+        self.fixture.write("src/example.py", "VALUE = 4\n")
+        self.fixture.write("notes.txt", "authorized untracked evidence\n")
+        result = self.fixture.prepare(
+            "working",
+            base=self.fixture.head,
+            head=self.fixture.head,
+            include_worktree=True,
+            authorized_untracked=("notes.txt",),
+        )
+        manifest = read_json(Path(result["manifest_path"]))
+        entries = {
+            item["path"]: item for item in manifest["subject"]["changed_files"]
+        }
+        self.assertEqual(entries["src/example.py"]["sources"], ["staged", "unstaged"])
+        self.assertEqual(entries["notes.txt"]["sources"], ["untracked"])
+        self.assertNotEqual(
+            entries["src/example.py"]["sha256"]["index"],
+            entries["src/example.py"]["sha256"]["worktree"],
+        )
+        self.assertEqual(
+            [item["name"] for item in manifest["diffs"]],
+            ["committed.diff", "staged.diff", "unstaged.diff"],
+        )
+
+    def test_unbound_untracked_file_is_rejected(self):
+        self.fixture.write("unbound.txt", "not authorized\n")
+        with self.assertRaisesRegex(CrewChiefError, "untracked allowlist"):
+            self.fixture.prepare(
+                "working",
+                base=self.fixture.head,
+                head=self.fixture.head,
+                include_worktree=True,
+            )
+
+    def test_secret_path_is_rejected_without_reading_it(self):
+        self.fixture.write(".env.local", "DO_NOT_READ=this-value\n")
+        with self.assertRaisesRegex(CrewChiefError, "secret-bearing path"):
+            self.fixture.prepare(
+                "working",
+                base=self.fixture.head,
+                head=self.fixture.head,
+                include_worktree=True,
+                authorized_untracked=(".env.local",),
+            )
+
+    def test_secret_bearing_external_parent_is_rejected(self):
+        secret_parent = self.fixture.inputs / "credentials"
+        secret_parent.mkdir()
+        engineer = secret_parent / "report.json"
+        engineer.write_text("{}\n", encoding="utf-8")
+        with self.assertRaisesRegex(CrewChiefError, "secret-bearing path"):
+            prepare_audit(
+                self.fixture.repo,
+                mission_record=self.fixture.repo / "docs/missions/example/mission.md",
+                base=self.fixture.base,
+                head=self.fixture.head,
+                engineer_report=engineer,
+                evidence_artifacts=[self.fixture.evidence],
+                test_claims=self.fixture.claims,
+                output_root=Path(self.temporary.name) / "secret-parent",
+                clock=lambda: FIXED_TIME,
+            )
+
+    def test_live_data_evidence_parent_is_rejected(self):
+        live_parent = self.fixture.inputs / "live-data"
+        live_parent.mkdir()
+        evidence = live_parent / "validation.log"
+        evidence.write_text("not live fixture data\n", encoding="utf-8")
+        with self.assertRaisesRegex(CrewChiefError, "live-data path"):
+            prepare_audit(
+                self.fixture.repo,
+                mission_record=self.fixture.repo / "docs/missions/example/mission.md",
+                base=self.fixture.base,
+                head=self.fixture.head,
+                engineer_report=self.fixture.engineer_report,
+                evidence_artifacts=[evidence],
+                test_claims=self.fixture.claims,
+                output_root=Path(self.temporary.name) / "live-evidence",
+                clock=lambda: FIXED_TIME,
+            )
+
+    def test_live_data_path_is_rejected(self):
+        self.fixture.write("data/live.json", "{}\n")
+        with self.assertRaisesRegex(CrewChiefError, "live-data path"):
+            self.fixture.prepare(
+                "working",
+                base=self.fixture.head,
+                head=self.fixture.head,
+                include_worktree=True,
+                authorized_untracked=("data/live.json",),
+            )
+
+    def test_mission_path_outside_repository_is_rejected(self):
+        outside = self.fixture.inputs / "mission.md"
+        outside.write_text("# outside\n", encoding="utf-8")
+        with self.assertRaisesRegex(CrewChiefError, "outside the authorized repository"):
+            prepare_audit(
+                self.fixture.repo,
+                mission_record=outside,
+                base=self.fixture.base,
+                head=self.fixture.head,
+                engineer_report=self.fixture.engineer_report,
+                evidence_artifacts=[self.fixture.evidence],
+                test_claims=self.fixture.claims,
+                output_root=Path(self.temporary.name) / "outside-mission",
+                clock=lambda: FIXED_TIME,
+            )
+
+    def test_missing_engineer_report_is_rejected(self):
+        self.fixture.engineer_report.unlink()
+        with self.assertRaisesRegex(CrewChiefError, "engineer report"):
+            self.fixture.prepare("missing-engineer")
+
+    def test_tampered_frozen_evidence_is_rejected(self):
+        result = self.fixture.prepare("envelope")
+        diff = Path(result["output_root"]) / "diffs" / "committed.diff"
+        diff.write_bytes(diff.read_bytes() + b"tamper")
+        with self.assertRaisesRegex(CrewChiefError, "(size|hash) changed"):
+            verify_envelope(Path(result["envelope_path"]), clock=lambda: FIXED_TIME)
+
+    def test_missing_frozen_mission_is_rejected(self):
+        result = self.fixture.prepare("envelope")
+        (Path(result["output_root"]) / "evidence" / "mission-record.md").unlink()
+        with self.assertRaisesRegex(CrewChiefError, "frozen mission record"):
+            verify_envelope(Path(result["envelope_path"]), clock=lambda: FIXED_TIME)
+
+    def test_missing_evidence_artifact_is_rejected(self):
+        result = self.fixture.prepare("envelope")
+        (Path(result["output_root"]) / "evidence" / "artifact-001.log").unlink()
+        with self.assertRaisesRegex(CrewChiefError, "frozen evidence"):
+            verify_envelope(Path(result["envelope_path"]), clock=lambda: FIXED_TIME)
+
+    def test_expired_envelope_is_rejected(self):
+        result = self.fixture.prepare("envelope")
+        expired = FIXED_TIME + timedelta(hours=1)
+        with self.assertRaisesRegex(CrewChiefError, "expired"):
+            verify_envelope(Path(result["envelope_path"]), clock=lambda: expired)
+
+    def test_git_drift_after_freezing_is_rejected(self):
+        result = self.fixture.prepare("envelope")
+        self.fixture.write("src/example.py", "VALUE = 99\n")
+        with self.assertRaisesRegex(CrewChiefError, "Git state drifted"):
+            verify_envelope(Path(result["envelope_path"]), clock=lambda: FIXED_TIME)
+
+    def test_standard_deep_and_exempt_profiles(self):
+        standard = read_json(Path(self.fixture.prepare("standard")["envelope_path"]))
+        deep = read_json(Path(self.fixture.prepare("deep", profile="deep")["envelope_path"]))
+        exempt = read_json(
+            Path(
+                self.fixture.prepare(
+                    "exempt",
+                    profile="exempt",
+                    justification="generated status-only refresh",
+                    claims={"governance_validation": ["repository validate passed"]},
+                )["envelope_path"]
+            )
+        )
+        self.assertEqual(standard["risk_profile"]["name"], "standard")
+        self.assertIn("security", deep["risk_profile"]["required_focus"])
+        self.assertEqual(exempt["risk_profile"]["name"], "exempt")
+
+    def test_exempt_profile_requires_justification_and_governance_evidence(self):
+        with self.assertRaisesRegex(CrewChiefError, "justification"):
+            self.fixture.prepare("exempt", profile="exempt")
+        with self.assertRaisesRegex(CrewChiefError, "governance validation"):
+            self.fixture.prepare(
+                "exempt-2", profile="exempt", justification="status only"
+            )
+
+
+class CrewChiefReportTests(unittest.TestCase):
+    def setUp(self):
+        self.envelope = {"audit_id": "a" * 64, "envelope_id": "b" * 64}
+
+    def test_schema_accepts_pass_report_and_individual_finding(self):
+        report = report_for(self.envelope)
+        validate_report(self.envelope, report)
+        validate_instance("finding-v1.schema.json", finding())
+
+    def test_schema_rejects_missing_exact_evidence(self):
+        bad = finding()
+        bad["evidence"] = []
+        report = report_for(self.envelope, [bad], verdict="FAIL")
+        with self.assertRaisesRegex(CrewChiefError, "schema validation"):
+            validate_report(self.envelope, report)
+
+    def test_source_evidence_rejects_reversed_line_range(self):
+        bad = finding()
+        bad["evidence"][0]["line_start"] = 3
+        bad["evidence"][0]["line_end"] = 2
+        with self.assertRaisesRegex(CrewChiefError, "line range"):
+            validate_report(
+                self.envelope,
+                report_for(self.envelope, [bad], verdict="FAIL"),
+            )
+
+    def test_pass_requires_no_findings(self):
+        report = report_for(self.envelope, [finding()], verdict="PASS")
+        with self.assertRaisesRegex(CrewChiefError, "verdict must be FAIL"):
+            validate_report(self.envelope, report)
+
+    def test_low_and_advisory_findings_are_non_blocking_advisories(self):
+        findings = [
+            finding("CC-0001", severity="low", blocking=False),
+            finding("CC-0002", severity="advisory", blocking=False),
+        ]
+        report = report_for(
+            self.envelope, findings, verdict="PASS_WITH_ADVISORIES"
+        )
+        validate_report(self.envelope, report)
+
+    def test_medium_finding_requires_rationale_and_fail_verdict(self):
+        no_rationale = finding(severity="medium", blocking=False)
+        with self.assertRaisesRegex(CrewChiefError, "blocking rationale"):
+            validate_report(
+                self.envelope,
+                report_for(self.envelope, [no_rationale], verdict="FAIL"),
+            )
+        explained = finding(
+            severity="medium",
+            blocking=False,
+            rationale="Non-blocking because the path is not executed, but medium remains FAIL.",
+        )
+        validate_report(
+            self.envelope,
+            report_for(self.envelope, [explained], verdict="FAIL"),
+        )
+
+    def test_critical_and_high_are_always_blocking(self):
+        for severity in ("critical", "high"):
+            with self.subTest(severity=severity):
+                report = report_for(
+                    self.envelope,
+                    [finding(severity=severity, blocking=False)],
+                    verdict="FAIL",
+                )
+                with self.assertRaisesRegex(CrewChiefError, "must be blocking"):
+                    validate_report(self.envelope, report)
+
+    def test_blocked_requires_control_reason(self):
+        validate_report(
+            self.envelope,
+            report_for(
+                self.envelope,
+                verdict="BLOCKED",
+                blocked=["mission evidence was missing"],
+            ),
+        )
+        with self.assertRaisesRegex(CrewChiefError, "verdict must be PASS"):
+            validate_report(
+                self.envelope,
+                report_for(self.envelope, verdict="BLOCKED"),
+            )
+
+    def test_every_finding_requires_exactly_one_disposition(self):
+        report = report_for(
+            self.envelope, [finding()], verdict="FAIL"
+        )
+        with self.assertRaisesRegex(CrewChiefError, "exactly one disposition"):
+            reconcile_report(self.envelope, report, [], clock=lambda: FIXED_TIME)
+
+    def test_resolved_blocking_finding_is_approval_ready(self):
+        report = report_for(self.envelope, [finding()], verdict="FAIL")
+        package = reconcile_report(
+            self.envelope,
+            report,
+            [
+                {
+                    "finding_id": "CC-0001",
+                    "disposition": "resolved",
+                    "summary": "Corrected the defect.",
+                    "correction_evidence": ["src/example.py:1"],
+                    "validation_results": ["focused test passed"],
+                }
+            ],
+            clock=lambda: FIXED_TIME,
+        )
+        self.assertTrue(package["reconciliation_complete"])
+        self.assertTrue(package["approval_ready"])
+        validate_reconciliation(package, report)
+
+    def test_disputed_blocking_finding_is_deliverable_but_not_approval_ready(self):
+        report = report_for(self.envelope, [finding()], verdict="FAIL")
+        package = reconcile_report(
+            self.envelope,
+            report,
+            [
+                {
+                    "finding_id": "CC-0001",
+                    "disposition": "disputed_with_evidence",
+                    "summary": "The cited path is unreachable.",
+                    "counter_evidence": ["tests/example.py:10"],
+                    "reasoning": "The exact test proves the branch cannot execute.",
+                }
+            ],
+            clock=lambda: FIXED_TIME,
+        )
+        self.assertTrue(package["reconciliation_complete"])
+        self.assertFalse(package["approval_ready"])
+
+    def test_escalated_blocking_finding_is_not_approval_ready(self):
+        report = report_for(self.envelope, [finding()], verdict="FAIL")
+        package = reconcile_report(
+            self.envelope,
+            report,
+            [
+                {
+                    "finding_id": "CC-0001",
+                    "disposition": "escalated_to_maverick",
+                    "summary": "A scope decision is reserved.",
+                    "unresolved_issue": "Compatibility behavior is ambiguous.",
+                    "impact": "Approval could preserve or remove the surface.",
+                    "decision_requested": "Select the intended compatibility policy.",
+                }
+            ],
+            clock=lambda: FIXED_TIME,
+        )
+        self.assertFalse(package["approval_ready"])
+
+    def test_resolved_disposition_requires_correction_and_validation_evidence(self):
+        report = report_for(self.envelope, [finding()], verdict="FAIL")
+        with self.assertRaisesRegex(CrewChiefError, "correction evidence"):
+            reconcile_report(
+                self.envelope,
+                report,
+                [
+                    {
+                        "finding_id": "CC-0001",
+                        "disposition": "resolved",
+                        "summary": "Claimed resolution without proof.",
+                    }
+                ],
+                clock=lambda: FIXED_TIME,
+            )
+
+
+class CrewChiefRunnerTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.fixture = FixtureRepository(Path(self.temporary.name))
+        self.prepared = self.fixture.prepare("envelope")
+        self.envelope_path = Path(self.prepared["envelope_path"])
+
+    def tearDown(self):
+        self.temporary.cleanup()
+
+    def capabilities(self, selector=False):
+        return CodexCapabilities(
+            executable="/fixture/codex",
+            version="codex-cli fixture",
+            exec_flags=(
+                "--config",
+                "--ephemeral",
+                "--ignore-rules",
+                "--ignore-user-config",
+                "--output-schema",
+                "--sandbox",
+            ),
+            features=(
+                "apps",
+                "browser_use",
+                "computer_use",
+                "image_generation",
+                "multi_agent",
+                "plugins",
+                "shell_snapshot",
+                "shell_tool",
+            ),
+            shell_tool_control=True,
+            custom_agent_selector=selector,
+        )
+
+    def test_launch_command_is_an_argument_array_with_read_only_controls(self):
+        workspace = Path(self.temporary.name) / "workspace with spaces"
+        schema = workspace / "schema.json"
+        report = workspace / "report.json"
+        command = build_launch_command(self.capabilities(), workspace, schema, report)
+        self.assertIsInstance(command, list)
+        self.assertIn("--ephemeral", command)
+        self.assertIn("--ignore-user-config", command)
+        self.assertIn("read-only", command)
+        self.assertIn('approval_policy="never"', command)
+        self.assertEqual(
+            command[
+                command.index(
+                    "--disable", command.index('approval_policy="never"')
+                )
+                + 1
+            ],
+            "apps",
+        )
+        self.assertIn("shell_tool", command)
+        self.assertIn(str(workspace), command)
+        self.assertNotIn("--agent", command)
+        self.assertNotIn(";", command)
+
+    def test_supported_selector_uses_project_agent(self):
+        command = build_launch_command(
+            self.capabilities(selector=True),
+            Path("/tmp/workspace"),
+            Path("/tmp/schema.json"),
+            Path("/tmp/report.json"),
+        )
+        self.assertEqual(command[command.index("--agent") + 1], "crew_chief")
+
+    def test_unsupported_selector_records_honest_fallback(self):
+        invocation = prepare_review_workspace(
+            self.envelope_path,
+            Path(self.temporary.name) / "review",
+            detector=lambda _: self.capabilities(selector=False),
+            clock=lambda: FIXED_TIME,
+        )
+        self.assertEqual(invocation["execution_mode"], "fresh-session-fallback")
+        self.assertFalse(invocation["live_audit_performed"])
+        self.assertIn("No supported", invocation["automation_limitation"])
+        prompt = Path(invocation["prompt_path"]).read_text(encoding="utf-8")
+        self.assertIn("shell tool is disabled", prompt)
+        self.assertIn("diff --git", prompt)
+
+    def test_tampered_review_workspace_control_is_rejected(self):
+        invocation = prepare_review_workspace(
+            self.envelope_path,
+            Path(self.temporary.name) / "review",
+            detector=lambda _: self.capabilities(selector=True),
+            clock=lambda: FIXED_TIME,
+        )
+        (Path(invocation["workspace"]) / "AGENTS.md").write_text(
+            "tampered\n", encoding="utf-8"
+        )
+        with self.assertRaisesRegex(CrewChiefError, "binding size changed"):
+            execute_prepared_review(
+                self.envelope_path,
+                invocation,
+                runner=lambda *_args, **_kwargs: subprocess.CompletedProcess(
+                    [], 0, "", ""
+                ),
+                clock=lambda: FIXED_TIME,
+            )
+
+    def test_bundled_output_schema_accepts_a_valid_report(self):
+        invocation = prepare_review_workspace(
+            self.envelope_path,
+            Path(self.temporary.name) / "review",
+            detector=lambda _: self.capabilities(selector=True),
+            clock=lambda: FIXED_TIME,
+        )
+        schema = read_json(Path(invocation["schema_path"]))
+        envelope = read_json(self.envelope_path)
+        errors = list(
+            Draft202012Validator(
+                schema, format_checker=FormatChecker()
+            ).iter_errors(report_for(envelope, [finding()], verdict="FAIL"))
+        )
+        self.assertEqual(errors, [])
+
+    def test_missing_codex_is_reported_clearly(self):
+        with mock.patch(
+            "tools.crew_chief.runner.shutil.which", return_value=None
+        ):
+            with self.assertRaisesRegex(CrewChiefError, "unavailable"):
+                detect_codex_capabilities("/missing/codex")
+
+    def test_capability_detection_uses_help_only(self):
+        calls = []
+
+        def fake_runner(arguments, **_kwargs):
+            calls.append(arguments)
+            if arguments[-1] == "--version":
+                return subprocess.CompletedProcess(arguments, 0, "codex-cli fixture\n", "")
+            if arguments[-2:] == ["features", "list"]:
+                return subprocess.CompletedProcess(
+                    arguments,
+                    0,
+                    "apps stable true\nshell_tool stable true\n",
+                    "",
+                )
+            help_text = " ".join(sorted({
+                "--config",
+                "--ephemeral",
+                "--ignore-rules",
+                "--ignore-user-config",
+                "--output-schema",
+                "--sandbox",
+                "--agent",
+            }))
+            return subprocess.CompletedProcess(arguments, 0, help_text, "")
+
+        with mock.patch(
+            "tools.crew_chief.runner.shutil.which", return_value="/fixture/codex"
+        ):
+            capabilities = detect_codex_capabilities(
+                "codex", runner=fake_runner
+            )
+        self.assertTrue(capabilities.custom_agent_selector)
+        self.assertEqual(
+            [call[1:] for call in calls],
+            [["--version"], ["exec", "--help"], ["features", "list"]],
+        )
+        self.assertTrue(all("exec" not in call[1:2] or "--help" in call for call in calls))
+
+    def test_missing_shell_disable_control_fails_closed(self):
+        def fake_runner(arguments, **_kwargs):
+            if arguments[-1] == "--version":
+                return subprocess.CompletedProcess(arguments, 0, "codex-cli fixture\n", "")
+            if arguments[-2:] == ["features", "list"]:
+                return subprocess.CompletedProcess(
+                    arguments, 0, "apps stable true\n", ""
+                )
+            return subprocess.CompletedProcess(
+                arguments,
+                0,
+                " ".join(sorted({
+                    "--config",
+                    "--ephemeral",
+                    "--ignore-rules",
+                    "--ignore-user-config",
+                    "--output-schema",
+                    "--sandbox",
+                })),
+                "",
+            )
+
+        with mock.patch(
+            "tools.crew_chief.runner.shutil.which", return_value="/fixture/codex"
+        ):
+            with self.assertRaisesRegex(CrewChiefError, "shell-tool"):
+                detect_codex_capabilities("codex", runner=fake_runner)
+
+    def test_missing_authentication_fails_without_consuming(self):
+        invocation = prepare_review_workspace(
+            self.envelope_path,
+            Path(self.temporary.name) / "review",
+            detector=lambda _: self.capabilities(selector=True),
+            clock=lambda: FIXED_TIME,
+        )
+
+        def unauthenticated(arguments, **_kwargs):
+            return subprocess.CompletedProcess(arguments, 1, "", "not logged in")
+
+        with self.assertRaisesRegex(CrewChiefError, "authentication"):
+            execute_prepared_review(
+                self.envelope_path,
+                invocation,
+                runner=unauthenticated,
+                clock=lambda: FIXED_TIME,
+            )
+        self.assertFalse(
+            (Path(invocation["workspace"]) / ".crew-chief-consumed.json").exists()
+        )
+
+    def test_atomic_consumption_prevents_reuse(self):
+        invocation = prepare_review_workspace(
+            self.envelope_path,
+            Path(self.temporary.name) / "review",
+            detector=lambda _: self.capabilities(selector=True),
+            clock=lambda: FIXED_TIME,
+        )
+        envelope = read_json(self.envelope_path)
+
+        def successful(arguments, **_kwargs):
+            if arguments[-2:] == ["login", "status"]:
+                return subprocess.CompletedProcess(arguments, 0, "logged in", "")
+            Path(invocation["report_path"]).parent.mkdir(parents=True, exist_ok=True)
+            Path(invocation["report_path"]).write_text(
+                json.dumps(report_for(envelope)), encoding="utf-8"
+            )
+            return subprocess.CompletedProcess(arguments, 0, "{}", "")
+
+        record = execute_prepared_review(
+            self.envelope_path,
+            invocation,
+            runner=successful,
+            clock=lambda: FIXED_TIME,
+        )
+        self.assertTrue(record["live_audit_performed"])
+        with self.assertRaisesRegex(CrewChiefError, "already consumed"):
+            execute_prepared_review(
+                self.envelope_path,
+                invocation,
+                runner=successful,
+                clock=lambda: FIXED_TIME,
+            )
+
+    def test_repository_mutation_during_review_is_rejected(self):
+        invocation = prepare_review_workspace(
+            self.envelope_path,
+            Path(self.temporary.name) / "review",
+            detector=lambda _: self.capabilities(selector=True),
+            clock=lambda: FIXED_TIME,
+        )
+
+        def mutating(arguments, **_kwargs):
+            if arguments[-2:] == ["login", "status"]:
+                return subprocess.CompletedProcess(arguments, 0, "logged in", "")
+            self.fixture.write("unexpected.txt", "mutation\n")
+            return subprocess.CompletedProcess(arguments, 0, "{}", "")
+
+        with self.assertRaisesRegex(CrewChiefError, "unexpected repository mutation"):
+            execute_prepared_review(
+                self.envelope_path,
+                invocation,
+                runner=mutating,
+                clock=lambda: FIXED_TIME,
+            )
+
+    def test_timeout_is_consumed_and_preserves_redacted_diagnostic(self):
+        invocation = prepare_review_workspace(
+            self.envelope_path,
+            Path(self.temporary.name) / "review",
+            detector=lambda _: self.capabilities(selector=True),
+            clock=lambda: FIXED_TIME,
+        )
+
+        def timing_out(arguments, **_kwargs):
+            if arguments[-2:] == ["login", "status"]:
+                return subprocess.CompletedProcess(arguments, 0, "logged in", "")
+            raise subprocess.TimeoutExpired(
+                arguments, 1, stderr="token=do-not-preserve"
+            )
+
+        with self.assertRaisesRegex(CrewChiefError, "time limit"):
+            execute_prepared_review(
+                self.envelope_path,
+                invocation,
+                runner=timing_out,
+                clock=lambda: FIXED_TIME,
+            )
+        workspace = Path(invocation["workspace"])
+        self.assertTrue((workspace / ".crew-chief-consumed.json").is_file())
+        diagnostic = (workspace / "output/codex-stderr.log").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn("do-not-preserve", diagnostic)
+        self.assertIn("[REDACTED]", diagnostic)
+
+
+class CrewChiefGovernanceTests(unittest.TestCase):
+    def test_schemas_and_governance_are_discoverable(self):
+        self.assertEqual(governance.validate_schemas_and_first_reads(), [])
+        self.assertTrue((ROOT / "tools/crew_chief/schemas/report-v1.schema.json").is_file())
+        self.assertTrue((ROOT / ".codex/agents/crew-chief.toml").is_file())
+
+    def test_no_test_invokes_a_real_model_or_network(self):
+        source = Path(__file__).read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        imported_roots = {
+            alias.name.split(".", 1)[0]
+            for node in ast.walk(tree)
+            if isinstance(node, (ast.Import, ast.ImportFrom))
+            for alias in (
+                node.names
+                if isinstance(node, ast.Import)
+                else [ast.alias(name=node.module or "")]
+            )
+        }
+        self.assertNotRegex(
+            source,
+            r"subprocess\.run\(\s*\[\s*['\"]codex['\"]\s*,\s*['\"]exec['\"]",
+        )
+        self.assertTrue({"requests", "urllib", "httpx"}.isdisjoint(imported_roots))
+
+    def test_canonical_json_hashing_is_sorted_and_compact(self):
+        left = canonical_json_bytes({"b": 2, "a": 1})
+        right = canonical_json_bytes({"a": 1, "b": 2})
+        self.assertEqual(left, b'{"a":1,"b":2}')
+        self.assertEqual(sha256_bytes(left), sha256_bytes(right))
+
+
+if __name__ == "__main__":
+    unittest.main()

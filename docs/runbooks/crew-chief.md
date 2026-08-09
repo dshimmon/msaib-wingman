@@ -1,0 +1,195 @@
+# Crew Chief Independent Audit
+
+The sole canonical current lifecycle record is
+[`governance/crew-chief/mission.md`](../missions/governance/crew-chief/mission.md);
+this runbook defines procedure and does not claim mission status. Crew Chief's
+single canonical model-facing instruction file is
+[`crew-chief.toml`](../../.codex/agents/crew-chief.toml). Do not duplicate or
+silently amend those instructions in an operator prompt.
+
+Crew Chief implements this governed handoff:
+
+> Codex implementation report → frozen audit envelope → fresh read-only
+> reviewer → structured findings → Codex reconciliation → validated decision
+> package → Goose and Maverick decision
+
+## When Crew Chief is required
+
+Use Crew Chief at the governed audit handoff for an implemented mission before
+its next approval gate, unless Maverick approved and recorded the `exempt`
+profile. Preparing an envelope is not an audit. Preparing a command is not an
+audit. A valid report exists only after an explicitly authorized fresh review
+returns schema-valid JSON bound to the exact envelope.
+
+Select one risk profile:
+
+- `standard` — ordinary bounded implementation;
+- `deep` — architecture, security, data, dependencies, public contracts,
+  migrations, or other high-risk behavior; or
+- `exempt` — generated or status-only changes with a recorded justification
+  and deterministic governance-validation evidence.
+
+An exemption bypasses a model review only for the exact approved subject. It
+does not imply approval, publication, or mission completion.
+
+## Prepare and freeze evidence
+
+Start from a verified repository root. Confirm the approved mission, exact base
+and head, branch, status, scope, engineer report, evidence artifacts, and test
+claims. Inputs must be regular files and must not expose credentials, `.env`
+files, keys, tokens, or live data. Use a new external destination; the
+controller refuses repository-internal audit outputs and existing targets.
+
+For a committed range:
+
+```text
+PYTHONDONTWRITEBYTECODE=1 python -m tools.crew_chief prepare \
+  --repository /absolute/repository \
+  --mission-record /absolute/repository/docs/missions/<mission>/mission.md \
+  --base <approved-base> \
+  --head <implementation-head> \
+  --engineer-report /absolute/external/engineer-report.json \
+  --evidence /absolute/external/validation.log \
+  --test-claims /absolute/external/test-claims.json \
+  --profile standard \
+  --output-root /private/tmp/wingman-crew-chief-envelope-<audit-id>
+```
+
+For staged, unstaged, or untracked work, set `--base` and `--head` to the
+intended committed range, add `--include-working-tree`, and repeat
+`--allow-untracked <repository-relative-path>` for every untracked file. The
+allowlist must equal the observed untracked inventory exactly. The controller
+captures binary full-index diffs, file type, mode, and base, head, index, and
+worktree SHA-256 values as applicable.
+
+The envelope binds the canonical repository identity, resolved path, mission
+hash, Git state, subject inventory, evidence, risk profile, deterministic
+manifest, identifiers, and a maximum 24-hour expiry. Hashing uses canonical
+UTF-8 JSON with sorted keys and compact separators. Reverification rejects
+changed or missing evidence, Git drift, path escape, unbound files, secret or
+live-data paths, and expiry.
+
+## Prepare or run a fresh review
+
+Command preparation is safe and does not invoke a model:
+
+```text
+PYTHONDONTWRITEBYTECODE=1 python -m tools.crew_chief run \
+  /private/tmp/wingman-crew-chief-envelope-<audit-id>/audit-envelope.json \
+  --workspace /private/tmp/wingman-crew-chief-review-<audit-id>
+```
+
+The controller feature-detects the installed Codex CLI with version, `exec
+--help`, and `features list`. It requires ephemeral execution, explicit
+read-only sandboxing, approval denial, structured output, ignored user
+configuration, and ignored repository rules. It disables detected apps,
+browser, computer use, image generation, multi-agent operation, plugins, shell
+snapshots, and the default shell tool. It refuses automated execution if the
+installed CLI exposes no supported shell-tool control. It records the CLI
+version, argv array, selection mode, and any limitation.
+
+Because the shell tool is disabled, the controller deterministically embeds
+the complete frozen evidence set in standard input. UTF-8 files remain text;
+other regular files are base64-labeled. Encoded evidence is limited to 16 MiB
+for v1 and an oversized envelope fails before any model invocation. The
+external read-only artifact tree remains available for operator evidence and
+exact artifact references, not as a substitute for the standard-input review
+payload.
+
+If the CLI exposes a supported non-interactive custom-agent selector, the
+command selects `crew_chief`. If it does not, the controller does not invent
+one: it prepares a fresh-session fallback whose prompt points to the frozen
+agent file. Executing that fallback additionally requires an explicit
+`--allow-fresh-session-fallback` decision. Actual execution requires a
+separately authorized `--execute`; do not add it during preparation or CI.
+
+Immediately before an authorized model process starts, the controller creates
+an atomic consumption marker in that external review workspace. Reuse in the
+same workspace fails closed. It verifies authentication without printing
+authentication output, supplies a minimal environment, uses a subprocess argv
+array rather than a shell string, captures redacted stderr, and compares the
+Git-visible repository state before and after review. A changed state or
+changed bound evidence invalidates the run.
+
+## Findings and reconciliation
+
+The canonical report is JSON conforming to
+[`report-v1.schema.json`](../../tools/crew_chief/schemas/report-v1.schema.json).
+`PASS` requires no findings. `PASS_WITH_ADVISORIES` permits only non-blocking
+`low` or `advisory` findings. Any `critical`, `high`, `medium`, or otherwise
+blocking finding requires `FAIL`. Missing controls or evidence requires
+`BLOCKED`. File length alone is not a finding.
+
+Validate a report and optionally generate a labeled non-canonical Markdown
+view outside the repository:
+
+```text
+python -m tools.crew_chief validate-report \
+  /private/tmp/<envelope>/audit-envelope.json \
+  /private/tmp/<review>/output/crew-chief-report.json \
+  --markdown-output /private/tmp/<review>/output/crew-chief-report.md
+```
+
+Codex must give every finding exactly one disposition: `resolved`,
+`disputed_with_evidence`, or `escalated_to_maverick`. Resolution needs
+correction evidence and validation results. A dispute needs exact
+counter-evidence and reasoning. Escalation needs the unresolved issue, impact,
+and decision requested.
+
+```text
+python -m tools.crew_chief reconcile \
+  /private/tmp/<envelope>/audit-envelope.json \
+  /private/tmp/<review>/output/crew-chief-report.json \
+  /private/tmp/<review>/output/dispositions.json \
+  --output /private/tmp/<review>/output/reconciliation.json \
+  --markdown-output /private/tmp/<review>/output/reconciliation.md
+```
+
+`reconciliation_complete` means every finding has one valid disposition.
+`approval_ready` additionally means every blocking finding is resolved. A
+disputed or escalated blocking finding is deliverable to Maverick but is not
+approval-ready. Deliver the envelope, canonical report, reconciliation, exact
+evidence, remaining risks, and CLI/run record to Goose and Maverick.
+
+## Failure and recovery
+
+Preserve failed, expired, or partially prepared external artifacts for
+diagnosis. Do not repair an envelope, reuse a consumed workspace, weaken
+controls, or rewrite evidence. Correct the underlying repository or evidence,
+rerun validation, and prepare a new envelope and workspace with a new expiry.
+Missing Codex, missing authentication, an unsupported required flag, invalid
+JSON, process timeout, or detected mutation fails clearly without a success
+claim.
+
+The mutation comparison covers Git-visible files and explicitly bound
+evidence. It intentionally does not open ignored secret paths merely to hash
+them. Operating-system and Codex read-only sandboxing is therefore the primary
+write protection; ignored-path mutation detection is not claimed. Codex
+service authentication is inherently required for an authorized live run, but
+authentication stores are neither copied into the evidence nor exposed to the
+review prompt.
+
+## Role separation and bootstrap
+
+- Crew Chief independently evaluates frozen mission implementation evidence
+  and returns advisory findings.
+- Goose/Mission Control plans and audits mission evidence for Maverick; it is
+  not Crew Chief and cannot transfer Maverick's authority.
+- The Development Flightline Independent Auditor verifies a Flightline
+  engineering handoff. It is a separate role and must not claim a Crew Chief
+  audit.
+- Maverick retains final authority over scope, findings policy, commits,
+  publication, gates, and mission completion.
+
+Crew Chief cannot certify its initial implementation. The bootstrap handoff
+must go to a fresh ordinary Codex reviewer that did not participate in the
+build, operating read-only over the implementation commit and frozen evidence.
+Its first report statement must be: “This bootstrap audit is not a Crew Chief
+audit.” Do not select the Crew Chief agent for bootstrap. A controlled real
+Crew Chief acceptance run is later and separately authorized.
+
+CI runs only deterministic schema, controller, safety, reconciliation, and
+governance tests with fake model-process runners. It never supplies
+`--execute`, contacts a model, or incurs a paid audit. This prevents CI from
+silently crossing the governed handoff or treating a model result as an
+automatic authority.

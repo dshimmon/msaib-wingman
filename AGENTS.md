@@ -135,23 +135,28 @@ authorization for a later gate.
 
 ## Crew Chief audit
 
-Crew Chief is a required, high-priority future independent audit capability.
+Crew Chief is a required, high-priority independent audit capability. Its v1
+implementation candidate is locally committed and awaiting the independent
+bootstrap gate recorded in `CURRENT_MISSION.md`; it is not yet operational.
 Its intended loop is:
 
 > Codex report → Crew Chief audit → findings returned to Codex → Codex resolves,
 > disputes with evidence, or escalates each finding → final evidence package to
 > Goose and Maverick.
 
-Until Crew Chief automation is implemented and verified, prepare an
-audit-ready evidence package, disclose that the independent audit loop remains
-pending, and never claim that an independent Crew Chief audit occurred. Do not
-fabricate an audit agent or silently self-certify as independent.
+Until the bootstrap audit and separately authorized controlled acceptance run
+verify Crew Chief automation, prepare an audit-ready evidence package,
+disclose that the independent audit loop remains pending, and never claim that
+an independent Crew Chief audit occurred. Crew Chief may not audit or certify
+its initial implementation. Do not fabricate an audit agent or silently
+self-certify as independent.
 
-Once Crew Chief is implemented and applicable, its audit handoff is mandatory.
-Resolve every finding, dispute it with evidence, or escalate it. Findings are
-advisory and not self-executing unless Maverick authorizes a specific blocking
-policy. Crew Chief may not independently expand scope, rewrite code, approve
-commits, or overrule Maverick.
+Once Crew Chief is accepted and applicable, its audit handoff is mandatory.
+Use the canonical `docs/runbooks/crew-chief.md` procedure. Resolve every
+finding, dispute it with evidence, or escalate it. Findings are advisory and
+not self-executing unless Maverick authorizes a specific blocking policy. Crew
+Chief may not independently expand scope, rewrite code, approve commits, or
+overrule Maverick.
 
 ## Reporting and mission state
 
