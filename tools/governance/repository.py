@@ -726,9 +726,10 @@ def render_context(missions: list[Record]) -> str:
         f"- Official record: `{_relative(primary.path)}`",
         f"- Last completed: `{latest.metadata['id']}` at `{latest.metadata['implementation_commits'][-1]}`",
         f"- Next gate: {primary.metadata['next_gate']}",
-        "- Crew Chief: v1 implementation candidate locally committed; awaiting "
-        "a fresh ordinary-Codex bootstrap audit; not published, operational, "
-        "independently audited, or mission-complete.",
+        f"- Crew Chief state: `{primary.metadata['workstream']['state']}`; "
+        f"pushed=`{str(primary.metadata['pushed']).lower()}`; "
+        f"merged=`{str(primary.metadata['merged']).lower()}`; lifecycle remains "
+        f"`{primary.metadata['lifecycle']}` pending the recorded next gate.",
         "",
     ])
 

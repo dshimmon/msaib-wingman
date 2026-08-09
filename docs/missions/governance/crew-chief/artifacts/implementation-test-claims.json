@@ -4,7 +4,17 @@
   "subject": {
     "base_commit": "b1910d0c69a52d73ddde93cb9722f12540c5d1e7",
     "branch": "codex/crew-chief-v1-build-20260809",
-    "correction_parent": "82c5952e64eb8fe5638701fef1f9d289b7735d82"
+    "correction_parent": "82c5952e64eb8fe5638701fef1f9d289b7735d82",
+    "acceptance_readiness_parent": "3e4edff5cc5e9b9810827331ca1024fd14c8f875"
+  },
+  "acceptance_readiness": {
+    "objective": "Reconcile closeout authority and make the fail-closed CLI policy compatible with the complete enabled inventory of the installed Codex CLI.",
+    "current_enabled_features": 38,
+    "permitted_remain_enabled_features": [],
+    "all_current_enabled_features_explicitly_disabled": true,
+    "unknown_failed_malformed_or_duplicate_inventory_fails_closed": true,
+    "tampered_prepared_capabilities_fail_before_model_invocation": true,
+    "actual_installed_cli_preparation_completed_without_model_invocation": true
   },
   "correction": {
     "objective": "Fail closed on unknown enabled Codex features, freeze complete changed-source context, enforce risk-profile coverage, and bind finding citations to frozen evidence.",
@@ -23,43 +33,43 @@
   "results": [
     {
       "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 python -m unittest tests.governance.test_crew_chief",
-      "tests": 64,
+      "tests": 67,
       "failures": 0,
       "errors": 0,
       "skips": 0,
-      "duration_seconds": 45.135,
+      "duration_seconds": 50.461,
       "result": "PASS"
     },
     {
       "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src OPENAI_API_KEY=repository-governance-offline-placeholder PYTHON_DOTENV_DISABLED=1 python -m unittest tests.governance.test_crew_chief tests.governance.test_repository_governance",
-      "tests": 92,
+      "tests": 95,
       "failures": 0,
       "errors": 0,
       "skips": 0,
-      "duration_seconds": 49.288,
+      "duration_seconds": 54.405,
       "result": "PASS"
     },
     {
       "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src OPENAI_API_KEY=repository-governance-offline-placeholder PYTHON_DOTENV_DISABLED=1 python -m unittest discover -s tests/governance -t . -p 'test_*.py'",
-      "tests": 140,
+      "tests": 143,
       "failures": 0,
       "errors": 0,
       "skips": 0,
-      "duration_seconds": 57.054,
+      "duration_seconds": 62.079,
       "result": "PASS"
     },
     {
       "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src OPENAI_API_KEY=repository-governance-offline-placeholder PYTHON_DOTENV_DISABLED=1 python -m unittest discover -s tests -t . -p 'test_*.py'",
-      "tests": 369,
+      "tests": 372,
       "failures": 0,
       "errors": 0,
       "skips": 0,
-      "duration_seconds": 61.901,
+      "duration_seconds": 67.775,
       "result": "PASS",
       "note": "Expected negative-path Flightline and Atlas diagnostics and bare-Streamlit warnings were emitted; the suite remained green."
     },
     {
-      "command": "ruff check tools/crew_chief tests/governance/test_crew_chief.py",
+      "command": "ruff check tools/crew_chief tests/governance/test_crew_chief.py tools/governance/repository.py",
       "result": "PASS",
       "output": "All checks passed!"
     },
@@ -97,18 +107,64 @@
     "shell_tool_disable_control": true,
     "required_exec_flags": [
       "--config",
+      "--cd",
+      "--color",
+      "--disable",
       "--ephemeral",
       "--ignore-rules",
       "--ignore-user-config",
+      "--output-last-message",
       "--output-schema",
-      "--sandbox"
+      "--sandbox",
+      "--strict-config"
     ],
     "effective_approval_config": "approval_policy=\"never\"",
     "effective_sandbox": "read-only",
-    "accepted_enabled_features": ["personality"],
+    "classified_enabled_features": [
+      "apps",
+      "auth_elicitation",
+      "browser_use",
+      "browser_use_external",
+      "browser_use_full_cdp_access",
+      "code_mode_host",
+      "collaboration_modes",
+      "computer_use",
+      "enable_request_compression",
+      "fast_mode",
+      "goals",
+      "guardian_approval",
+      "hooks",
+      "image_generation",
+      "in_app_browser",
+      "in_app_updates",
+      "item_ids",
+      "mentions_v2",
+      "multi_agent",
+      "personality",
+      "plugin_sharing",
+      "plugins",
+      "remote_compaction_v2",
+      "remote_plugin",
+      "resize_all_images",
+      "shell_snapshot",
+      "shell_tool",
+      "skill_mcp_dependency_install",
+      "skill_search",
+      "sqlite",
+      "steer",
+      "terminal_resize_reflow",
+      "tool_call_mcp_elicitation",
+      "tool_search_always_defer_mcp_tools",
+      "tool_suggest",
+      "tui_app_server",
+      "unified_exec",
+      "workspace_dependencies"
+    ],
+    "permitted_remain_enabled_features": [],
+    "all_classified_enabled_features_explicitly_disabled": true,
     "unknown_enabled_features_fail_closed": true,
-    "feature_inventory_failure_or_malformed_output_fails_closed": true,
-    "correction_capability_probe_performed": false,
-    "automation_state": "deterministic fake-runner validation only; no Codex model process or live capability probe executed during the correction"
+    "feature_inventory_failure_malformed_output_or_duplicates_fail_closed": true,
+    "acceptance_readiness_capability_probe_performed": true,
+    "automation_state": "installed CLI version, help, feature, login-status, and command-preparation probes only; no Codex model process was launched during acceptance-readiness implementation"
   }
 }

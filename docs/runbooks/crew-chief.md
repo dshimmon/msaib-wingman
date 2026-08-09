@@ -89,19 +89,39 @@ PYTHONDONTWRITEBYTECODE=1 python -m tools.crew_chief run \
 The controller feature-detects the installed Codex CLI with version, `exec
 --help`, and `features list`. It requires ephemeral execution, explicit
 read-only sandboxing, approval denial, structured output, ignored user
-configuration, and ignored repository rules. It disables detected apps,
-browser, computer use, image generation, multi-agent operation, plugins, shell
-snapshots, and the default shell tool. It refuses automated execution if the
-installed CLI exposes no supported shell-tool control. Enabled-feature
-evidence is fail-closed: known prohibited feature names are accepted only
-because the launch command explicitly disables each one, and `personality` is
-the sole accepted enabled feature that may remain enabled because it exposes
-no tool, network, application, or write capability. Any other enabled feature,
-a failed feature inventory, or malformed feature evidence stops preparation or
-execution with a diagnostic naming the unsupported feature when available.
-This accepted set must be reviewed deliberately when the CLI adds a feature;
-an unfamiliar feature is never inferred safe. The controller records the CLI
-version, argv array, selection mode, and any limitation.
+configuration, ignored repository rules, exact output capture, and explicit
+feature-disable controls. It refuses automated execution if any required
+control or the supported shell-tool disable feature is absent. Failed,
+malformed, or duplicate feature evidence fails closed.
+
+The 2026-08-09 acceptance probe of `codex-cli 0.147.0-alpha.6.5` classified all
+38 enabled features as prohibited for the review process:
+
+- tool, application, network, or external-capability surfaces: `apps`,
+  `auth_elicitation`, `browser_use`, `browser_use_external`,
+  `browser_use_full_cdp_access`, `code_mode_host`, `computer_use`, `hooks`,
+  `image_generation`, `in_app_browser`, `multi_agent`, `plugin_sharing`,
+  `plugins`, `remote_plugin`, `shell_snapshot`, `shell_tool`,
+  `skill_mcp_dependency_install`, `skill_search`,
+  `tool_call_mcp_elicitation`, `tool_search_always_defer_mcp_tools`,
+  `tool_suggest`, `unified_exec`, and `workspace_dependencies`;
+- workflow, approval, identity, or inherited-context surfaces:
+  `collaboration_modes`, `fast_mode`, `goals`, `guardian_approval`,
+  `mentions_v2`, `personality`, and `steer`;
+- transport, storage, UI, or runtime features lacking affirmative isolation
+  evidence: `enable_request_compression`, `in_app_updates`, `item_ids`,
+  `remote_compaction_v2`, `resize_all_images`, `sqlite`,
+  `terminal_resize_reflow`, and `tui_app_server`.
+
+The permitted-remain-enabled set is therefore empty. The controller accepts a
+known prohibited enabled name only because the final argv explicitly disables
+it. Any unfamiliar enabled feature stops preparation before model invocation;
+names are never inferred safe. This deliberately conservative classification
+may be relaxed only by a later evidence-backed change proving that a feature
+cannot expose a model-facing tool, network path, external application,
+credential, writable capability, approval path, or inherited mutable context.
+The controller records the CLI version, exact capabilities, argv array,
+selection mode, and any limitation.
 
 Because the shell tool is disabled, the controller deterministically embeds
 the complete frozen evidence set in standard input. Each block names its exact

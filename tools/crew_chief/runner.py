@@ -38,40 +38,62 @@ _DISABLED_REVIEW_FEATURES = (
     "browser_use",
     "browser_use_external",
     "browser_use_full_cdp_access",
+    "code_mode_host",
+    "collaboration_modes",
     "computer_use",
+    "enable_request_compression",
+    "fast_mode",
+    "goals",
+    "guardian_approval",
     "image_generation",
     "in_app_browser",
+    "in_app_updates",
     "hooks",
+    "item_ids",
+    "mentions_v2",
     "multi_agent",
     "multi_agent_v2",
+    "personality",
     "plugins",
     "plugin_sharing",
     "recommended_plugins",
+    "remote_compaction_v2",
     "remote_plugin",
+    "resize_all_images",
     "shell_snapshot",
     "shell_tool",
     "skill_mcp_dependency_install",
     "skill_search",
+    "sqlite",
     "standalone_web_search",
+    "steer",
+    "terminal_resize_reflow",
     "web_search_cached",
     "web_search_request",
     "tool_call_mcp_elicitation",
     "tool_search_always_defer_mcp_tools",
     "tool_suggest",
+    "tui_app_server",
+    "unified_exec",
     "workspace_dependencies",
 )
-_PERMITTED_REVIEW_FEATURES = ("personality",)
+_PERMITTED_REVIEW_FEATURES: tuple[str, ...] = ()
 _ACCEPTED_ENABLED_FEATURES = frozenset(
     (*_DISABLED_REVIEW_FEATURES, *_PERMITTED_REVIEW_FEATURES)
 )
 _REQUIRED_EXEC_FLAGS = frozenset(
     {
         "--config",
+        "--cd",
+        "--color",
+        "--disable",
         "--ephemeral",
         "--ignore-rules",
         "--ignore-user-config",
+        "--output-last-message",
         "--output-schema",
         "--sandbox",
+        "--strict-config",
     }
 )
 _MAX_EMBEDDED_EVIDENCE_BYTES = 16 * 1024 * 1024
@@ -95,6 +117,17 @@ def _validate_enabled_features(features: tuple[str, ...]) -> None:
         raise CrewChiefError(
             "Codex has unsupported enabled features: " + ", ".join(unsupported)
         )
+
+
+def _validate_capabilities(capabilities: CodexCapabilities) -> None:
+    _validate_enabled_features(capabilities.features)
+    missing = sorted(_REQUIRED_EXEC_FLAGS - set(capabilities.exec_flags))
+    if missing:
+        raise CrewChiefError(
+            f"installed Codex exec lacks required controls: {missing}"
+        )
+    if not capabilities.shell_tool_control:
+        raise CrewChiefError("Codex shell-tool disable control is unavailable")
 
 
 def _completed(
@@ -141,6 +174,10 @@ def detect_codex_capabilities(
             raise CrewChiefError(
                 "Codex enabled-feature evidence is malformed; isolation cannot be proven"
             )
+        if fields[0] in available_features:
+            raise CrewChiefError(
+                "Codex enabled-feature evidence is duplicated; isolation cannot be proven"
+            )
         available_features.add(fields[0])
         if fields[-1].lower() == "true":
             features.append(fields[0])
@@ -165,7 +202,7 @@ def detect_codex_capabilities(
         shell_tool_control=True,
         custom_agent_selector="--agent" in help_text,
     )
-    _validate_enabled_features(capabilities.features)
+    _validate_capabilities(capabilities)
     return capabilities
 
 
@@ -175,9 +212,7 @@ def build_launch_command(
     schema: Path,
     report_output: Path,
 ) -> list[str]:
-    if not capabilities.shell_tool_control:
-        raise CrewChiefError("Codex shell-tool disable control is unavailable")
-    _validate_enabled_features(capabilities.features)
+    _validate_capabilities(capabilities)
     command = [
         capabilities.executable,
         "exec",
@@ -195,7 +230,7 @@ def build_launch_command(
         str(report_output),
         "--color",
         "never",
-        "-C",
+        "--cd",
         str(workspace),
     ]
     for feature in _DISABLED_REVIEW_FEATURES:

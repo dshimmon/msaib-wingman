@@ -11,7 +11,7 @@
   "lifecycle": "active",
   "priority": "high",
   "portfolio_primary": true,
-  "authorization_gate": "implementation locally committed; independent bootstrap audit required before controlled Crew Chief acceptance",
+  "authorization_gate": "closeout authorized within six-commit and four-model-invocation limits; acceptance-readiness implementation and canonical reconciliation in progress",
   "approval_evidence": [
     {
       "date": "2026-08-08",
@@ -22,10 +22,23 @@
       "date": "2026-08-09",
       "authority": "Maverick",
       "scope": "Authorized Crew Chief v1 implementation, credential-free validation, and exactly one local implementation commit; prohibited live model audit, push, merge, publication, operational declaration, and mission completion."
+    },
+    {
+      "date": "2026-08-09",
+      "authority": "Maverick",
+      "scope": "Authorized one bounded Crew Chief correction and one local correction commit to enforce fail-closed feature handling, complete frozen source context, risk-profile coverage, and frozen citation binding; prohibited push, merge, publication, live Crew Chief execution, and mission completion."
+    },
+    {
+      "date": "2026-08-09",
+      "authority": "Maverick",
+      "scope": "Authorized bounded Crew Chief closeout: acceptance-readiness corrections, canonical reconciliation, up to two fresh ordinary-Codex bootstrap attempts, exactly two controlled Crew Chief fixture acceptance invocations, in-scope finding correction, no more than six new local commits, and a final evidence package; prohibited push, merge, rebase, amend, tag, publication, credential exposure, and mission completion."
     }
   ],
   "baseline_commit": "b1910d0c69a52d73ddde93cb9722f12540c5d1e7",
-  "implementation_commits": [],
+  "implementation_commits": [
+    "82c5952e64eb8fe5638701fef1f9d289b7735d82",
+    "3e4edff5cc5e9b9810827331ca1024fd14c8f875"
+  ],
   "pushed": false,
   "merged": false,
   "official_decisions": [
@@ -34,7 +47,7 @@
     "docs/decisions/governance/crew-chief-audit.md"
   ],
   "workstream": {
-    "owner_session": "Codex implementation session authorized by Maverick on 2026-08-09",
+    "owner_session": "Codex closeout session authorized by Maverick on 2026-08-09",
     "branch": "codex/crew-chief-v1-build-20260809",
     "worktree": "/Users/davidshimmon/.codex/worktrees/a83e/msaib-wingman",
     "writable_scope": [
@@ -57,10 +70,10 @@
       "tools/crew_chief/",
       "tools/governance/repository.py"
     ],
-    "state": "implemented_tested_locally_committed_awaiting_independent_bootstrap_audit",
-    "next_gate": "A fresh ordinary Codex reviewer must conduct the read-only bootstrap audit and state that it is not a Crew Chief audit."
+    "state": "acceptance_readiness_implementation_in_progress",
+    "next_gate": "Commit and reconcile the current CLI acceptance-readiness correction, then conduct one fresh ordinary-Codex deep-profile bootstrap review."
   },
-  "next_gate": "Conduct the separately controlled fresh ordinary-Codex bootstrap audit; do not run Crew Chief acceptance without later authorization.",
+  "next_gate": "Complete deterministic validation and exact-hash reconciliation before the authorized fresh ordinary-Codex bootstrap review.",
   "supersedes": null,
   "superseded_by": null,
   "paused": false,
@@ -71,15 +84,19 @@
 
 Lifecycle: **active** and **portfolio-primary**. Call sign: **CREW-CHIEF**.
 
-Maverick authorized Crew Chief v1 implementation and exactly one local commit
-on 2026-08-09. When read from that implementation commit, this record describes
-an implementation candidate that is implemented and tested locally, locally
-committed, and awaiting an independent bootstrap audit. The implementation
-commit intentionally does not record its own hash inside itself.
+Maverick authorized Crew Chief v1 implementation, a bounded enforcement
+correction, and this bounded closeout on 2026-08-09. The original implementation
+and correction are locally committed at the exact hashes recorded above. This
+closeout permits acceptance-readiness work, a fresh ordinary-Codex bootstrap
+review, and a two-run controlled Crew Chief fixture acceptance exercise within
+the recorded commit and model-invocation limits.
 
-Crew Chief is not published, not operational, not independently audited, and
-not mission-complete. No live model audit occurred during implementation, and
-a real Crew Chief acceptance run requires later separate authorization.
+Implemented, tested, locally committed, bootstrap-reviewed,
+acceptance-validated, Maverick-approved, published, operational, and
+mission-complete are distinct states. At this gate the first three apply only
+to the previously recorded candidate; bootstrap and controlled acceptance have
+not yet occurred. Crew Chief is not approved, published, operational, or
+mission-complete, and the lifecycle remains active.
 
 ## Approved responsibility
 
@@ -101,8 +118,9 @@ and credential-free tests. [GOV-004](../../../decisions/governance/crew-chief-au
 defines the enduring workflow and bootstrap boundary.
 
 The exact evidence and validation record belongs in [`evidence.md`](evidence.md),
-with chronological build notes in [`journal.md`](journal.md). The exact next
-gate is a fresh ordinary Codex bootstrap audit that operates read-only and
-states, “This bootstrap audit is not a Crew Chief audit.” Crew Chief cannot
-audit or certify this initial implementation. Any controlled real Crew Chief
-acceptance run is a later, separately authorized gate.
+with chronological build notes in [`journal.md`](journal.md). After the
+acceptance-readiness commit is reconciled by exact hash, the next gate is a
+fresh ordinary Codex bootstrap audit that operates read-only and states,
+“This bootstrap audit is not a Crew Chief audit.” Only a successful bootstrap
+permits the separately authorized controlled fixture acceptance exercise.
+Neither review transfers Maverick's final authority.

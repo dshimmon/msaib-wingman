@@ -7,9 +7,9 @@
 
 - Mission: **governance/crew-chief — Crew Chief Independent Audit**
 - Lifecycle: **active**
-- Authorization gate: `implementation locally committed; independent bootstrap audit required before controlled Crew Chief acceptance`
+- Authorization gate: `closeout authorized within six-commit and four-model-invocation limits; acceptance-readiness implementation and canonical reconciliation in progress`
 - Official record: [docs/missions/governance/crew-chief/mission.md](docs/missions/governance/crew-chief/mission.md)
-- Next gate: Conduct the separately controlled fresh ordinary-Codex bootstrap audit; do not run Crew Chief acceptance without later authorization.
+- Next gate: Complete deterministic validation and exact-hash reconciliation before the authorized fresh ordinary-Codex bootstrap review.
 
 ## Last completed work
 
@@ -21,7 +21,7 @@
 
 | Mission | Role | Branch | Worktree | State | Next gate |
 |---|---|---|---|---|---|
-| `governance/crew-chief` | primary | `codex/crew-chief-v1-build-20260809` | `/Users/davidshimmon/.codex/worktrees/a83e/msaib-wingman` | implemented_tested_locally_committed_awaiting_independent_bootstrap_audit | A fresh ordinary Codex reviewer must conduct the read-only bootstrap audit and state that it is not a Crew Chief audit. |
+| `governance/crew-chief` | primary | `codex/crew-chief-v1-build-20260809` | `/Users/davidshimmon/.codex/worktrees/a83e/msaib-wingman` | acceptance_readiness_implementation_in_progress | Commit and reconcile the current CLI acceptance-readiness correction, then conduct one fresh ordinary-Codex deep-profile bootstrap review. |
 
 ## Canonical homes
 

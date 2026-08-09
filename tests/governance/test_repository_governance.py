@@ -367,9 +367,9 @@ _expose(__name__, "knowledge")
         context = repository.render_context(self.missions)
         index = repository.render_mission_index(self.missions)
         self.assertIn("governance/crew-chief", current)
-        self.assertIn("awaiting_independent_bootstrap_audit", current)
-        self.assertIn("not published, operational", context)
-        self.assertIn("hash intentionally not self-recorded", index)
+        self.assertIn("acceptance_readiness_implementation_in_progress", current)
+        self.assertIn("pushed=`false`; merged=`false`", context)
+        self.assertIn("committed=yes; pushed=no; merged=no", index)
 
 
 if __name__ == "__main__":

@@ -31,6 +31,8 @@ from tools.crew_chief.core import (
 )
 from tools.crew_chief.runner import (
     _DISABLED_REVIEW_FEATURES,
+    _PERMITTED_REVIEW_FEATURES,
+    _REQUIRED_EXEC_FLAGS,
     CodexCapabilities,
     build_launch_command,
     detect_codex_capabilities,
@@ -932,12 +934,7 @@ class CrewChiefRunnerTests(unittest.TestCase):
             executable="/fixture/codex",
             version="codex-cli fixture",
             exec_flags=(
-                "--config",
-                "--ephemeral",
-                "--ignore-rules",
-                "--ignore-user-config",
-                "--output-schema",
-                "--sandbox",
+                *sorted(_REQUIRED_EXEC_FLAGS),
             ),
             features=(
                 "apps",
@@ -983,7 +980,7 @@ class CrewChiefRunnerTests(unittest.TestCase):
         capabilities = CodexCapabilities(
             **{
                 **capabilities.__dict__,
-                "features": (*_DISABLED_REVIEW_FEATURES, "personality"),
+                "features": _DISABLED_REVIEW_FEATURES,
             }
         )
         command = build_launch_command(
@@ -999,7 +996,7 @@ class CrewChiefRunnerTests(unittest.TestCase):
         }
         self.assertEqual(disabled, set(_DISABLED_REVIEW_FEATURES))
 
-    def test_known_permitted_feature_does_not_require_disabling(self):
+    def test_permitted_inventory_is_empty_and_personality_is_disabled(self):
         capabilities = CodexCapabilities(
             executable="/fixture/codex",
             version="codex-cli fixture",
@@ -1014,8 +1011,33 @@ class CrewChiefRunnerTests(unittest.TestCase):
             Path("/tmp/schema.json"),
             Path("/tmp/report.json"),
         )
-        self.assertNotIn("personality", command)
+        self.assertEqual(_PERMITTED_REVIEW_FEATURES, ())
+        self.assertIn("personality", command)
         self.assertIn("shell_tool", command)
+
+    def test_tampered_prepared_capabilities_fail_before_process_runner(self):
+        invocation = prepare_review_workspace(
+            self.envelope_path,
+            Path(self.temporary.name) / "tampered-capabilities-review",
+            detector=lambda _: self.capabilities(selector=True),
+            clock=lambda: FIXED_TIME,
+        )
+        invocation["capabilities"]["features"] = tuple(
+            feature
+            for feature in invocation["capabilities"]["features"]
+            if feature != "shell_tool"
+        )
+        fake_runner = mock.Mock()
+        with self.assertRaisesRegex(
+            CrewChiefError, "invocation argv changed after preparation"
+        ):
+            execute_prepared_review(
+                self.envelope_path,
+                invocation,
+                runner=fake_runner,
+                clock=lambda: FIXED_TIME,
+            )
+        fake_runner.assert_not_called()
 
     def test_unknown_enabled_feature_fails_before_process_runner(self):
         invocation = prepare_review_workspace(
@@ -1138,12 +1160,7 @@ class CrewChiefRunnerTests(unittest.TestCase):
                     "",
                 )
             help_text = " ".join(sorted({
-                "--config",
-                "--ephemeral",
-                "--ignore-rules",
-                "--ignore-user-config",
-                "--output-schema",
-                "--sandbox",
+                *_REQUIRED_EXEC_FLAGS,
                 "--agent",
             }))
             return subprocess.CompletedProcess(arguments, 0, help_text, "")
@@ -1173,12 +1190,7 @@ class CrewChiefRunnerTests(unittest.TestCase):
                 arguments,
                 0,
                 " ".join(sorted({
-                    "--config",
-                    "--ephemeral",
-                    "--ignore-rules",
-                    "--ignore-user-config",
-                    "--output-schema",
-                    "--sandbox",
+                    *_REQUIRED_EXEC_FLAGS,
                 })),
                 "",
             )
@@ -1212,12 +1224,7 @@ class CrewChiefRunnerTests(unittest.TestCase):
                         arguments,
                         0,
                         " ".join(sorted({
-                            "--config",
-                            "--ephemeral",
-                            "--ignore-rules",
-                            "--ignore-user-config",
-                            "--output-schema",
-                            "--sandbox",
+                            *_REQUIRED_EXEC_FLAGS,
                         })),
                         "",
                     )
@@ -1230,6 +1237,48 @@ class CrewChiefRunnerTests(unittest.TestCase):
                         CrewChiefError, "feature.*(failed|malformed)"
                     ):
                         detect_codex_capabilities("codex", runner=fake_runner)
+
+    def test_duplicate_feature_inventory_fails_closed(self):
+        def fake_runner(arguments, **_kwargs):
+            if arguments[-1] == "--version":
+                return subprocess.CompletedProcess(
+                    arguments, 0, "codex-cli fixture\n", ""
+                )
+            if arguments[-2:] == ["features", "list"]:
+                return subprocess.CompletedProcess(
+                    arguments,
+                    0,
+                    "shell_tool stable true\nshell_tool stable true\n",
+                    "",
+                )
+            return subprocess.CompletedProcess(
+                arguments, 0, " ".join(sorted(_REQUIRED_EXEC_FLAGS)), ""
+            )
+
+        with mock.patch(
+            "tools.crew_chief.runner.shutil.which", return_value="/fixture/codex"
+        ):
+            with self.assertRaisesRegex(CrewChiefError, "duplicated"):
+                detect_codex_capabilities("codex", runner=fake_runner)
+
+    @unittest.skipUnless(shutil.which("codex"), "installed Codex CLI unavailable")
+    def test_installed_codex_completes_preparation_without_model(self):
+        invocation = prepare_review_workspace(
+            self.envelope_path,
+            Path(self.temporary.name) / "installed-cli-review",
+            clock=lambda: FIXED_TIME,
+        )
+        self.assertFalse(invocation["live_audit_performed"])
+        self.assertEqual(invocation["execution_mode"], "fresh-session-fallback")
+        features = set(invocation["capabilities"]["features"])
+        command = invocation["argv"]
+        disabled = {
+            command[index + 1]
+            for index, value in enumerate(command[:-1])
+            if value == "--disable"
+        }
+        self.assertEqual(disabled, features)
+        self.assertFalse(Path(invocation["report_path"]).exists())
 
     def test_missing_authentication_fails_without_consuming(self):
         invocation = prepare_review_workspace(

@@ -124,3 +124,39 @@ and execution remain a later separately authorized controlled acceptance gate.
 The implementation is not published, not operational, and not
 mission-complete. Nothing in this evidence grants push, merge, or lifecycle
 approval authority.
+
+## 2026-08-09 acceptance-readiness closeout candidate
+
+Maverick's bounded closeout authorization reconciles the original
+implementation commit `82c5952e64eb8fe5638701fef1f9d289b7735d82` and bounded
+correction commit `3e4edff5cc5e9b9810827331ca1024fd14c8f875` into the
+canonical active mission. It authorizes readiness correction, a fresh
+ordinary-Codex bootstrap review, exactly two controlled Crew Chief fixture
+acceptance runs, up to two ordinary bootstrap attempts, and no more than six
+new local commits. It does not authorize push, merge, publication, operational
+status, or mission completion.
+
+The live non-model probe found `codex-cli 0.147.0-alpha.6.5` with 38 enabled
+features. The readiness correction explicitly classifies and disables all 38;
+no feature is permitted to remain enabled. Capability validation now also
+requires every command-line control actually used by the prepared argv,
+rejects duplicate inventory rows, and rejects tampered prepared capabilities
+before authentication or process invocation. The exact classifications and
+effective controls are recorded in the runbook and adjacent test-claims JSON.
+An installed-CLI integration test successfully prepared the external
+read-only command and verified that no report or model run was produced.
+
+The readiness validation passed 67 focused Crew Chief tests in 50.461 seconds,
+95 combined Crew Chief and repository-governance tests in 54.405 seconds, 143
+complete governance tests in 62.079 seconds, and 372 complete credential-free
+repository tests in 67.775 seconds, with no failures, errors, or skips. Ruff,
+repository governance, all four Crew Chief Schemas, and Git whitespace checks
+also passed. Expected negative-path Flightline and Atlas diagnostics and bare
+Streamlit warnings appeared during the green complete suite. The exact commands
+and results are in
+[`artifacts/implementation-test-claims.json`](artifacts/implementation-test-claims.json).
+
+No model process ran during this readiness implementation. The next gate is an
+exact-hash reconciliation commit followed by a fresh, isolated ordinary Codex
+bootstrap review. Controlled Crew Chief fixture acceptance remains contingent
+on a successful bootstrap.

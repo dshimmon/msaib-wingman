@@ -59,3 +59,27 @@ The correction candidate still requires Goose's independent evidence review
 and a fresh bootstrap re-audit. A controlled Crew Chief acceptance run remains
 separately authorized work, and no push, merge, publication, operational, or
 mission-complete claim is made here.
+
+## 2026-08-09 — Authorized closeout acceptance readiness
+
+- Repeated the `CANOPY-7C2F-ATLAS` check and verified the clean expected branch
+  at correction commit `3e4edff5cc5e9b9810827331ca1024fd14c8f875`, two commits
+  ahead of `origin/main` with the expected merge base and no upstream.
+- Reconciled Maverick's implementation, bounded-correction, and closeout
+  authorizations plus the two existing implementation hashes into the active
+  canonical mission without changing its lifecycle.
+- Probed the installed CLI without a model invocation. Version
+  `codex-cli 0.147.0-alpha.6.5` exposed 38 enabled features and every one is now
+  explicitly classified and disabled for Crew Chief; the permitted-remain
+  inventory is empty.
+- Added enforcement and tests for the full current inventory, every actual
+  argv control, duplicate inventory evidence, prepared-capability tampering,
+  future unknown features, and actual installed-CLI preparation without a
+  model process.
+- Passed 67 focused, 95 combined Crew Chief/repository-governance, 143 complete
+  governance, and 372 complete repository tests, plus Ruff, governance, four
+  Schema loads, and Git whitespace validation.
+
+The readiness commit cannot record its own hash. A separate canonical
+reconciliation commit must bind that exact hash before the authorized fresh
+ordinary-Codex bootstrap review.
