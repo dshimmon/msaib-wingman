@@ -11,9 +11,12 @@ from jsonschema import Draft202012Validator, FormatChecker
 from referencing import Registry, Resource
 
 from tools.crew_chief.core import (
+    ALL_AUDIT_FOCUS,
+    PROFILE_FOCUS,
     CrewChiefError,
     SCHEMA_NAMES,
     canonical_json_bytes,
+    normalize_repo_path,
     sha256_bytes,
 )
 
@@ -78,12 +81,111 @@ def _expected_verdict(report: dict[str, Any]) -> str:
     return "PASS_WITH_ADVISORIES"
 
 
+def _validate_audit_scope(
+    envelope: dict[str, Any], report: dict[str, Any]
+) -> None:
+    profile = envelope.get("risk_profile")
+    if not isinstance(profile, dict):
+        raise CrewChiefError("report validation requires a bound audit risk profile")
+    name = profile.get("name")
+    if name not in PROFILE_FOCUS:
+        raise CrewChiefError(f"audit risk profile is unrecognized: {name!r}")
+    required = profile.get("required_focus")
+    canonical = list(PROFILE_FOCUS[name])
+    if required != canonical:
+        raise CrewChiefError(
+            f"{name} audit risk profile has malformed required focus"
+        )
+    if name == "exempt" and not str(profile.get("justification", "")).strip():
+        raise CrewChiefError("exempt audit profile requires a justification")
+    scope = report["audit_scope"]
+    unrecognized = sorted(set(scope) - ALL_AUDIT_FOCUS)
+    if unrecognized:
+        raise CrewChiefError(
+            f"report audit scope contains unrecognized coverage: {unrecognized}"
+        )
+    missing = [focus for focus in required if focus not in scope]
+    if missing:
+        raise CrewChiefError(
+            f"report audit scope is missing required {name} coverage: {missing}"
+        )
+
+
+def _validate_finding_evidence(
+    envelope: dict[str, Any], report: dict[str, Any]
+) -> None:
+    verified = envelope.get("_verified_evidence")
+    if not isinstance(verified, dict):
+        raise CrewChiefError(
+            "report validation requires a verified frozen evidence catalog"
+        )
+    if (
+        envelope["risk_profile"]["name"] == "exempt"
+        and verified.get("exempt_governance_validation") is not True
+    ):
+        raise CrewChiefError(
+            "exempt audit profile requires bound governance validation evidence"
+        )
+    sources = verified.get("sources")
+    artifacts = verified.get("artifacts")
+    if not isinstance(sources, list) or not isinstance(artifacts, list):
+        raise CrewChiefError("verified frozen evidence catalog is malformed")
+    source_catalog = {
+        (item.get("path"), item.get("state")): item
+        for item in sources
+        if isinstance(item, dict)
+    }
+    if len(source_catalog) != len(sources):
+        raise CrewChiefError("verified frozen source catalog is duplicated or malformed")
+    artifact_catalog = {
+        (item.get("artifact"), item.get("reference"))
+        for item in artifacts
+        if isinstance(item, dict)
+    }
+    if len(artifact_catalog) != len(artifacts):
+        raise CrewChiefError(
+            "verified frozen artifact catalog is duplicated or malformed"
+        )
+    for finding in report["findings"]:
+        for evidence in finding["evidence"]:
+            if evidence["kind"] == "artifact":
+                key = (evidence["artifact"], evidence["reference"])
+                if key not in artifact_catalog:
+                    raise CrewChiefError(
+                        "finding cites an unknown frozen artifact: "
+                        f"{evidence['artifact']} ({evidence['reference']})"
+                    )
+                continue
+            path = normalize_repo_path(evidence["path"])
+            state = evidence["state"]
+            source = source_catalog.get((path, state))
+            if source is None:
+                raise CrewChiefError(
+                    f"finding cites an unfrozen source: {path} ({state})"
+                )
+            if (
+                source.get("file_type") not in {"regular", "executable"}
+                or source.get("encoding") != "utf-8"
+            ):
+                raise CrewChiefError(
+                    f"finding line citation requires frozen text: {path} ({state})"
+                )
+            line_count = source.get("line_count")
+            if not isinstance(line_count, int) or evidence["line_end"] > line_count:
+                raise CrewChiefError(
+                    "finding source line range exceeds frozen content: "
+                    f"{path} ({state}) has {line_count} lines"
+                )
+
+
 def validate_report(envelope: dict[str, Any], report: dict[str, Any]) -> None:
     validate_instance("report-v1.schema.json", report)
     if report["audit_id"] != envelope["audit_id"]:
         raise CrewChiefError("report audit_id does not match the envelope")
     if report["envelope_id"] != envelope["envelope_id"]:
         raise CrewChiefError("report envelope_id does not match the envelope")
+    _validate_audit_scope(envelope, report)
+    _validate_finding_evidence(envelope, report)
     finding_ids = [finding["finding_id"] for finding in report["findings"]]
     if len(finding_ids) != len(set(finding_ids)):
         raise CrewChiefError("finding IDs must be unique")
@@ -97,10 +199,9 @@ def validate_report(envelope: dict[str, Any], report: dict[str, Any]) -> None:
         if severity == "medium" and not finding.get("blocking_rationale"):
             raise CrewChiefError("medium findings require a blocking rationale")
         for evidence in finding["evidence"]:
-            if (
-                evidence["kind"] == "source"
-                and evidence["line_end"] < evidence["line_start"]
-            ):
+            if evidence["kind"] == "source" and evidence[
+                "line_end"
+            ] < evidence["line_start"]:
                 raise CrewChiefError("source evidence line range is invalid")
     expected = _expected_verdict(report)
     if report["verdict"] != expected:

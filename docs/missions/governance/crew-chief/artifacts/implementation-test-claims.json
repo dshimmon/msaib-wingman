@@ -3,41 +3,63 @@
   "finalized": true,
   "subject": {
     "base_commit": "b1910d0c69a52d73ddde93cb9722f12540c5d1e7",
-    "branch": "codex/crew-chief-v1-build-20260809"
+    "branch": "codex/crew-chief-v1-build-20260809",
+    "correction_parent": "82c5952e64eb8fe5638701fef1f9d289b7735d82"
+  },
+  "correction": {
+    "objective": "Fail closed on unknown enabled Codex features, freeze complete changed-source context, enforce risk-profile coverage, and bind finding citations to frozen evidence.",
+    "bootstrap_finding": {
+      "finding_id": "CC-0001",
+      "disposition": "resolved_in_correction_candidate_pending_fresh_bootstrap_reaudit"
+    },
+    "mission_control_concerns": {
+      "complete_frozen_implementation_context": "resolved_in_correction_candidate",
+      "risk_profile_enforcement": "resolved_in_correction_candidate",
+      "finding_citation_binding": "resolved_in_correction_candidate"
+    }
   },
   "live_model_audit_performed": false,
   "model_or_network_invocation_during_tests": false,
   "results": [
     {
       "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 python -m unittest tests.governance.test_crew_chief",
-      "tests": 49,
+      "tests": 64,
       "failures": 0,
       "errors": 0,
       "skips": 0,
-      "duration_seconds": 29.017,
+      "duration_seconds": 45.135,
+      "result": "PASS"
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src OPENAI_API_KEY=repository-governance-offline-placeholder PYTHON_DOTENV_DISABLED=1 python -m unittest tests.governance.test_crew_chief tests.governance.test_repository_governance",
+      "tests": 92,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "duration_seconds": 49.288,
       "result": "PASS"
     },
     {
       "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src OPENAI_API_KEY=repository-governance-offline-placeholder PYTHON_DOTENV_DISABLED=1 python -m unittest discover -s tests/governance -t . -p 'test_*.py'",
-      "tests": 125,
+      "tests": 140,
       "failures": 0,
       "errors": 0,
       "skips": 0,
-      "duration_seconds": 39.958,
+      "duration_seconds": 57.054,
       "result": "PASS"
     },
     {
       "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src OPENAI_API_KEY=repository-governance-offline-placeholder PYTHON_DOTENV_DISABLED=1 python -m unittest discover -s tests -t . -p 'test_*.py'",
-      "tests": 354,
+      "tests": 369,
       "failures": 0,
       "errors": 0,
       "skips": 0,
-      "duration_seconds": 44.228,
+      "duration_seconds": 61.901,
       "result": "PASS",
       "note": "Expected negative-path Flightline and Atlas diagnostics and bare-Streamlit warnings were emitted; the suite remained green."
     },
     {
-      "command": "ruff check tools/crew_chief tools/governance/repository.py tests/governance/test_crew_chief.py tests/governance/test_repository_governance.py",
+      "command": "ruff check tools/crew_chief tests/governance/test_crew_chief.py",
       "result": "PASS",
       "output": "All checks passed!"
     },
@@ -47,9 +69,9 @@
       "output": "Repository governance validation passed."
     },
     {
-      "command": "env PYTHONDONTWRITEBYTECODE=1 python -m tools.crew_chief --help",
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 python -c 'from tools.crew_chief.validation import load_schemas; print(f\"Validated {len(load_schemas())} Crew Chief schemas.\")'",
       "result": "PASS",
-      "operations": ["prepare", "run", "validate-report", "reconcile"]
+      "output": "Validated 4 Crew Chief schemas."
     },
     {
       "command": "git diff --check",
@@ -57,8 +79,20 @@
       "output": ""
     }
   ],
+  "development_runs": [
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 python -m unittest tests.governance.test_crew_chief",
+      "tests": 64,
+      "failures": 1,
+      "errors": 1,
+      "skips": 0,
+      "duration_seconds": 44.873,
+      "result": "FAIL",
+      "disposition": "Two new test-harness defects were corrected: tuple mutation was replaced by tuple reconstruction, and the oversize test no longer incorrectly requires capability detection to be skipped. The production assertions did not fail, and the exact command then passed."
+    }
+  ],
   "codex_capabilities": {
-    "version": "codex-cli 0.147.0-alpha.6.5",
+    "original_build_version": "codex-cli 0.147.0-alpha.6.5",
     "non_interactive_custom_agent_selector": false,
     "shell_tool_disable_control": true,
     "required_exec_flags": [
@@ -71,6 +105,10 @@
     ],
     "effective_approval_config": "approval_policy=\"never\"",
     "effective_sandbox": "read-only",
-    "automation_state": "validated fresh-session fallback prepared; no model process executed"
+    "accepted_enabled_features": ["personality"],
+    "unknown_enabled_features_fail_closed": true,
+    "feature_inventory_failure_or_malformed_output_fails_closed": true,
+    "correction_capability_probe_performed": false,
+    "automation_state": "deterministic fake-runner validation only; no Codex model process or live capability probe executed during the correction"
   }
 }

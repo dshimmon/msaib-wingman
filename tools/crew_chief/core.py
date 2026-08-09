@@ -22,6 +22,41 @@ SCHEMA_NAMES = (
     "reconciliation-v1.schema.json",
 )
 RISK_PROFILES = frozenset({"standard", "deep", "exempt"})
+PROFILE_FOCUS = {
+    "standard": (
+        "scope",
+        "correctness",
+        "tests",
+        "documentation",
+        "unrequested_changes",
+        "completion_claims",
+        "maintainability",
+    ),
+    "deep": (
+        "scope",
+        "architecture",
+        "correctness",
+        "security",
+        "data",
+        "tests",
+        "documentation",
+        "dependencies",
+        "compatibility",
+        "public_contracts",
+        "migrations",
+        "unrequested_changes",
+        "completion_claims",
+        "maintainability",
+    ),
+    "exempt": (
+        "recorded_exemption_justification",
+        "deterministic_governance_validation",
+        "status_claim_accuracy",
+    ),
+}
+ALL_AUDIT_FOCUS = frozenset(
+    focus for profile in PROFILE_FOCUS.values() for focus in profile
+)
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _SECRET_EXACT = frozenset(
     {
@@ -75,6 +110,17 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def payload_encoding(value: bytes) -> tuple[str, int | None]:
+    """Classify frozen bytes consistently for manifests and model payloads."""
+    try:
+        text = value.decode("utf-8")
+    except UnicodeDecodeError:
+        return "base64", None
+    if "\x00" in text:
+        return "base64", None
+    return "utf-8", len(text.splitlines())
 
 
 def atomic_write(path: Path, payload: bytes) -> None:

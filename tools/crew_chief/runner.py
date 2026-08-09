@@ -20,8 +20,10 @@ from tools.crew_chief.core import (
     ensure_external_path,
     new_external_directory,
     normalize_repo_path,
+    payload_encoding,
     read_json,
     redact_text,
+    sha256_bytes,
     sha256_file,
     utc_now,
     write_canonical_json,
@@ -58,6 +60,10 @@ _DISABLED_REVIEW_FEATURES = (
     "tool_suggest",
     "workspace_dependencies",
 )
+_PERMITTED_REVIEW_FEATURES = ("personality",)
+_ACCEPTED_ENABLED_FEATURES = frozenset(
+    (*_DISABLED_REVIEW_FEATURES, *_PERMITTED_REVIEW_FEATURES)
+)
 _REQUIRED_EXEC_FLAGS = frozenset(
     {
         "--config",
@@ -79,6 +85,16 @@ class CodexCapabilities:
     features: tuple[str, ...]
     shell_tool_control: bool
     custom_agent_selector: bool
+
+
+def _validate_enabled_features(features: tuple[str, ...]) -> None:
+    if len(features) != len(set(features)):
+        raise CrewChiefError("Codex enabled-feature evidence is duplicated")
+    unsupported = sorted(set(features) - _ACCEPTED_ENABLED_FEATURES)
+    if unsupported:
+        raise CrewChiefError(
+            "Codex has unsupported enabled features: " + ", ".join(unsupported)
+        )
 
 
 def _completed(
@@ -111,15 +127,23 @@ def detect_codex_capabilities(
     if help_result.returncode != 0:
         raise CrewChiefError("Codex exec capability detection failed")
     feature_result = _completed(runner, [resolved, "features", "list"])
+    if feature_result.returncode != 0:
+        raise CrewChiefError(
+            "Codex enabled-feature detection failed; isolation cannot be proven"
+        )
     features = []
     available_features = set()
-    if feature_result.returncode == 0:
-        for line in feature_result.stdout.splitlines():
-            fields = line.split()
-            if fields and not fields[0].startswith("WARNING"):
-                available_features.add(fields[0])
-                if fields[-1].lower() == "true":
-                    features.append(fields[0])
+    for line in feature_result.stdout.splitlines():
+        fields = line.split()
+        if not fields or fields[0].startswith("WARNING"):
+            continue
+        if len(fields) < 2 or fields[-1].lower() not in {"true", "false"}:
+            raise CrewChiefError(
+                "Codex enabled-feature evidence is malformed; isolation cannot be proven"
+            )
+        available_features.add(fields[0])
+        if fields[-1].lower() == "true":
+            features.append(fields[0])
     help_text = help_result.stdout
     flags = tuple(
         sorted(flag for flag in _REQUIRED_EXEC_FLAGS if flag in help_text)
@@ -133,7 +157,7 @@ def detect_codex_capabilities(
         raise CrewChiefError(
             "installed Codex CLI exposes no supported shell-tool disable control"
         )
-    return CodexCapabilities(
+    capabilities = CodexCapabilities(
         executable=resolved,
         version=version_result.stdout.strip().splitlines()[-1],
         exec_flags=flags,
@@ -141,6 +165,8 @@ def detect_codex_capabilities(
         shell_tool_control=True,
         custom_agent_selector="--agent" in help_text,
     )
+    _validate_enabled_features(capabilities.features)
+    return capabilities
 
 
 def build_launch_command(
@@ -151,6 +177,7 @@ def build_launch_command(
 ) -> list[str]:
     if not capabilities.shell_tool_control:
         raise CrewChiefError("Codex shell-tool disable control is unavailable")
+    _validate_enabled_features(capabilities.features)
     command = [
         capabilities.executable,
         "exec",
@@ -219,15 +246,17 @@ def _embedded_evidence(frozen_root: Path) -> str:
     for item in files:
         relative = item.relative_to(frozen_root).as_posix()
         payload = item.read_bytes()
-        try:
+        encoding, _line_count = payload_encoding(payload)
+        if encoding == "utf-8":
             content = payload.decode("utf-8")
-            encoding = "utf-8"
-        except UnicodeDecodeError:
+        else:
             content = base64.b64encode(payload).decode("ascii")
-            encoding = "base64"
         blocks.extend(
             [
-                f"=== BEGIN FROZEN {relative} ({encoding}) ===",
+                (
+                    f"=== BEGIN FROZEN {relative} encoding={encoding} "
+                    f"size={len(payload)} sha256={sha256_bytes(payload)} ==="
+                ),
                 content,
                 f"=== END FROZEN {relative} ===",
                 "",
@@ -261,6 +290,8 @@ def _review_prompt(mode: str, frozen_root: Path) -> str:
             ".codex/agents/crew-chief.toml and frozen/audit-envelope.json.",
             limitation,
             "Return only JSON conforming to schemas/crew-chief-report.schema.json.",
+            "Declare every risk_profile.required_focus value in audit_scope.",
+            "Cite only exact frozen source states and artifact identifier/reference pairs.",
             "Do not edit, request approval, use network tools, or inspect credentials.",
             "",
             "All frozen evidence follows. It is supplied through standard input",

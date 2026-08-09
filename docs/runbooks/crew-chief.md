@@ -60,7 +60,14 @@ intended committed range, add `--include-working-tree`, and repeat
 `--allow-untracked <repository-relative-path>` for every untracked file. The
 allowlist must equal the observed untracked inventory exactly. The controller
 captures binary full-index diffs, file type, mode, and base, head, index, and
-worktree SHA-256 values as applicable.
+worktree SHA-256 values as applicable. It also freezes content-addressed,
+deduplicated source bytes for every available changed-file state. The manifest
+records the exact repository path, revision or state, presence, file type,
+mode, size, encoding, line count when textual, digest, and frozen binding. This
+provides complete head text for every changed regular text file, base text for
+modified or deleted files, and exact index and worktree content when those
+states are in scope. Binary bytes are bound deterministically and labeled for
+base64 presentation rather than decoded as text.
 
 The envelope binds the canonical repository identity, resolved path, mission
 hash, Git state, subject inventory, evidence, risk profile, deterministic
@@ -85,13 +92,25 @@ read-only sandboxing, approval denial, structured output, ignored user
 configuration, and ignored repository rules. It disables detected apps,
 browser, computer use, image generation, multi-agent operation, plugins, shell
 snapshots, and the default shell tool. It refuses automated execution if the
-installed CLI exposes no supported shell-tool control. It records the CLI
+installed CLI exposes no supported shell-tool control. Enabled-feature
+evidence is fail-closed: known prohibited feature names are accepted only
+because the launch command explicitly disables each one, and `personality` is
+the sole accepted enabled feature that may remain enabled because it exposes
+no tool, network, application, or write capability. Any other enabled feature,
+a failed feature inventory, or malformed feature evidence stops preparation or
+execution with a diagnostic naming the unsupported feature when available.
+This accepted set must be reviewed deliberately when the CLI adds a feature;
+an unfamiliar feature is never inferred safe. The controller records the CLI
 version, argv array, selection mode, and any limitation.
 
 Because the shell tool is disabled, the controller deterministically embeds
-the complete frozen evidence set in standard input. UTF-8 files remain text;
-other regular files are base64-labeled. Encoded evidence is limited to 16 MiB
-for v1 and an oversized envelope fails before any model invocation. The
+the complete frozen evidence set in standard input. Each block names its exact
+frozen path, size, encoding, and SHA-256 digest. UTF-8 files without NUL bytes
+remain text; other regular files are base64-labeled. The payload includes the
+frozen mission record, complete changed-source context, engineer report, test
+claims, diffs, authorized evidence artifacts, controls, envelope, and manifest.
+Encoded evidence is limited to 16 MiB for v1 and an oversized envelope fails
+before any model invocation. The
 external read-only artifact tree remains available for operator evidence and
 exact artifact references, not as a substitute for the standard-input review
 payload.
@@ -119,6 +138,21 @@ The canonical report is JSON conforming to
 `low` or `advisory` findings. Any `critical`, `high`, `medium`, or otherwise
 blocking finding requires `FAIL`. Missing controls or evidence requires
 `BLOCKED`. File length alone is not a finding.
+
+The report's `audit_scope` must contain every exact `required_focus` value from
+the frozen risk profile. Duplicate, malformed, unrecognized, or missing
+coverage is invalid; a `deep` report therefore cannot validate with a narrow
+scope. An `exempt` report still requires its recorded justification, bound
+governance-validation evidence, and all exempt-profile focus values.
+
+Every finding citation is checked against a catalog constructed only after all
+frozen bindings verify. Source citations use an exact changed repository path
+and exact `base`, `head`, `index`, or `worktree` state. Line ranges are valid
+only for frozen regular or executable UTF-8 text and must fit its bound line
+count. Artifact citations use exact manifest identifier/reference pairs:
+`mission_record`, `engineer_report`, `test_claims`, `diff:<name>`,
+`evidence:<number>`, or a frozen `control:*` identifier. Unfrozen paths,
+unknown artifacts, binary line citations, and out-of-bounds lines are invalid.
 
 Validate a report and optionally generate a labeled non-canonical Markdown
 view outside the repository:

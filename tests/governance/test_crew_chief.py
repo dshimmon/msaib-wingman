@@ -23,12 +23,14 @@ from tools.crew_chief.controller import (
 )
 from tools.crew_chief.core import (
     CANARY,
+    PROFILE_FOCUS,
     CrewChiefError,
     canonical_json_bytes,
     read_json,
     sha256_bytes,
 )
 from tools.crew_chief.runner import (
+    _DISABLED_REVIEW_FEATURES,
     CodexCapabilities,
     build_launch_command,
     detect_codex_capabilities,
@@ -63,6 +65,8 @@ class FixtureRepository:
 
         self.write("docs/missions/example/mission.md", "# Example mission\n")
         self.write("src/example.py", "VALUE = 1\n")
+        self.write("src/deleted.py", "REMOVED = True\n")
+        self.write_bytes("assets/payload.bin", b"\x00\xffbase\n")
         self.copy(ROOT / "AGENTS.md", "AGENTS.md")
         agent = ROOT / ".codex" / "agents" / "crew-chief.toml"
         self.copy(agent, ".codex/agents/crew-chief.toml")
@@ -74,6 +78,8 @@ class FixtureRepository:
         self.base = self.rev("HEAD")
 
         self.write("src/example.py", "VALUE = 2\n")
+        (self.repo / "src/deleted.py").unlink()
+        self.write_bytes("assets/payload.bin", b"\x00\xffhead\n")
         self.write("scripts/check.sh", "#!/bin/sh\nexit 0\n")
         os.chmod(self.repo / "scripts" / "check.sh", 0o755)
         self.git("add", ".")
@@ -114,6 +120,12 @@ class FixtureRepository:
         path.write_text(content, encoding="utf-8")
         return path
 
+    def write_bytes(self, relative: str, content: bytes) -> Path:
+        path = self.repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+        return path
+
     def copy(self, source: Path, relative: str) -> Path:
         target = self.repo / relative
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -150,7 +162,14 @@ class FixtureRepository:
         )
 
 
-def report_for(envelope: dict, findings=None, *, verdict="PASS", blocked=None):
+def report_for(
+    envelope: dict,
+    findings=None,
+    *,
+    verdict="PASS",
+    blocked=None,
+    scope=None,
+):
     return {
         "schema_version": "1.0",
         "canary": CANARY,
@@ -166,7 +185,9 @@ def report_for(envelope: dict, findings=None, *, verdict="PASS", blocked=None):
         "verdict": verdict,
         "blocked_reasons": blocked or [],
         "findings": findings or [],
-        "audit_scope": ["approved mission and frozen diff"],
+        "audit_scope": scope
+        if scope is not None
+        else list(envelope["risk_profile"]["required_focus"]),
         "validation_evidence": ["frozen/validation.log"],
         "generated_at": "2026-08-09T12:30:00Z",
         "authority_statement": (
@@ -191,6 +212,7 @@ def finding(
             {
                 "kind": "source",
                 "path": "src/example.py",
+                "state": "head",
                 "line_start": 1,
                 "line_end": 1,
                 "detail": "exact failing line",
@@ -243,7 +265,12 @@ class CrewChiefEnvelopeTests(unittest.TestCase):
         self.assertEqual(envelope["subject"]["mode"], "committed-range")
         self.assertEqual(
             {item["path"] for item in manifest["subject"]["changed_files"]},
-            {"scripts/check.sh", "src/example.py"},
+            {
+                "assets/payload.bin",
+                "scripts/check.sh",
+                "src/deleted.py",
+                "src/example.py",
+            },
         )
         script = next(
             item for item in manifest["subject"]["changed_files"]
@@ -255,6 +282,51 @@ class CrewChiefEnvelopeTests(unittest.TestCase):
             manifest["controls"]["repository_instructions"]["path"],
             "controls/AGENTS.md",
         )
+
+    def test_complete_changed_content_is_frozen_with_exact_state_metadata(self):
+        result = self.fixture.prepare("envelope")
+        root = Path(result["output_root"])
+        manifest = read_json(Path(result["manifest_path"]))
+        material = {
+            (item["repository_path"], item["state"]): item
+            for item in manifest["subject"]["source_material"]
+        }
+        base = material[("src/example.py", "base")]
+        head = material[("src/example.py", "head")]
+        self.assertEqual(base["revision"], self.fixture.base)
+        self.assertEqual(head["revision"], self.fixture.head)
+        self.assertEqual(base["encoding"], "utf-8")
+        self.assertEqual(base["line_count"], 1)
+        self.assertEqual(
+            (root / base["frozen"]["path"]).read_text(encoding="utf-8"),
+            "VALUE = 1\n",
+        )
+        self.assertEqual(
+            (root / head["frozen"]["path"]).read_text(encoding="utf-8"),
+            "VALUE = 2\n",
+        )
+        deleted_base = material[("src/deleted.py", "base")]
+        deleted_head = material[("src/deleted.py", "head")]
+        self.assertEqual(deleted_base["presence"], "present")
+        self.assertEqual(deleted_head["presence"], "absent")
+        self.assertIsNone(deleted_head["frozen"])
+        binary = material[("assets/payload.bin", "head")]
+        self.assertEqual(binary["encoding"], "base64")
+        self.assertIsNone(binary["line_count"])
+        self.assertEqual(
+            (root / binary["frozen"]["path"]).read_bytes(), b"\x00\xffhead\n"
+        )
+
+    def test_identical_source_content_is_deduplicated(self):
+        result = self.fixture.prepare("envelope")
+        root = Path(result["output_root"]) / "source-content" / "sha256"
+        manifest = read_json(Path(result["manifest_path"]))
+        references = [
+            item["frozen"]["path"]
+            for item in manifest["subject"]["source_material"]
+            if item["frozen"] is not None
+        ]
+        self.assertEqual(len(list(root.iterdir())), len(set(references)))
 
     def test_manifest_is_deterministic_with_fixed_clock(self):
         first = self.fixture.prepare("first")
@@ -406,6 +478,20 @@ class CrewChiefEnvelopeTests(unittest.TestCase):
         with self.assertRaisesRegex(CrewChiefError, "(size|hash) changed"):
             verify_envelope(Path(result["envelope_path"]), clock=lambda: FIXED_TIME)
 
+    def test_tampered_frozen_source_content_is_rejected(self):
+        result = self.fixture.prepare("envelope")
+        manifest = read_json(Path(result["manifest_path"]))
+        source = next(
+            item
+            for item in manifest["subject"]["source_material"]
+            if item["repository_path"] == "src/example.py"
+            and item["state"] == "head"
+        )
+        frozen = Path(result["output_root"]) / source["frozen"]["path"]
+        frozen.write_bytes(frozen.read_bytes() + b"tamper")
+        with self.assertRaisesRegex(CrewChiefError, "(size|hash) changed"):
+            verify_envelope(Path(result["envelope_path"]), clock=lambda: FIXED_TIME)
+
     def test_missing_frozen_mission_is_rejected(self):
         result = self.fixture.prepare("envelope")
         (Path(result["output_root"]) / "evidence" / "mission-record.md").unlink()
@@ -458,7 +544,60 @@ class CrewChiefEnvelopeTests(unittest.TestCase):
 
 class CrewChiefReportTests(unittest.TestCase):
     def setUp(self):
-        self.envelope = {"audit_id": "a" * 64, "envelope_id": "b" * 64}
+        self.envelope = {
+            "audit_id": "a" * 64,
+            "envelope_id": "b" * 64,
+            "risk_profile": {
+                "name": "standard",
+                "justification": "",
+                "required_focus": list(PROFILE_FOCUS["standard"]),
+            },
+            "_verified_evidence": {
+                "sources": [
+                    {
+                        "path": "src/example.py",
+                        "state": "head",
+                        "revision": "1" * 40,
+                        "file_type": "regular",
+                        "encoding": "utf-8",
+                        "line_count": 1,
+                        "reference": "source-content/sha256/" + "c" * 64,
+                    },
+                    {
+                        "path": "assets/payload.bin",
+                        "state": "head",
+                        "revision": "1" * 40,
+                        "file_type": "regular",
+                        "encoding": "base64",
+                        "line_count": None,
+                        "reference": "source-content/sha256/" + "d" * 64,
+                    },
+                ],
+                "artifacts": [
+                    {
+                        "artifact": "mission_record",
+                        "reference": "evidence/mission-record.md",
+                    },
+                    {
+                        "artifact": "engineer_report",
+                        "reference": "evidence/engineer-report.json",
+                    },
+                    {
+                        "artifact": "test_claims",
+                        "reference": "evidence/test-claims.json",
+                    },
+                    {
+                        "artifact": "diff:committed.diff",
+                        "reference": "diffs/committed.diff",
+                    },
+                    {
+                        "artifact": "evidence:001",
+                        "reference": "evidence/artifact-001.log",
+                    },
+                ],
+                "exempt_governance_validation": False,
+            },
+        }
 
     def test_schema_accepts_pass_report_and_individual_finding(self):
         report = report_for(self.envelope)
@@ -474,9 +613,165 @@ class CrewChiefReportTests(unittest.TestCase):
 
     def test_source_evidence_rejects_reversed_line_range(self):
         bad = finding()
-        bad["evidence"][0]["line_start"] = 3
-        bad["evidence"][0]["line_end"] = 2
+        bad["evidence"][0]["line_start"] = 2
+        bad["evidence"][0]["line_end"] = 1
         with self.assertRaisesRegex(CrewChiefError, "line range"):
+            validate_report(
+                self.envelope,
+                report_for(self.envelope, [bad], verdict="FAIL"),
+            )
+
+    def test_all_risk_profiles_require_complete_declared_coverage(self):
+        for name in ("standard", "deep"):
+            with self.subTest(profile=name):
+                envelope = dict(self.envelope)
+                envelope["risk_profile"] = {
+                    "name": name,
+                    "justification": "",
+                    "required_focus": list(PROFILE_FOCUS[name]),
+                }
+                validate_report(envelope, report_for(envelope))
+        exempt = dict(self.envelope)
+        exempt["risk_profile"] = {
+            "name": "exempt",
+            "justification": "Maverick-approved status-only subject",
+            "required_focus": list(PROFILE_FOCUS["exempt"]),
+        }
+        exempt["_verified_evidence"] = {
+            **self.envelope["_verified_evidence"],
+            "exempt_governance_validation": True,
+        }
+        validate_report(exempt, report_for(exempt))
+
+    def test_deep_profile_rejects_narrow_scope(self):
+        envelope = dict(self.envelope)
+        envelope["risk_profile"] = {
+            "name": "deep",
+            "justification": "",
+            "required_focus": list(PROFILE_FOCUS["deep"]),
+        }
+        with self.assertRaisesRegex(CrewChiefError, "missing required deep"):
+            validate_report(envelope, report_for(envelope, scope=["scope"]))
+
+    def test_scope_rejects_missing_duplicate_malformed_and_unrecognized_values(self):
+        with self.assertRaisesRegex(CrewChiefError, "missing required standard"):
+            validate_report(
+                self.envelope,
+                report_for(self.envelope, scope=["scope"]),
+            )
+        duplicate = list(PROFILE_FOCUS["standard"]) + ["scope"]
+        with self.assertRaisesRegex(CrewChiefError, "schema validation"):
+            validate_report(
+                self.envelope,
+                report_for(self.envelope, scope=duplicate),
+            )
+        with self.assertRaisesRegex(CrewChiefError, "schema validation"):
+            validate_report(
+                self.envelope,
+                report_for(
+                    self.envelope,
+                    scope=[*PROFILE_FOCUS["standard"], "Scope"],
+                ),
+            )
+        malformed = dict(self.envelope)
+        malformed["risk_profile"] = {
+            **self.envelope["risk_profile"],
+            "required_focus": ["scope"],
+        }
+        with self.assertRaisesRegex(CrewChiefError, "malformed required focus"):
+            validate_report(malformed, report_for(malformed, scope=["scope"]))
+
+    def test_exempt_profile_requires_justification_and_bound_evidence(self):
+        envelope = dict(self.envelope)
+        envelope["risk_profile"] = {
+            "name": "exempt",
+            "justification": "",
+            "required_focus": list(PROFILE_FOCUS["exempt"]),
+        }
+        with self.assertRaisesRegex(CrewChiefError, "requires a justification"):
+            validate_report(envelope, report_for(envelope))
+        envelope["risk_profile"]["justification"] = "approved exemption"
+        with self.assertRaisesRegex(CrewChiefError, "governance validation"):
+            validate_report(envelope, report_for(envelope))
+
+    def test_finding_citations_accept_bound_sources_and_artifacts(self):
+        bound = finding()
+        bound["evidence"].extend(
+            [
+                {
+                    "kind": "artifact",
+                    "artifact": "mission_record",
+                    "reference": "evidence/mission-record.md",
+                },
+                {
+                    "kind": "artifact",
+                    "artifact": "engineer_report",
+                    "reference": "evidence/engineer-report.json",
+                },
+                {
+                    "kind": "artifact",
+                    "artifact": "diff:committed.diff",
+                    "reference": "diffs/committed.diff",
+                },
+                {
+                    "kind": "artifact",
+                    "artifact": "test_claims",
+                    "reference": "evidence/test-claims.json",
+                },
+                {
+                    "kind": "artifact",
+                    "artifact": "evidence:001",
+                    "reference": "evidence/artifact-001.log",
+                },
+            ]
+        )
+        validate_report(
+            self.envelope,
+            report_for(self.envelope, [bound], verdict="FAIL"),
+        )
+
+    def test_finding_citations_reject_unfrozen_paths_states_and_lines(self):
+        for label, mutation, message in (
+            (
+                "path",
+                lambda item: item.update(path="src/missing.py"),
+                "unfrozen source",
+            ),
+            (
+                "state",
+                lambda item: item.update(state="base"),
+                "unfrozen source",
+            ),
+            (
+                "line",
+                lambda item: item.update(line_end=2),
+                "exceeds frozen content",
+            ),
+            (
+                "binary",
+                lambda item: item.update(path="assets/payload.bin"),
+                "requires frozen text",
+            ),
+        ):
+            with self.subTest(case=label):
+                bad = finding()
+                mutation(bad["evidence"][0])
+                with self.assertRaisesRegex(CrewChiefError, message):
+                    validate_report(
+                        self.envelope,
+                        report_for(self.envelope, [bad], verdict="FAIL"),
+                    )
+
+    def test_finding_citations_reject_unknown_artifact_identifiers(self):
+        bad = finding()
+        bad["evidence"] = [
+            {
+                "kind": "artifact",
+                "artifact": "evidence:999",
+                "reference": "evidence/artifact-999.log",
+            }
+        ]
+        with self.assertRaisesRegex(CrewChiefError, "unknown frozen artifact"):
             validate_report(
                 self.envelope,
                 report_for(self.envelope, [bad], verdict="FAIL"),
@@ -650,6 +945,7 @@ class CrewChiefRunnerTests(unittest.TestCase):
                 "computer_use",
                 "image_generation",
                 "multi_agent",
+                "personality",
                 "plugins",
                 "shell_snapshot",
                 "shell_tool",
@@ -682,6 +978,68 @@ class CrewChiefRunnerTests(unittest.TestCase):
         self.assertNotIn("--agent", command)
         self.assertNotIn(";", command)
 
+    def test_every_known_prohibited_feature_is_explicitly_disabled(self):
+        capabilities = self.capabilities()
+        capabilities = CodexCapabilities(
+            **{
+                **capabilities.__dict__,
+                "features": (*_DISABLED_REVIEW_FEATURES, "personality"),
+            }
+        )
+        command = build_launch_command(
+            capabilities,
+            Path("/tmp/workspace"),
+            Path("/tmp/schema.json"),
+            Path("/tmp/report.json"),
+        )
+        disabled = {
+            command[index + 1]
+            for index, value in enumerate(command[:-1])
+            if value == "--disable"
+        }
+        self.assertEqual(disabled, set(_DISABLED_REVIEW_FEATURES))
+
+    def test_known_permitted_feature_does_not_require_disabling(self):
+        capabilities = CodexCapabilities(
+            executable="/fixture/codex",
+            version="codex-cli fixture",
+            exec_flags=self.capabilities().exec_flags,
+            features=("personality", "shell_tool"),
+            shell_tool_control=True,
+            custom_agent_selector=False,
+        )
+        command = build_launch_command(
+            capabilities,
+            Path("/tmp/workspace"),
+            Path("/tmp/schema.json"),
+            Path("/tmp/report.json"),
+        )
+        self.assertNotIn("personality", command)
+        self.assertIn("shell_tool", command)
+
+    def test_unknown_enabled_feature_fails_before_process_runner(self):
+        invocation = prepare_review_workspace(
+            self.envelope_path,
+            Path(self.temporary.name) / "review",
+            detector=lambda _: self.capabilities(selector=True),
+            clock=lambda: FIXED_TIME,
+        )
+        invocation["capabilities"]["features"] = (
+            *invocation["capabilities"]["features"],
+            "future_remote_tool",
+        )
+        fake_runner = mock.Mock()
+        with self.assertRaisesRegex(
+            CrewChiefError, "unsupported enabled features: future_remote_tool"
+        ):
+            execute_prepared_review(
+                self.envelope_path,
+                invocation,
+                runner=fake_runner,
+                clock=lambda: FIXED_TIME,
+            )
+        fake_runner.assert_not_called()
+
     def test_supported_selector_uses_project_agent(self):
         command = build_launch_command(
             self.capabilities(selector=True),
@@ -704,6 +1062,23 @@ class CrewChiefRunnerTests(unittest.TestCase):
         prompt = Path(invocation["prompt_path"]).read_text(encoding="utf-8")
         self.assertIn("shell tool is disabled", prompt)
         self.assertIn("diff --git", prompt)
+        self.assertIn("source-content/sha256/", prompt)
+        self.assertIn("encoding=base64", prompt)
+        self.assertIn("AP9oZWFkCg==", prompt)
+
+    def test_oversize_payload_fails_before_model_invocation(self):
+        detector = mock.Mock(return_value=self.capabilities(selector=True))
+        with mock.patch(
+            "tools.crew_chief.runner._MAX_EMBEDDED_EVIDENCE_BYTES", 64
+        ):
+            with self.assertRaisesRegex(CrewChiefError, "16 MiB"):
+                prepare_review_workspace(
+                    self.envelope_path,
+                    Path(self.temporary.name) / "oversize-review",
+                    detector=detector,
+                    clock=lambda: FIXED_TIME,
+                )
+        detector.assert_called_once_with("codex")
 
     def test_tampered_review_workspace_control_is_rejected(self):
         invocation = prepare_review_workspace(
@@ -813,6 +1188,48 @@ class CrewChiefRunnerTests(unittest.TestCase):
         ):
             with self.assertRaisesRegex(CrewChiefError, "shell-tool"):
                 detect_codex_capabilities("codex", runner=fake_runner)
+
+    def test_failed_or_malformed_feature_detection_fails_closed(self):
+        for label, result in (
+            (
+                "failed",
+                subprocess.CompletedProcess([], 1, "", "unsupported"),
+            ),
+            (
+                "malformed",
+                subprocess.CompletedProcess([], 0, "shell_tool stable maybe\n", ""),
+            ),
+        ):
+            with self.subTest(case=label):
+                def fake_runner(arguments, **_kwargs):
+                    if arguments[-1] == "--version":
+                        return subprocess.CompletedProcess(
+                            arguments, 0, "codex-cli fixture\n", ""
+                        )
+                    if arguments[-2:] == ["features", "list"]:
+                        return result
+                    return subprocess.CompletedProcess(
+                        arguments,
+                        0,
+                        " ".join(sorted({
+                            "--config",
+                            "--ephemeral",
+                            "--ignore-rules",
+                            "--ignore-user-config",
+                            "--output-schema",
+                            "--sandbox",
+                        })),
+                        "",
+                    )
+
+                with mock.patch(
+                    "tools.crew_chief.runner.shutil.which",
+                    return_value="/fixture/codex",
+                ):
+                    with self.assertRaisesRegex(
+                        CrewChiefError, "feature.*(failed|malformed)"
+                    ):
+                        detect_codex_capabilities("codex", runner=fake_runner)
 
     def test_missing_authentication_fails_without_consuming(self):
         invocation = prepare_review_workspace(

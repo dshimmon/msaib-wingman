@@ -10,6 +10,7 @@ from typing import Any, Callable, Iterable
 from tools.crew_chief.core import (
     AGENT_PATH,
     CANARY,
+    PROFILE_FOCUS,
     RISK_PROFILES,
     SCHEMA_NAMES,
     SCHEMA_VERSION,
@@ -47,40 +48,6 @@ from tools.crew_chief.validation import (
 )
 
 
-_PROFILE_FOCUS = {
-    "standard": [
-        "scope",
-        "correctness",
-        "tests",
-        "documentation",
-        "unrequested_changes",
-        "completion_claims",
-        "maintainability",
-    ],
-    "deep": [
-        "scope",
-        "architecture",
-        "correctness",
-        "security",
-        "data",
-        "tests",
-        "documentation",
-        "dependencies",
-        "compatibility",
-        "public_contracts",
-        "migrations",
-        "unrequested_changes",
-        "completion_claims",
-        "maintainability",
-    ],
-    "exempt": [
-        "recorded_exemption_justification",
-        "deterministic_governance_validation",
-        "status_claim_accuracy",
-    ],
-}
-
-
 def _input_file(path: Path, label: str) -> Path:
     if path.is_symlink():
         raise CrewChiefError(f"{label} must not be a symlink: {path}")
@@ -111,7 +78,7 @@ def _risk_profile(
     return {
         "name": name,
         "justification": (justification or "").strip(),
-        "required_focus": _PROFILE_FOCUS[name],
+        "required_focus": list(PROFILE_FOCUS[name]),
     }
 
 
@@ -205,7 +172,7 @@ def prepare_audit(
     if not is_ancestor(repository, base_commit, head_commit):
         raise CrewChiefError("audit base is not an ancestor of audit head")
 
-    subject, diff_payloads, untracked_payloads = capture_subject(
+    subject, diff_payloads, content_payloads = capture_subject(
         repository,
         base_commit,
         head_commit,
@@ -241,6 +208,7 @@ def prepare_audit(
         relative = _artifact_target(index, source)
         evidence_bindings.append(
             {
+                "artifact_id": f"evidence:{index:03d}",
                 "label": source.name,
                 "frozen": copy_bound_file(source, output / relative, relative),
             }
@@ -250,16 +218,37 @@ def prepare_audit(
     for name, payload in sorted(diff_payloads.items()):
         relative = f"diffs/{name}"
         atomic_write(output / relative, payload)
-        diff_bindings.append({"name": name, "frozen": bind_file(output / relative, relative)})
+        diff_bindings.append(
+            {
+                "artifact_id": f"diff:{name}",
+                "name": name,
+                "frozen": bind_file(output / relative, relative),
+            }
+        )
+
+    for relative, payload in sorted(content_payloads.items()):
+        atomic_write(output / relative, payload)
 
     untracked_bindings = []
-    for path, payload in sorted(untracked_payloads.items()):
-        relative = f"untracked/{path}"
-        atomic_write(output / relative, payload)
+    for path in subject["authorized_untracked"]:
+        material = next(
+            (
+                item
+                for item in subject["source_material"]
+                if item["repository_path"] == path
+                and item["state"] == "worktree"
+                and item["presence"] == "present"
+            ),
+            None,
+        )
+        if material is None or material["frozen"] is None:
+            raise CrewChiefError(
+                f"authorized untracked content was not frozen: {path}"
+            )
         untracked_bindings.append(
             {
                 "repository_path": path,
-                "frozen": bind_file(output / relative, relative),
+                "frozen": material["frozen"],
             }
         )
 
@@ -356,6 +345,104 @@ def _manifest_bindings(value: Any) -> Iterable[dict[str, Any]]:
     elif isinstance(value, list):
         for child in value:
             yield from _manifest_bindings(child)
+
+
+def _verified_report_evidence(
+    envelope_root: Path, manifest: dict[str, Any]
+) -> dict[str, Any]:
+    material = manifest["subject"].get("source_material")
+    if not isinstance(material, list):
+        raise CrewChiefError("evidence manifest lacks frozen source material")
+    sources = []
+    source_keys = set()
+    for item in material:
+        if not isinstance(item, dict):
+            raise CrewChiefError("frozen source material entry is invalid")
+        try:
+            path = normalize_repo_path(item["repository_path"])
+            state = item["state"]
+            presence = item["presence"]
+        except (KeyError, TypeError) as error:
+            raise CrewChiefError("frozen source material entry is incomplete") from error
+        if state not in {"base", "head", "index", "worktree"}:
+            raise CrewChiefError(f"frozen source state is invalid: {state!r}")
+        key = (path, state)
+        if key in source_keys:
+            raise CrewChiefError(
+                f"frozen source material is duplicated: {path} ({state})"
+            )
+        source_keys.add(key)
+        if presence == "absent":
+            if item.get("frozen") is not None:
+                raise CrewChiefError(
+                    f"absent source material has frozen content: {path} ({state})"
+                )
+            continue
+        if presence != "present":
+            raise CrewChiefError(
+                f"frozen source presence is invalid: {path} ({state})"
+            )
+        binding = item.get("frozen")
+        if binding is None:
+            if item.get("file_type") == "submodule":
+                continue
+            raise CrewChiefError(
+                f"present source material lacks frozen content: {path} ({state})"
+            )
+        if not isinstance(binding, dict):
+            raise CrewChiefError(
+                f"frozen source binding is invalid: {path} ({state})"
+            )
+        sources.append(
+            {
+                "path": path,
+                "state": state,
+                "revision": item.get("revision"),
+                "file_type": item.get("file_type"),
+                "encoding": item.get("encoding"),
+                "line_count": item.get("line_count"),
+                "reference": binding["path"],
+            }
+        )
+
+    artifacts = []
+
+    def add_artifact(identifier: str, binding: dict[str, Any]) -> None:
+        artifacts.append({"artifact": identifier, "reference": binding["path"]})
+
+    add_artifact("mission_record", manifest["mission"]["frozen"])
+    add_artifact("engineer_report", manifest["engineer_report"])
+    add_artifact("test_claims", manifest["test_claims"])
+    for item in manifest["diffs"]:
+        add_artifact(item["artifact_id"], item["frozen"])
+    for item in manifest["evidence_artifacts"]:
+        add_artifact(item["artifact_id"], item["frozen"])
+    controls = manifest["controls"]
+    add_artifact(
+        "control:repository_instructions", controls["repository_instructions"]
+    )
+    add_artifact("control:agent", controls["agent"])
+    for item in controls["schemas"]:
+        add_artifact(f"control:schema:{item['name']}", item["frozen"])
+    artifact_keys = [
+        (item["artifact"], item["reference"]) for item in artifacts
+    ]
+    if len(artifact_keys) != len(set(artifact_keys)):
+        raise CrewChiefError("frozen artifact citation identifiers are duplicated")
+
+    claims_path = _bound_path(
+        envelope_root, manifest["test_claims"], "frozen test claims"
+    )
+    claims = read_json(claims_path)
+    if not isinstance(claims, dict):
+        raise CrewChiefError("frozen test claims must be a JSON object")
+    return {
+        "sources": sources,
+        "artifacts": artifacts,
+        "exempt_governance_validation": bool(
+            claims.get("governance_validation")
+        ),
+    }
 
 
 def load_envelope(path: Path) -> tuple[Path, dict[str, Any]]:
@@ -457,6 +544,11 @@ def verify_envelope(
         raise CrewChiefError("manifest and envelope mission binding disagree")
     if manifest["risk_profile"] != envelope["risk_profile"]:
         raise CrewChiefError("manifest and envelope risk profile disagree")
+    profile_name = envelope["risk_profile"]["name"]
+    if envelope["risk_profile"]["required_focus"] != list(
+        PROFILE_FOCUS[profile_name]
+    ):
+        raise CrewChiefError("audit risk profile focus is not canonical")
     subject_fields = ("mode", "base_commit", "head_commit", "authorized_untracked")
     if any(
         manifest["subject"].get(field) != envelope["subject"][field]
@@ -478,6 +570,15 @@ def verify_envelope(
             raise CrewChiefError("changed-file evidence drifted after freezing")
     if manifest["git_state"] != envelope["git_state"]:
         raise CrewChiefError("manifest and envelope Git state disagree")
+    verified_evidence = _verified_report_evidence(envelope_root, manifest)
+    if profile_name == "exempt":
+        if not envelope["risk_profile"]["justification"].strip():
+            raise CrewChiefError("exempt profile lacks its governed justification")
+        if not verified_evidence["exempt_governance_validation"]:
+            raise CrewChiefError(
+                "exempt profile lacks bound governance validation evidence"
+            )
+    envelope["_verified_evidence"] = verified_evidence
     return envelope
 
 

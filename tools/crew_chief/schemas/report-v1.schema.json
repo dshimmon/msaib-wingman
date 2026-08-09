@@ -59,7 +59,27 @@
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
-      "items": {"type": "string", "minLength": 1}
+      "items": {
+        "enum": [
+          "scope",
+          "architecture",
+          "correctness",
+          "security",
+          "data",
+          "tests",
+          "documentation",
+          "dependencies",
+          "compatibility",
+          "public_contracts",
+          "migrations",
+          "unrequested_changes",
+          "completion_claims",
+          "maintainability",
+          "recorded_exemption_justification",
+          "deterministic_governance_validation",
+          "status_claim_accuracy"
+        ]
+      }
     },
     "validation_evidence": {
       "type": "array",

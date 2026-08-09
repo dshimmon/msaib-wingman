@@ -12,6 +12,7 @@ from tools.crew_chief.core import (
     CrewChiefError,
     canonical_json_bytes,
     normalize_repo_path,
+    payload_encoding,
     sha256_bytes,
     validate_subject_path,
 )
@@ -187,7 +188,7 @@ def _mode_type(mode: str | None) -> str | None:
     }.get(mode, "other")
 
 
-def _worktree_value(repository: Path, path: str) -> tuple[str | None, str | None]:
+def _worktree_value(repository: Path, path: str) -> tuple[str | None, bytes | None]:
     candidate = repository.joinpath(*Path(path).parts)
     if not candidate.exists() and not candidate.is_symlink():
         return None, None
@@ -205,11 +206,76 @@ def _worktree_value(repository: Path, path: str) -> tuple[str | None, str | None
         mode = "100755" if metadata.st_mode & stat.S_IXUSR else "100644"
     else:
         raise CrewChiefError(f"unsupported changed file type: {path}")
-    return mode, sha256_bytes(payload)
+    return mode, payload
 
 
 def _blob_hash(value: bytes | None) -> str | None:
     return sha256_bytes(value) if value is not None else None
+
+
+def _material_entry(
+    path: str,
+    state: str,
+    revision: str,
+    mode: str | None,
+    payload: bytes | None,
+) -> tuple[dict[str, Any], tuple[str, bytes] | None]:
+    file_type = _mode_type(mode)
+    if mode is None:
+        return (
+            {
+                "repository_path": path,
+                "state": state,
+                "revision": revision,
+                "presence": "absent",
+                "file_type": None,
+                "mode": None,
+                "size": None,
+                "encoding": None,
+                "line_count": None,
+                "frozen": None,
+            },
+            None,
+        )
+    if file_type == "submodule":
+        return (
+            {
+                "repository_path": path,
+                "state": state,
+                "revision": revision,
+                "presence": "present",
+                "file_type": file_type,
+                "mode": mode,
+                "size": None,
+                "encoding": "gitlink",
+                "line_count": None,
+                "frozen": None,
+            },
+            None,
+        )
+    if payload is None:
+        raise CrewChiefError(
+            f"unable to freeze {state} content for changed path: {path}"
+        )
+    digest = sha256_bytes(payload)
+    encoding, line_count = payload_encoding(payload)
+    relative = f"source-content/sha256/{digest}"
+    binding = {"path": relative, "sha256": digest, "size": len(payload)}
+    return (
+        {
+            "repository_path": path,
+            "state": state,
+            "revision": revision,
+            "presence": "present",
+            "file_type": file_type,
+            "mode": mode,
+            "size": len(payload),
+            "encoding": encoding,
+            "line_count": line_count,
+            "frozen": binding,
+        },
+        (relative, payload),
+    )
 
 
 def capture_subject(
@@ -220,7 +286,7 @@ def capture_subject(
     include_worktree: bool,
     authorized_untracked: list[str],
 ) -> tuple[dict[str, Any], dict[str, bytes], dict[str, bytes]]:
-    """Capture deterministic inventory, diffs, and authorized untracked bytes."""
+    """Capture deterministic inventory, diffs, and deduplicated source bytes."""
     committed_paths = set(_diff_paths(repository, [base, head]))
     staged_paths = set(_diff_paths(repository, ["--cached"]))
     unstaged_paths = set(_diff_paths(repository, []))
@@ -269,7 +335,8 @@ def capture_subject(
         ).stdout
 
     inventory: list[dict[str, Any]] = []
-    untracked_payloads: dict[str, bytes] = {}
+    source_material: list[dict[str, Any]] = []
+    content_payloads: dict[str, bytes] = {}
     for raw_path in sorted(paths):
         path = validate_subject_path(raw_path)
         sources = []
@@ -284,12 +351,9 @@ def capture_subject(
         base_blob = _git_blob(repository, f"{base}:{path}")
         head_blob = _git_blob(repository, f"{head}:{path}")
         index_blob = _git_blob(repository, f":{path}")
-        worktree_mode, worktree_hash = _worktree_value(repository, path)
-        if path in observed_untracked:
-            candidate = repository.joinpath(*Path(path).parts)
-            if candidate.is_symlink():
-                raise CrewChiefError(f"authorized untracked symlink is forbidden: {path}")
-            untracked_payloads[path] = candidate.read_bytes()
+        worktree_mode, worktree_blob = _worktree_value(repository, path)
+        if path in observed_untracked and worktree_mode == "120000":
+            raise CrewChiefError(f"authorized untracked symlink is forbidden: {path}")
         modes = {
             "base": _tree_mode(repository, base, path),
             "head": _tree_mode(repository, head, path),
@@ -310,10 +374,33 @@ def capture_subject(
                     "base": _blob_hash(base_blob),
                     "head": _blob_hash(head_blob),
                     "index": _blob_hash(index_blob),
-                    "worktree": worktree_hash,
+                    "worktree": _blob_hash(worktree_blob),
                 },
             }
         )
+        states = [
+            ("base", base, modes["base"], base_blob),
+            ("head", head, modes["head"], head_blob),
+        ]
+        if include_worktree:
+            states.extend(
+                [
+                    ("index", "INDEX", modes["index"], index_blob),
+                    ("worktree", "WORKTREE", modes["worktree"], worktree_blob),
+                ]
+            )
+        for state, revision, mode, payload in states:
+            material, frozen_payload = _material_entry(
+                path, state, revision, mode, payload
+            )
+            source_material.append(material)
+            if frozen_payload is not None:
+                relative, frozen_bytes = frozen_payload
+                existing = content_payloads.setdefault(relative, frozen_bytes)
+                if existing != frozen_bytes:
+                    raise CrewChiefError(
+                        f"source content digest collision detected: {relative}"
+                    )
 
     subject = {
         "mode": "working-tree" if include_worktree else "committed-range",
@@ -321,5 +408,6 @@ def capture_subject(
         "head_commit": head,
         "authorized_untracked": sorted(allowed_untracked),
         "changed_files": inventory,
+        "source_material": source_material,
     }
-    return subject, diffs, untracked_payloads
+    return subject, diffs, content_payloads

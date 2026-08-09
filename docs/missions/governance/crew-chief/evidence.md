@@ -30,32 +30,95 @@ not independently approve, publish, operationalize, or complete the mission.
 - Credential-free temporary-repository tests and CI integration that never
   invoke `codex exec` or a network client.
 
+## 2026-08-09 bounded enforcement correction
+
+Maverick authorized one bounded correction pass from the clean implementation
+commit `82c5952e64eb8fe5638701fef1f9d289b7735d82` and exactly one new local
+commit after validation. The correction remains inside Crew Chief's approved
+read-only, advisory responsibility.
+
+- Bootstrap finding `CC-0001` — **resolved in the correction candidate,
+  pending fresh bootstrap re-audit.** Capability detection now accepts only a
+  closed set of enabled feature names, explicitly disables every enabled known
+  prohibited feature, and fails before model invocation on unknown enabled
+  features, failed inventory, or malformed inventory evidence. `personality`
+  is the sole enabled feature permitted to remain because it exposes no tool,
+  network, application, or write capability.
+- Mission Control concern: complete frozen implementation context — **resolved
+  in the correction candidate.** Changed-file base, head, index, and worktree
+  states are frozen as applicable into deduplicated content-addressed blobs
+  with exact path, revision/state, presence, type, mode, size, encoding, line
+  count, digest, and binding metadata. Complete changed head text, necessary
+  base/deleted text, and deterministic binary payloads reach the standard-input
+  review context under the existing strict 16 MiB encoded limit.
+- Mission Control concern: selected risk-profile enforcement — **resolved in
+  the correction candidate.** Report validation requires every canonical
+  profile focus, rejects missing, duplicate, malformed, and unrecognized
+  coverage, prevents narrow deep-profile reports, and preserves exempt
+  justification and bound governance-evidence requirements.
+- Mission Control concern: finding citation binding — **resolved in the
+  correction candidate.** Source citations require an exact frozen path/state
+  and in-bounds UTF-8 text lines; artifact citations require an exact verified
+  manifest identifier/reference pair. Unfrozen paths, binary line citations,
+  unknown artifacts, and invalid ranges fail.
+
+The exact correction files are:
+
+- `.codex/agents/crew-chief.toml`
+- `docs/missions/governance/crew-chief/artifacts/implementation-test-claims.json`
+- `docs/missions/governance/crew-chief/evidence.md`
+- `docs/missions/governance/crew-chief/journal.md`
+- `docs/runbooks/crew-chief.md`
+- `tests/governance/test_crew_chief.py`
+- `tools/crew_chief/controller.py`
+- `tools/crew_chief/core.py`
+- `tools/crew_chief/git_evidence.py`
+- `tools/crew_chief/runner.py`
+- `tools/crew_chief/schemas/finding-v1.schema.json`
+- `tools/crew_chief/schemas/report-v1.schema.json`
+- `tools/crew_chief/validation.py`
+
+The agent definition changed only because the enforced report contract now
+requires exact risk-focus declarations and source-state/artifact citations
+from the model.
+
 ## Final validation
 
 Exact final command results are recorded in
 [`artifacts/implementation-test-claims.json`](artifacts/implementation-test-claims.json).
-The final pass recorded 49 focused Crew Chief tests, 125 complete governance
-tests, and 354 complete credential-free repository tests, all passing with
-zero failures, errors, or skips. Ruff passed every changed Python file;
-governance generation and validation, CLI help/capability smoke checks, and Git
-whitespace validation also passed.
+The correction pass recorded 64 focused Crew Chief tests, 92 combined Crew
+Chief and repository-governance tests, 140 complete governance tests, and 369
+complete credential-free repository tests, all passing with zero failures,
+errors, or skips. Ruff passed the changed Python scope; repository governance,
+all four Crew Chief JSON Schemas, and Git whitespace validation also passed.
+One earlier focused development run had one failure and one error in new test
+harness code; both assertions were corrected and the exact focused command was
+rerun successfully. Exact commands, durations, results, and the disposition of
+that development run are preserved in the adjacent claims artifact.
 
-The installed CLI is `codex-cli 0.147.0-alpha.6.5`. It supports ephemeral
-execution, ignored user config and rules, strict configuration, structured
-output, explicit read-only sandboxing, stable shell-tool disabling, and
-configuration-based approval denial. It does not expose a supported
+The original implementation build recorded `codex-cli 0.147.0-alpha.6.5`.
+That probe supported ephemeral execution, ignored user config and rules,
+strict configuration, structured output, explicit read-only sandboxing,
+stable shell-tool disabling, and configuration-based approval denial. It did
+not expose a supported
 non-interactive custom-agent selector, so automation records and requires the
 fresh-session fallback. No supported local custom-agent introspection command
 was exposed; TOML parsing, current-schema governance checks, and official
 documentation validate the project agent until later interactive acceptance.
+The correction did not invoke the installed CLI or perform a live capability
+probe. A new or unfamiliar enabled CLI feature intentionally blocks controlled
+preparation until its safety is explicitly classified and tested.
 
 ## Independence and remaining gates
 
-No Crew Chief or other live model review occurred during implementation. The
-local implementation has only deterministic self-tests and Codex self-review;
-it is not independently audited. After the one authorized local commit, a
-fresh ordinary Codex reviewer must audit the exact commit read-only and state,
-“This bootstrap audit is not a Crew Chief audit.” Actual Crew Chief selection
+No Crew Chief or other live model review occurred during implementation or the
+correction. The local candidate has only deterministic self-tests and Codex
+self-review; the correction is not independently re-audited. Binary source is
+frozen and base64-presented but intentionally cannot receive line citations;
+the complete encoded payload remains capped at 16 MiB; and ignored-path
+mutation detection retains the runbook's documented limitation. After the one
+authorized local correction commit, Goose must independently verify the
+evidence and perform a fresh bootstrap re-audit. Actual Crew Chief selection
 and execution remain a later separately authorized controlled acceptance gate.
 
 The implementation is not published, not operational, and not

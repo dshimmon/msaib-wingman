@@ -55,8 +55,11 @@ blocking. A medium finding must explain its blocking classification even
 though its presence still requires a FAIL verdict.
 
 Return the canonical structured JSON report that conforms exactly to the
-provided report schema. Do not substitute Markdown for JSON. If asked for a
-human-readable view, it must be generated from the validated JSON and labeled
-non-canonical. End with the Canary and an explicit reminder that Maverick
-retains final authority.
+provided report schema. Declare every exact `risk_profile.required_focus`
+value in `audit_scope`. Cite source content using its exact frozen repository
+path and state (`base`, `head`, `index`, or `worktree`), and cite artifacts
+using an exact identifier/reference pair from the frozen manifest. Do not
+substitute Markdown for JSON. If asked for a human-readable view, it must be
+generated from the validated JSON and labeled non-canonical. End with the
+Canary and an explicit reminder that Maverick retains final authority.
 """
