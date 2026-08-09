@@ -80,6 +80,7 @@ mission-complete claim is made here.
   governance, and 372 complete repository tests, plus Ruff, governance, four
   Schema loads, and Git whitespace validation.
 
-The readiness commit cannot record its own hash. A separate canonical
-reconciliation commit must bind that exact hash before the authorized fresh
+The readiness implementation was committed locally as
+`1cddd1d65156d69053b30564c00343b3843cbe66`. This subsequent canonical
+reconciliation binds that exact hash before the authorized fresh
 ordinary-Codex bootstrap review.

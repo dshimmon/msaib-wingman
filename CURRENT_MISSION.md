@@ -7,9 +7,9 @@
 
 - Mission: **governance/crew-chief — Crew Chief Independent Audit**
 - Lifecycle: **active**
-- Authorization gate: `closeout authorized within six-commit and four-model-invocation limits; acceptance-readiness implementation and canonical reconciliation in progress`
+- Authorization gate: `acceptance-readiness implementation reconciled; fresh ordinary-Codex bootstrap review authorized before controlled fixture acceptance`
 - Official record: [docs/missions/governance/crew-chief/mission.md](docs/missions/governance/crew-chief/mission.md)
-- Next gate: Complete deterministic validation and exact-hash reconciliation before the authorized fresh ordinary-Codex bootstrap review.
+- Next gate: Conduct the authorized fresh ordinary-Codex bootstrap review; controlled Crew Chief fixture acceptance remains contingent on a successful result.
 
 ## Last completed work
 
@@ -21,7 +21,7 @@
 
 | Mission | Role | Branch | Worktree | State | Next gate |
 |---|---|---|---|---|---|
-| `governance/crew-chief` | primary | `codex/crew-chief-v1-build-20260809` | `/Users/davidshimmon/.codex/worktrees/a83e/msaib-wingman` | acceptance_readiness_implementation_in_progress | Commit and reconcile the current CLI acceptance-readiness correction, then conduct one fresh ordinary-Codex deep-profile bootstrap review. |
+| `governance/crew-chief` | primary | `codex/crew-chief-v1-build-20260809` | `/Users/davidshimmon/.codex/worktrees/a83e/msaib-wingman` | implemented_tested_acceptance_ready_awaiting_fresh_bootstrap_review | Conduct one fresh ordinary-Codex deep-profile bootstrap review that begins with the required non-Crew-Chief statement. |
 
 ## Canonical homes
 

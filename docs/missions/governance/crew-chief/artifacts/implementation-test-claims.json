@@ -5,7 +5,8 @@
     "base_commit": "b1910d0c69a52d73ddde93cb9722f12540c5d1e7",
     "branch": "codex/crew-chief-v1-build-20260809",
     "correction_parent": "82c5952e64eb8fe5638701fef1f9d289b7735d82",
-    "acceptance_readiness_parent": "3e4edff5cc5e9b9810827331ca1024fd14c8f875"
+    "acceptance_readiness_parent": "3e4edff5cc5e9b9810827331ca1024fd14c8f875",
+    "acceptance_readiness_commit": "1cddd1d65156d69053b30564c00343b3843cbe66"
   },
   "acceptance_readiness": {
     "objective": "Reconcile closeout authority and make the fail-closed CLI policy compatible with the complete enabled inventory of the installed Codex CLI.",

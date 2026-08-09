@@ -156,7 +156,7 @@ Streamlit warnings appeared during the green complete suite. The exact commands
 and results are in
 [`artifacts/implementation-test-claims.json`](artifacts/implementation-test-claims.json).
 
-No model process ran during this readiness implementation. The next gate is an
-exact-hash reconciliation commit followed by a fresh, isolated ordinary Codex
-bootstrap review. Controlled Crew Chief fixture acceptance remains contingent
-on a successful bootstrap.
+No model process ran during this readiness implementation. The exact local
+readiness commit is `1cddd1d65156d69053b30564c00343b3843cbe66`. The next gate
+is a fresh, isolated ordinary Codex bootstrap review. Controlled Crew Chief
+fixture acceptance remains contingent on a successful bootstrap.
