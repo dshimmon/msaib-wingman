@@ -19,9 +19,10 @@
 ## Decision
 
 Wingman OS is the domain-neutral foundation. Atlas is its first product and
-owns academic policy and composition. Radar is a distinct future product and
-receives dedicated documentation, source, and test namespaces without
-speculative production behavior.
+owns academic policy and composition. Portfolio Wingman and Radar are the same
+future product, expressed as Portfolio Wingman/Radar. That product is separate
+from Atlas and Wingman OS core and receives dedicated documentation, source,
+and test namespaces without speculative production behavior.
 
 Product-specific decisions use the global decision system with namespace tags.
 Architecture documents may summarize this decision only by linking here; this

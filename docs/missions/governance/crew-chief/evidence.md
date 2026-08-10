@@ -354,3 +354,84 @@ No receipt was created, no model or network service was invoked, no fixture
 audit ran, and the original `FAIL` verdict remains unchanged. The correction
 and evidence require one finding-focused independent re-audit before any
 acceptance sequence can resume.
+
+## 2026-08-10 Maverick closeout with accepted limitations
+
+Maverick ended the correction and audit cycle and accepted Crew Chief v1 at
+implementation commit `6658076e8c9440665245793621edf1e309bedfdf` without
+claiming independent certification or successful acceptance audits. Maverick
+explicitly accepted both the same-account impersonation risk documented for
+`BOOTSTRAP-003` and the frozen-workspace launcher limitation exposed by
+`FOCUSED-RUN-001`.
+
+The focused ordinary-Codex re-audit was attempted once with zero automatic
+retries. The local Codex preflight exited with return code 1 before a model
+service request began because the frozen workspace was not a trusted Git
+directory and the canonical command omitted `--skip-git-repo-check`. The
+authorization receipt was consumed, no structured report was produced, and
+model token consumption was zero. Neither the seeded-defect fixture nor the
+corrected-fixture audit ran.
+
+The exact failure evidence is preserved under
+[`artifacts/focused-run-failed-20260810/`](artifacts/focused-run-failed-20260810/):
+
+| Artifact | Bytes | SHA-256 |
+|---|---:|---|
+| `focused-failure-evidence.json` | 4,539 | `b3878267f6a99f5b1d253bc0a0c841985a1241723d2b90bf0915d877e3114dbc` |
+| `authorization-receipt.json` | 1,000 | `da71546abd5a67d57a8bf1028f245d9ba532ccb3f205c0af6c9126e2a4a1217c` |
+| `invocation.json` | 5,963 | `1ffbf8115bc754e00d639ffee3cdea3d8b6bb06ea5a8298a570fa82c52b68cd7` |
+| `run-record.json` | 3,075 | `27ff74b22d2923a2a4f6ff21ec51870a3f6ef2037ad8afbe1a36e6a5c73b63c4` |
+| `codex-stderr.log` | 76 | `dd701e712037bba81445e9a92376e3d3af69acac5f0187ec904e9ed3c401324d` |
+| `provenance.json` | 3,057 | `cad4b86aaf1443d3d27965e3daa1047ecb73f21cc7e4e15f3eaf0cf8e02d43ac` |
+
+The exact copied sources produced zero credential/secret scan matches. No
+unrelated content was detected and no redaction was made. Absolute temporary
+paths remain only inside exact historical artifacts and the provenance record;
+they are not claims that those paths remain stable or available.
+
+| Lifecycle distinction | Final recorded state |
+|---|---|
+| Implemented | Yes, at `6658076e8c9440665245793621edf1e309bedfdf` |
+| Deterministic tests | Passed as previously recorded and revalidated during this closeout |
+| Ordinary full bootstrap audit | Completed with `FAIL` |
+| Focused re-audit | Not completed because of `FOCUSED-RUN-001` |
+| Fixture acceptance audits | Not completed |
+| Independently acceptance-certified | No |
+| Maverick-approved with known limitations | Yes |
+| Locally committed implementation | Yes |
+| Mission complete by Maverick decision | Yes |
+| Operational limitation | Frozen external review workspaces require an unresolved trusted-directory accommodation |
+
+Bootstrap and focused-run history remains historical evidence, and bootstrap
+tooling remains available without being a mandatory closeout gate. Crew Chief
+is not described as fully acceptance-tested, independently certified, or
+proven operational. Rangefinder and every successor remain inactive. The next
+gate is Maverick's selection and authorization of a mission.
+
+### Closeout validation
+
+- `PYTHONPATH=src .../flightline-py312/bin/python -m tools.governance generate`
+  regenerated the derived views successfully.
+- `PYTHONPATH=src .../flightline-py312/bin/python -m unittest
+  tests.governance.test_repository_governance` passed 32 tests in 4.608
+  seconds after generation.
+- `PYTHONPATH=src .../flightline-py312/bin/python -m unittest -q
+  tests.governance.test_crew_chief` passed 87 tests in 57.198 seconds.
+- The combined Crew Chief and repository-governance command passed 119 tests
+  in 63.182 seconds.
+- Governance discovery passed 167 tests in 69.322 seconds. Its
+  `operator_cancelled` and `time_budget_exceeded` Flightline messages were
+  expected negative-path evidence.
+- Complete repository discovery passed 396 tests in 76.090 seconds. Expected
+  diagnostic-failure fixtures, Flightline negative paths, and bare Streamlit
+  warnings appeared without failures.
+- Repository governance validation passed. All 11 repository JSON Schemas and
+  all six preserved focused-run JSON records parsed or validated successfully.
+- `/opt/anaconda3/bin/ruff check tools/governance/repository.py
+  tests/governance/test_repository_governance.py` passed, and `git diff
+  --check` reported no errors.
+
+The first test attempt used the system Python 3.9 interpreter and stopped at
+import because `tomllib` is unavailable there; no test body ran. The first
+repository-governance run under Python 3.12 then reported only the three
+expected stale generated views. Generation and the exact rerun passed.

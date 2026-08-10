@@ -4,7 +4,7 @@ import copy
 import hashlib
 import json
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from tools.governance import repository
 
@@ -33,36 +33,6 @@ class RepositoryGovernanceTests(unittest.TestCase):
         metadata = copy.deepcopy(record.metadata)
         metadata.update(changes)
         return repository.Record(record.path, metadata)
-
-    def test_bulk_ingestion_conflict_is_rejected(self):
-        record = self._mission("atlas/bulk-ingestion")
-        errors = repository.validate_mission_journal_authority(
-            [record], exists=lambda path: path.name == "journal.md"
-        )
-        self.assertEqual(
-            errors,
-            ["atlas/bulk-ingestion: completed mission retains competing journal.md"],
-        )
-
-    def test_prompt_optimizer_conflict_is_rejected(self):
-        record = self._mission("wingman-os/prompt-optimizer")
-        errors = repository.validate_mission_journal_authority(
-            [record], exists=lambda path: path.name == "journal.md"
-        )
-        self.assertEqual(
-            errors,
-            [
-                "wingman-os/prompt-optimizer: completed mission retains "
-                "competing journal.md"
-            ],
-        )
-
-    def test_any_completed_mission_retaining_journal_is_rejected(self):
-        record = self._mission("wingman-os/foundation")
-        errors = repository.validate_mission_journal_authority(
-            [record], exists=lambda path: True
-        )
-        self.assertTrue(any("competing journal.md" in error for error in errors))
 
     def test_schema_rejects_malformed_priority(self):
         record = self._with_metadata(self.missions[0], priority={"rank": 1})
@@ -131,6 +101,22 @@ class RepositoryGovernanceTests(unittest.TestCase):
             repository.ROOT / "README.md", "../outside.md"
         )
         self.assertTrue(any("escapes root" in error for error in errors), errors)
+
+    def test_broken_internal_documentation_link_is_not_a_governance_failure(self):
+        errors = repository.validate_link_target(
+            repository.ROOT / "README.md", "docs/not-present.md"
+        )
+        self.assertEqual(errors, [])
+
+    def test_empty_canonical_document_is_not_a_governance_failure(self):
+        empty = MagicMock()
+        empty.is_file.return_value = True
+        empty.read_text.return_value = ""
+        with patch.object(
+            repository, "_canonical_markdown_files", return_value=[empty]
+        ):
+            errors = repository.validate_links_and_documents()
+        self.assertEqual(errors, [])
 
     def test_repository_map_matches_canonical_locations(self):
         self.assertEqual(repository.validate_repository_map(), [])
@@ -324,11 +310,94 @@ _expose(__name__, "knowledge")
             errors,
         )
 
-    def test_active_workstreams_may_not_overlap(self):
-        primary = next(
-            item for item in self.missions if item.metadata["portfolio_primary"]
+    def test_gov_003_does_not_require_a_frozen_mission_count(self):
+        decision = next(
+            item for item in self.decisions if item.metadata["id"] == "GOV-003"
         )
-        metadata = copy.deepcopy(primary.metadata)
+        metadata = copy.deepcopy(decision.metadata)
+        metadata["ratified_missions"] = metadata["ratified_missions"][:-1]
+        replacement = repository.Record(decision.path, metadata)
+        decisions = [
+            replacement if item.metadata["id"] == "GOV-003" else item
+            for item in self.decisions
+        ]
+
+        errors = repository.validate_historical_ratification(
+            self.missions, decisions
+        )
+
+        self.assertEqual(errors, [])
+
+    def test_zero_active_portfolio_primary_is_valid(self):
+        missions = [
+            self._with_metadata(item, portfolio_primary=False)
+            if item.metadata["lifecycle"] == "active"
+            else item
+            for item in self.missions
+        ]
+        with patch.object(repository, "_commit_is_reachable", return_value=True):
+            errors = repository.validate_metadata(missions, self.decisions)
+        self.assertFalse(any("portfolio-primary" in error for error in errors), errors)
+
+    def test_more_than_one_active_portfolio_primary_is_rejected(self):
+        primary = next(
+            item for item in self.missions
+            if item.metadata["portfolio_primary"]
+        )
+        first = self._with_metadata(primary, lifecycle="active")
+        metadata = copy.deepcopy(first.metadata)
+        metadata.update(
+            {
+                "id": "governance/second-primary",
+                "legacy_aliases": [],
+            }
+        )
+        record = repository.Record(
+            repository.MISSION_ROOT
+            / "governance"
+            / "second-primary"
+            / "mission.md",
+            metadata,
+        )
+        with patch.object(repository, "_commit_is_reachable", return_value=True):
+            errors = repository.validate_metadata(
+                [
+                    *(
+                        first if item.metadata["id"] == first.metadata["id"] else item
+                        for item in self.missions
+                    ),
+                    record,
+                ],
+                self.decisions,
+            )
+        self.assertTrue(
+            any("at most one active mission" in error for error in errors),
+            errors,
+        )
+
+    def test_inactive_mission_may_retain_historical_primary_metadata(self):
+        record = self._with_metadata(
+            self._mission("atlas/bulk-ingestion"), portfolio_primary=True
+        )
+        with patch.object(repository, "_commit_is_reachable", return_value=True):
+            errors = repository.validate_metadata([record], self.decisions)
+        self.assertFalse(any("primary" in error for error in errors), errors)
+
+    def test_paused_and_cancelled_metadata_may_coexist(self):
+        record = self._with_metadata(
+            self._mission("atlas/bulk-ingestion"), paused=True, cancelled=True
+        )
+        with patch.object(repository, "_commit_is_reachable", return_value=True):
+            errors = repository.validate_metadata([record], self.decisions)
+        self.assertFalse(any("paused" in error for error in errors), errors)
+
+    def test_active_workstreams_may_overlap(self):
+        primary = next(
+            item for item in self.missions
+            if item.metadata["portfolio_primary"]
+        )
+        first = self._with_metadata(primary, lifecycle="active")
+        metadata = copy.deepcopy(first.metadata)
         metadata.update(
             {
                 "id": "governance/concurrent-overlap",
@@ -345,11 +414,17 @@ _expose(__name__, "knowledge")
         )
         with patch.object(repository, "_commit_is_reachable", return_value=True):
             errors = repository.validate_metadata(
-                [*self.missions, record], self.decisions
+                [
+                    *(
+                        first if item.metadata["id"] == first.metadata["id"] else item
+                        for item in self.missions
+                    ),
+                    record,
+                ],
+                self.decisions,
             )
-        self.assertTrue(
-            any("active writable scopes overlap" in error for error in errors),
-            errors,
+        self.assertFalse(
+            any("writable scopes overlap" in error for error in errors), errors
         )
 
     def test_canonical_documents_links_and_hygiene_are_valid(self):
@@ -360,17 +435,17 @@ _expose(__name__, "knowledge")
         self.assertEqual(repository.validate_compatibility_facades(), [])
         self.assertEqual(repository.validate_schemas_and_first_reads(), [])
 
-    def test_crew_chief_is_discoverable_but_not_claimed_operational(self):
+    def test_idle_state_is_generated_without_an_active_primary(self):
         current = repository.generated_content(
             self.missions, self.decisions
         )[repository.ROOT / "CURRENT_MISSION.md"]
         context = repository.render_context(self.missions)
         index = repository.render_mission_index(self.missions)
+        self.assertIn("Mission: **none**", current)
+        self.assertIn("Repository state: **between missions**", current)
+        self.assertIn("Implementation authority: **none**", current)
+        self.assertIn("Portfolio-primary: `none`", context)
         self.assertIn("governance/crew-chief", current)
-        self.assertIn(
-            "awaiting_focused_reaudit_approval", current
-        )
-        self.assertIn("pushed=`false`; merged=`false`", context)
         self.assertIn("committed=yes; pushed=no; merged=no", index)
 
 

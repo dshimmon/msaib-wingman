@@ -22,7 +22,7 @@ PYTHONPATH=src python3 -m tools.governance generate
 Generated files are review aids. Their headers identify their authoritative
 inputs, and validation fails if they are stale.
 
-Completed mission directories may contain only the canonical `mission.md`
-status record. Retained journals and snapshots live under `docs/archive/`,
-where every file carries its own machine classification, visible warning, and
-canonical replacement (or an explicit statement that none exists).
+Mission journals and other documentation may summarize current state and be
+maintained with authorized work. The canonical `mission.md` record controls if
+a summary conflicts with mission metadata. Historical snapshots under
+`docs/archive/` retain their machine classification and visible warning.

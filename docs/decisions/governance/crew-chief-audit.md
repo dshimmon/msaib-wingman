@@ -33,10 +33,13 @@ controller and stable JSON Schemas live under
 is the canonical [Crew Chief runbook](../../runbooks/crew-chief.md).
 
 Crew Chief is advisory and cannot mutate the repository, approve a lifecycle
-gate, expand scope, impersonate Goose or the Development Flightline Auditor,
-or certify its own implementation. The v1 controller uses external,
-single-workspace consumption markers rather than a global audit database.
-Model audits occur only at an explicitly governed handoff and never in CI.
+gate, expand scope, or impersonate Goose or the Development Flightline Auditor.
+It may review its initial implementation when that work is labeled honestly as
+self-review; independent certification requires a genuinely separate reviewer.
+The v1 controller uses external, single-workspace consumption markers rather
+than a global audit database. Model audits require authorization and suitable
+controls, but they are not restricted exclusively to formal handoffs or
+categorically excluded from CI.
 
 ## Authorization trust boundary
 
@@ -54,13 +57,14 @@ integration, remote identity services, or other cryptographic identity
 infrastructure. A future stronger identity boundary requires separate
 architecture and authorization.
 
-## Bootstrap boundary
+## Bootstrap tooling
 
-The initial implementation cannot be self-certified. Its local implementation
-commit must be handed to a fresh ordinary Codex reviewer operating read-only
-and stating, “This bootstrap audit is not a Crew Chief audit.” Only a later,
-separately authorized controlled acceptance run may establish that the Crew
-Chief selection and execution path operates as designed.
+The ordinary-Codex bootstrap path remains available for separately authorized
+review and preserves honest reviewer identity. It is not a mandatory closeout
+gate. When used, the ordinary reviewer operates read-only, does not select Crew
+Chief, and states, “This bootstrap audit is not a Crew Chief audit.” A Crew
+Chief review of its own implementation is self-review and must not be labeled
+independent certification.
 
 The ordinary-bootstrap command is constructed internally from the same
 canonical isolation contract as Crew Chief execution, without selecting the
@@ -71,5 +75,4 @@ required argument, disabled feature, frozen path, output path, and standard-
 input marker. Any omission, addition, duplication, meaningful reordering, or
 weakened control fails before process launch.
 
-This decision does not publish the implementation, make Crew Chief
-operational, complete the mission, or authorize a live model audit.
+This decision does not itself authorize publication or a live model audit.

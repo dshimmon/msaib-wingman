@@ -194,3 +194,32 @@ No receipt, model or network invocation, fixture audit, push, merge,
 publication, main mutation, certification, or mission-completion claim is
 authorized or performed. The next gate is Maverick's package-bound approval
 for exactly one finding-focused independent re-audit.
+
+## 2026-08-10 — Focused-run failure preserved and mission closed
+
+- Preserved the exact `FOCUSED-RUN-001` failure evidence, consumed
+  authorization receipt, invocation, run record, and short stderr in the
+  canonical Crew Chief artifact area, with a provenance record for external
+  evidence retained by hash.
+- Recorded that the ordinary focused re-audit did not reach model service
+  execution because the frozen workspace required a trusted-directory
+  accommodation and the command omitted `--skip-git-repo-check`.
+- Recorded zero model tokens, zero automatic retries, no structured focused
+  report, and zero fixture acceptance audits.
+- Applied Maverick's explicit acceptance of the same-account impersonation
+  risk and frozen-workspace launcher limitation without changing Crew Chief
+  implementation behavior.
+- Simplified repository governance, generated an explicit between-missions
+  state with no implementation authority, and did not activate Rangefinder or
+  another successor.
+- Closed `governance/crew-chief` by Maverick's authority. The implementation is
+  not independently acceptance-certified or proven operational.
+- Regenerated the governance views and passed 32 repository-governance tests,
+  87 Crew Chief tests, 119 combined tests, 167 governance tests, and all 396
+  repository tests. Repository governance, 11 JSON Schemas, six focused-run
+  JSON records, the changed Python Ruff scope, and diff checks passed.
+- Preserved one setup-only Python 3.9 `tomllib` import error and the expected
+  stale-generated-view result before regeneration; the corrected Python 3.12
+  commands passed.
+
+The next gate is Maverick's selection and authorization of a mission.

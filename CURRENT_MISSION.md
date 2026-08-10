@@ -5,23 +5,20 @@
 
 ## Portfolio primary
 
-- Mission: **governance/crew-chief — Crew Chief Independent Audit**
-- Lifecycle: **active**
-- Authorization gate: `BOOTSTRAP-003 disputed with explicit residual risk and BOOTSTRAP-004 corrected locally; focused re-audit receipt creation, transmission, and model invocation prohibited pending exact-package approval`
-- Official record: [docs/missions/governance/crew-chief/mission.md](docs/missions/governance/crew-chief/mission.md)
-- Next gate: Obtain Maverick's explicit approval for the exact compact finding-focused package before receipt creation, transmission, or model invocation; controlled Crew Chief fixture acceptance remains contingent on an accepted bootstrap disposition.
+- Mission: **none**
+- Repository state: **between missions**
+- Implementation authority: **none**
+- Next gate: Maverick selects and authorizes a mission.
 
 ## Last completed work
 
-- **governance/repository-architecture — Wingman Repository Architecture**
-- Commit: `cff8222fbe6092e0c145f7d8d7cabe8963cd66e6`
-- Official record: [docs/missions/governance/repository-architecture/mission.md](docs/missions/governance/repository-architecture/mission.md)
+- **governance/crew-chief — Crew Chief Independent Audit**
+- Commit: `6658076e8c9440665245793621edf1e309bedfdf`
+- Official record: [docs/missions/governance/crew-chief/mission.md](docs/missions/governance/crew-chief/mission.md)
 
 ## Active workstreams
 
-| Mission | Role | Branch | Worktree | State | Next gate |
-|---|---|---|---|---|---|
-| `governance/crew-chief` | primary | `codex/crew-chief-v1-build-20260809` | `/Users/davidshimmon/.codex/worktrees/a83e/msaib-wingman` | bootstrap_003_disputed_004_corrected_awaiting_focused_reaudit_approval | Report the exact finding-focused package binding and obtain Maverick's explicit approval before receipt creation, transmission, or one finding-focused re-audit. |
+None. The repository is between missions.
 
 ## Canonical homes
 

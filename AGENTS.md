@@ -73,38 +73,29 @@ instructions:
 Surface conflicts instead of silently selecting a convenient version.
 Distinguish known facts, reasonable inferences, and items needing verification.
 Never invent repository state, file contents, test results, approvals, commits,
-audits, or mission completion. If a material conflict cannot be resolved within
-the approved scope, stop and ask Maverick.
+audits, or mission completion. Disclose conflicts and stop when they make safe,
+accurate progress impossible; otherwise continue within the authorized scope
+and record the reconciliation.
 
 ## Architectural principles
 
-- Preserve Wingman OS as a domain-neutral foundation, Atlas as its first
-  product, and Portfolio Wingman/Radar as a separate future product.
+- Preserve Wingman OS as a domain-neutral foundation and Atlas as its first
+  product. Portfolio Wingman and Radar are the same separate product, expressed
+  as Portfolio Wingman/Radar; they are not Atlas or Wingman OS core.
 - Maintain clean product/Core boundaries, modularity, traceability, source
   preservation, explicit boundaries, honest uncertainty, human oversight,
   dependency awareness, and reversible decisions.
 - Apply the governing principle: “Wingman summarizes information, but always
   preserves a path back to the source.”
-- Consult the approved Vault for capability status and lineage. Preservation,
-  approval, requirement, or priority in the Vault does not authorize
-  implementation or permit dependencies and approval gates to be skipped.
+- Consult the approved Vault for capability status, lineage, and the actual
+  approval scope recorded by each entry.
 
 ## Mission discipline
 
-Before implementation, verify and record:
-
-- current repository state;
-- the bounded objective and reason for the change;
-- scope and explicit exclusions;
-- architectural constraints;
-- deliverables;
-- tests and acceptance criteria;
-- documentation requirements; and
-- approval and commit gates.
-
-Stay within the approved objective. Stop before material scope expansion and
-request Maverick's direction. Never treat authorization for one gate as
-authorization for a later gate.
+Verify the repository state and understand the bounded objective before acting.
+Stay within the approved objective and stop before material scope expansion.
+One explicit Maverick instruction may authorize multiple named workflow gates;
+do not infer any gate that the instruction does not name.
 
 ## Repository safety
 
@@ -130,40 +121,33 @@ authorization for a later gate.
 - Run relevant tests and report the exact commands, results, failures, skips,
   and limitations. Do not run or change unrelated tests without a scope-based
   justification.
-- Update architecture records or mission journals only when the approved brief
-  authorizes or requires it.
+- Maintain relevant documentation and journals as a normal part of an
+  authorized task. Mission records remain authoritative when summaries differ.
 
 ## Crew Chief audit
 
-Crew Chief is a required, high-priority independent audit capability. Its v1
-implementation candidate is locally committed and awaiting the independent
-bootstrap gate recorded in `CURRENT_MISSION.md`; it is not yet operational.
-Its intended loop is:
+Crew Chief is a repository audit capability. Its intended loop is:
 
 > Codex report → Crew Chief audit → findings returned to Codex → Codex resolves,
 > disputes with evidence, or escalates each finding → final evidence package to
 > Goose and Maverick.
 
-Until the bootstrap audit and separately authorized controlled acceptance run
-verify Crew Chief automation, prepare an audit-ready evidence package,
-disclose that the independent audit loop remains pending, and never claim that
-an independent Crew Chief audit occurred. Crew Chief may not audit or certify
-its initial implementation. Do not fabricate an audit agent or silently
-self-certify as independent.
-
-Once Crew Chief is accepted and applicable, its audit handoff is mandatory.
-Use the canonical `docs/runbooks/crew-chief.md` procedure. Resolve every
-finding, dispute it with evidence, or escalate it. Findings are advisory and
-not self-executing unless Maverick authorizes a specific blocking policy. Crew
-Chief may not independently expand scope, rewrite code, approve commits, or
-overrule Maverick.
+Self-review is permitted when explicitly labeled as self-review; independent
+review requires a genuinely separate reviewer. Never claim that incomplete or
+self-review evidence is independent certification. Use
+`docs/runbooks/crew-chief.md` when an audit is authorized. Bootstrap tooling is
+available but is not a universal closeout gate. Model audits may run in an
+authorized workflow, including CI if separately configured and approved.
+Resolve, dispute with evidence, or escalate findings according to the
+authorized policy. Crew Chief may not expand scope, rewrite code, approve
+commits, or overrule Maverick on its own.
 
 ## Reporting and mission state
 
-Completion reports must distinguish work that is implemented, tested,
-reviewed, independently audited, approved, committed, pushed or merged, and
-declared mission-complete. Never claim mission completion solely because
-implementation or tests finished.
+Report the delivery states material to the task and avoid unsupported
+completion claims. Existing structured metadata continues to track
+implementation, publication, and lifecycle state for compatibility; every
+human-facing report need not enumerate every field.
 
 Provide an evidence package containing, as applicable:
 

@@ -13,13 +13,13 @@ Crew Chief implements this governed handoff:
 > reviewer → structured findings → Codex reconciliation → validated decision
 > package → Goose and Maverick decision
 
-## When Crew Chief is required
+## When Crew Chief is authorized
 
-Use Crew Chief at the governed audit handoff for an implemented mission before
-its next approval gate, unless Maverick approved and recorded the `exempt`
-profile. Preparing an envelope is not an audit. Preparing a command is not an
-audit. A valid report exists only after an explicitly authorized fresh review
-returns schema-valid JSON bound to the exact envelope.
+Use Crew Chief when the task, mission, or Maverick's instruction authorizes an
+audit. Bootstrap tooling is available but is not a universal closeout gate.
+Preparing an envelope is not an audit. Preparing a command is not an audit. A
+valid report exists only after an explicitly authorized review returns
+schema-valid JSON bound to the exact envelope.
 
 Select one risk profile:
 
@@ -162,8 +162,8 @@ If the CLI exposes a supported non-interactive custom-agent selector, the
 command selects `crew_chief`. If it does not, the controller does not invent
 one: it prepares a fresh-session fallback whose prompt points to the frozen
 agent file. Executing that fallback additionally requires an explicit
-`--allow-fresh-session-fallback` decision. Actual execution requires a
-separately authorized `--execute`; do not add it during preparation or CI.
+`--allow-fresh-session-fallback` decision. Actual execution requires an
+authorized `--execute`; preparation alone never implies execution authority.
 
 Immediately before an authorized model process starts, the controller creates
 an atomic consumption marker in that external review workspace. Reuse in the
@@ -266,12 +266,12 @@ review prompt.
 - Maverick retains final authority over scope, findings policy, commits,
   publication, gates, and mission completion.
 
-Crew Chief cannot certify its initial implementation. The bootstrap handoff
-must go to a fresh ordinary Codex reviewer that did not participate in the
-build, operating read-only over the implementation commit and frozen evidence.
-Its first report statement must be: “This bootstrap audit is not a Crew Chief
-audit.” Do not select the Crew Chief agent for bootstrap. A controlled real
-Crew Chief acceptance run is later and separately authorized.
+Crew Chief may review its initial implementation when the result is labeled
+self-review. Independent certification requires a genuinely separate reviewer.
+When the ordinary bootstrap path is authorized, it goes to an ordinary Codex
+reviewer operating read-only over the implementation commit and frozen
+evidence. Its first report statement must be: “This bootstrap audit is not a
+Crew Chief audit.” Do not select the Crew Chief agent for bootstrap.
 
 The canonical bootstrap contract is
 [`bootstrap-report-v1.schema.json`](../../tools/crew_chief/schemas/bootstrap-report-v1.schema.json).
@@ -345,8 +345,8 @@ HEAD. Bootstrap instructions and mission metadata must identify both roles so
 the ordinary reviewer checks the implementation inventory and the external
 evidence-snapshot binding without demanding impossible commit self-reference.
 
-CI runs only deterministic schema, controller, safety, reconciliation, and
-governance tests with fake model-process runners. It never supplies
-`--execute`, contacts a model, or incurs a paid audit. This prevents CI from
-silently crossing the governed handoff or treating a model result as an
-automatic authority.
+The current CI configuration runs deterministic schema, controller, safety,
+reconciliation, and governance tests with fake model-process runners. This
+repository change adds no CI model job, credentials, or network access. A
+future model-backed CI audit would require its own explicit authorization and
+security configuration, and its result would not become automatic authority.

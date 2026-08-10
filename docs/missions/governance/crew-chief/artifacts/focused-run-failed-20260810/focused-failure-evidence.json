@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "canary": "CANOPY-7C2F-ATLAS",
+  "record_type": "focused_reaudit_pre_service_failure",
+  "recorded_at": "2026-08-10T14:48:05Z",
+  "audit_id": "575192b9824311fded2527cbf2d7dcc1a6546069c7e876abe396114150d1ecd6",
+  "envelope_id": "9f09a301c26de8e560e932d6bbdf518837a50de8989fbcb20135c45f5be12d39",
+  "reviewed_head": "6658076e8c9440665245793621edf1e309bedfdf",
+  "attempt": {
+    "ordinary_codex_focused_reaudit_attempts": 1,
+    "ordinary_codex_focused_reaudit_completions": 0,
+    "automatic_retries": 0,
+    "receipt_consumed": true,
+    "runner_returncode": 1,
+    "model_service_request_started": false,
+    "model_tokens_consumed": 0,
+    "token_basis": "The Codex CLI rejected the frozen workspace before model-service execution; stdout is empty and no structured report exists."
+  },
+  "consolidated_blocker": {
+    "blocker_id": "FOCUSED-RUN-001",
+    "stage": "local_codex_preflight",
+    "diagnostic": "Not inside a trusted directory and --skip-git-repo-check was not specified.",
+    "explanation": "The canonical ordinary-review command selected the external frozen workspace with --cd but neither made it a trusted Git repository nor included the CLI's explicit repository-check bypass. The CLI therefore exited before the authorized focused review could begin.",
+    "repair_status": "not_attempted",
+    "retry_status": "prohibited_by_zero_retry_authorization"
+  },
+  "bindings": {
+    "package": {
+      "path": "/private/tmp/wingman-crew-chief-finding-focused-reaudit-20260810-10KFKF/review/finding-focused-reaudit-package.md",
+      "size": 327988,
+      "sha256": "8c45b39118fded857b884b7b09313349289858dcdd62fc7506c4245111506765"
+    },
+    "service_schema": {
+      "path": "/private/tmp/wingman-crew-chief-finding-focused-reaudit-20260810-10KFKF/review/finding-focused-report.schema.json",
+      "size": 1631,
+      "sha256": "27115ce0ea284ea7a8f505c847a895f6a31895755faadf6ae1477bcee85d988e"
+    },
+    "authorization_text": {
+      "path": "/private/tmp/wingman-crew-chief-finding-focused-reaudit-20260810-10KFKF/authorization/authorization-text.txt",
+      "size": 3382,
+      "sha256": "74180a20820e92f027842d8f883d08281591b88d64afdd9e984de784de2e59b0"
+    },
+    "authorization_receipt": {
+      "path": "/private/tmp/wingman-crew-chief-finding-focused-reaudit-20260810-10KFKF/authorization/authorization-receipt.json",
+      "size": 1000,
+      "sha256": "da71546abd5a67d57a8bf1028f245d9ba532ccb3f205c0af6c9126e2a4a1217c",
+      "receipt_id": "585d2e861f6cffb5c093b51d75e78239ddfd087248b32f8586ea8354dfe605a4"
+    },
+    "invocation": {
+      "path": "/private/tmp/wingman-crew-chief-finding-focused-reaudit-20260810-10KFKF/focused-authorized-review/invocation.json",
+      "size": 5963,
+      "sha256": "1ffbf8115bc754e00d639ffee3cdea3d8b6bb06ea5a8298a570fa82c52b68cd7"
+    },
+    "composite_payload": {
+      "path": "/private/tmp/wingman-crew-chief-finding-focused-reaudit-20260810-10KFKF/focused-authorized-review/bootstrap-review-input.md",
+      "size": 329855,
+      "sha256": "4b3e4cb79e925bba1321936838c76e04bb7914edcc9396ae828b2b0da5e8bd6d"
+    },
+    "run_record": {
+      "path": "/private/tmp/wingman-crew-chief-finding-focused-reaudit-20260810-10KFKF/focused-authorized-review/output/bootstrap-run-record.json",
+      "size": 3075,
+      "sha256": "27ff74b22d2923a2a4f6ff21ec51870a3f6ef2037ad8afbe1a36e6a5c73b63c4"
+    },
+    "stdout": {
+      "path": "/private/tmp/wingman-crew-chief-finding-focused-reaudit-20260810-10KFKF/focused-authorized-review/output/codex-stdout.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stderr": {
+      "path": "/private/tmp/wingman-crew-chief-finding-focused-reaudit-20260810-10KFKF/focused-authorized-review/output/codex-stderr.log",
+      "size": 76,
+      "sha256": "dd701e712037bba81445e9a92376e3d3af69acac5f0187ec904e9ed3c401324d"
+    },
+    "structured_report": null
+  },
+  "conditional_sequence": {
+    "seeded_defect_fixture_attempted": false,
+    "corrected_fixture_attempted": false,
+    "evidence_only_closeout_commit_created": false,
+    "reason": "The focused re-audit did not complete successfully, so every conditional later gate is closed."
+  },
+  "git_after_failure": {
+    "branch": "codex/crew-chief-v1-build-20260809",
+    "head": "6658076e8c9440665245793621edf1e309bedfdf",
+    "origin_main": "b1910d0c69a52d73ddde93cb9722f12540c5d1e7",
+    "ahead": 8,
+    "behind": 0,
+    "index_and_worktree_clean": true,
+    "repository_mutation": false
+  }
+}

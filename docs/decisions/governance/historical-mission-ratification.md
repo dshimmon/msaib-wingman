@@ -9,7 +9,7 @@
   "status": "accepted",
   "date": "2026-08-07",
   "authority": "Maverick",
-  "scope": "Retrospective completion ratification and sole mission-status authority for the 30 completed missions at bf73134",
+  "scope": "Retrospective completion ratification for the missions listed at bf73134",
   "approval_evidence": "Maverick's 2026-08-07 correction-engineer instruction explicitly ratifying all 30 completed missions",
   "ratified_missions": [
     {"id": "atlas/briefing", "implementation_commits": ["109dc2a3e2502d3142dcba8c7c94fa2e4a191a0f"]},
@@ -50,9 +50,10 @@
 
 ## Decision
 
-Maverick retrospectively ratified completion of the exact 30 missions listed
-below on 2026-08-07. This ratification explicitly includes
-`atlas/bulk-ingestion` and `wingman-os/prompt-optimizer`.
+Maverick retrospectively ratified completion of the missions listed below on
+2026-08-07. The list is preserved as historical evidence rather than enforced
+as a permanent repository-wide mission count. This ratification explicitly
+includes `atlas/bulk-ingestion` and `wingman-os/prompt-optimizer`.
 
 Each mission's `mission.md` is its sole canonical mission-status surface.
 Retained journals are noncanonical, time-bound historical evidence and may not
@@ -100,7 +101,8 @@ retrospective completion ratification.
 
 ## Consequences
 
-All 30 canonical mission records cite this decision as their dated completion
-authority. Archived journals preserve substantive history without competing
-with those records. Publication evidence continues to be evaluated from
-cached remote-tracking refs and the canonical cached merge target.
+The listed canonical mission records cite this decision as their dated
+completion authority. Journals may preserve or summarize substantive history;
+the mission record controls when statements conflict. Publication evidence
+continues to be evaluated from cached remote-tracking refs and the canonical
+cached merge target.

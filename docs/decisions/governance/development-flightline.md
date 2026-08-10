@@ -20,9 +20,10 @@
 
 One mutable Development Engineer works in one bounded isolated worktree. A
 fresh, separate read-only Independent Auditor reviews frozen evidence.
-Additional mutable Engineers require explicitly partitioned writable scopes
-and Maverick's authorization. Roles receive no default network, credentials,
-commit, push, merge, or destructive authority.
+Concurrency boundaries for additional engineers are selected for the task;
+formally partitioned writable scopes and separate authorizations are not
+universal requirements. Roles receive no default network, credentials, commit,
+push, merge, or destructive authority.
 
 The Development Flightline Independent Auditor is not Crew Chief. Flightline
 setup delivery is historically completed at `ea9f3e0`; its capability health

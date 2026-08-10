@@ -26,11 +26,11 @@ remain an approved provisional working sequence, not implementation authority.
 
 Storage abstraction precedes physical migration. Assurance, continuity,
 concurrency, and security precede governed in-product agents. Mission Control
-and Rules of Engagement precede a future Chief of Staff. Radar remains a
-separate future product attached through the product contract. Crew Chief is
-required, is not the Flightline Auditor, and is not automatically deferred
-until after Mission 037; Maverick will decide its exact placement before the
-relevant Assurance mission.
+and Rules of Engagement precede a future Chief of Staff. Portfolio
+Wingman/Radar remains a separate future product attached through the product
+contract. Crew Chief is not the Flightline Auditor and is not automatically
+deferred until after Mission 037; Maverick will decide its exact placement
+before the relevant Assurance mission.
 
 ## 2026-08-08 amendment — Crew Chief promotion
 
@@ -50,3 +50,9 @@ awaits a fresh ordinary-Codex bootstrap audit. It is not published,
 operational, independently audited, or mission-complete. A controlled real
 Crew Chief acceptance run requires later separate authorization; Rangefinder
 does not advance through this amendment.
+
+## 2026-08-10 amendment — Crew Chief closeout and idle state
+
+Maverick completed `governance/crew-chief` with its documented limitations and
+did not activate Rangefinder or any successor. The repository is between
+missions. The next gate is Maverick's selection and authorization of a mission.

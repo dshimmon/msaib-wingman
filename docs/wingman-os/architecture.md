@@ -1,9 +1,9 @@
 # Wingman OS Architecture
 
-This document describes the current system. It does not authorize work or own
-mission status. [ARCH-001](../decisions/architecture/airframe-boundaries.md)
-and [ARCH-002](../decisions/architecture/product-separation.md) are the official
-decisions.
+This document describes the current system.
+[ARCH-001](../decisions/architecture/airframe-boundaries.md) and
+[ARCH-002](../decisions/architecture/product-separation.md) are the official
+decisions when wording conflicts.
 
 ## Physical ownership
 
@@ -14,13 +14,13 @@ src/
     shared/     product contracts and reusable composition
   products/
     atlas/      academic policy and application composition
-    radar/      reserved namespace; no production behavior
+    radar/      Portfolio Wingman/Radar namespace; no production behavior
 
 tests/
   wingman/      Core and Shared behavior
   products/
     atlas/      Atlas behavior and composition
-    radar/      future Radar tests; currently namespace-only
+    radar/      future Portfolio Wingman/Radar tests; currently namespace-only
   governance/   architecture and repository governance
 ```
 
@@ -38,8 +38,8 @@ Wingman Core <- Shared Product Framework <- Product composition
 ```
 
 Core depends only on Core. Shared depends on Core and Shared. Atlas may depend
-on Core, Shared, and Atlas. Radar must attach through the product contract and
-must not introduce product branches into Core or Shared.
+on Core, Shared, and Atlas. Portfolio Wingman/Radar must attach through the
+product contract and must not introduce product branches into Core or Shared.
 
 ## Current seams
 

@@ -97,7 +97,8 @@ only; no new implementation belongs there.
 - [`decisions/`](decisions/) — enduring governance and architecture decisions;
 - [`wingman-os/`](wingman-os/) — current Wingman OS documentation;
 - [`products/atlas/`](products/atlas/) — current Atlas documentation;
-- [`products/radar/`](products/radar/) — approved Radar boundary and planning;
+- [`products/radar/`](products/radar/) — approved Portfolio Wingman/Radar
+  boundary and planning;
 - [`governance/`](governance/) — policy, schemas, compatibility, and generated context;
 - [`runbooks/`](runbooks/) — operational procedures;
 - [`archive/`](archive/) — superseded or noncanonical historical material; and
@@ -108,5 +109,4 @@ Crew Chief instructions. `docs/runbooks/crew-chief.md` owns its operator
 procedure; neither location owns current mission lifecycle.
 
 `WINGMAN_VAULT.md` preserves approved future capabilities, strategic ideas,
-and deferred obligations. It is neither a mission-status authority nor an
-archive.
+deferred obligations, and the approval scope recorded by its entries.

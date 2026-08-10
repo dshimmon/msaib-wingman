@@ -8,10 +8,10 @@
   "title": "Crew Chief Independent Audit",
   "call_sign": "CREW-CHIEF",
   "namespace": "governance",
-  "lifecycle": "active",
+  "lifecycle": "completed",
   "priority": "high",
   "portfolio_primary": true,
-  "authorization_gate": "BOOTSTRAP-003 disputed with explicit residual risk and BOOTSTRAP-004 corrected locally; focused re-audit receipt creation, transmission, and model invocation prohibited pending exact-package approval",
+  "authorization_gate": "closed by Maverick with accepted limitations",
   "approval_evidence": [
     {
       "date": "2026-08-08",
@@ -47,6 +47,16 @@
       "date": "2026-08-10",
       "authority": "Maverick",
       "scope": "Authorized one bounded correction commit for BOOTSTRAP-004, an evidence-backed BOOTSTRAP-003 scope dispute with explicit residual same-account risk, complete deterministic validation, and preparation but not transmission of one compact finding-focused re-audit package; prohibited new identity infrastructure, receipt creation, model invocation, fixture audit, push, merge, publication, main modification, and mission completion."
+    },
+    {
+      "date": "2026-08-10",
+      "authority": "Maverick",
+      "scope": "Accepted the same-account authorization risk, authorized one finding-focused re-audit and two conditional fixture audits, and accepted the resulting FOCUSED-RUN-001 pre-service failure evidence."
+    },
+    {
+      "date": "2026-08-10",
+      "authority": "Maverick",
+      "scope": "Authorized governance simplification, preservation of FOCUSED-RUN-001 evidence, completion of governance/crew-chief with the frozen-workspace launcher limitation and incomplete acceptance evidence stated honestly, and exactly one local closeout commit; prohibited push, merge, publication, main modification, model invocation, and successor activation."
     }
   ],
   "baseline_commit": "b1910d0c69a52d73ddde93cb9722f12540c5d1e7",
@@ -56,7 +66,8 @@
     "1cddd1d65156d69053b30564c00343b3843cbe66",
     "0f7057896d2abfa9d04daa83e332f2015123c154",
     "2a868bac1088bd6523048623032af6d277143858",
-    "f34c7ad810a50b36be453493d17fee8ac4c3ea00"
+    "f34c7ad810a50b36be453493d17fee8ac4c3ea00",
+    "6658076e8c9440665245793621edf1e309bedfdf"
   ],
   "pushed": false,
   "merged": false,
@@ -66,7 +77,7 @@
     "docs/decisions/governance/crew-chief-audit.md"
   ],
   "workstream": {
-    "owner_session": "Codex BOOTSTRAP-003/004 finding correction authorized by Maverick on 2026-08-10",
+    "owner_session": "Codex Crew Chief closeout authorized by Maverick on 2026-08-10",
     "branch": "codex/crew-chief-v1-build-20260809",
     "worktree": "/Users/davidshimmon/.codex/worktrees/a83e/msaib-wingman",
     "writable_scope": [
@@ -89,50 +100,47 @@
       "tools/crew_chief/",
       "tools/governance/repository.py"
     ],
-    "state": "bootstrap_003_disputed_004_corrected_awaiting_focused_reaudit_approval",
-    "next_gate": "Report the exact finding-focused package binding and obtain Maverick's explicit approval before receipt creation, transmission, or one finding-focused re-audit."
+    "state": "completed_by_maverick_with_accepted_limitations",
+    "next_gate": "Maverick selects and authorizes a mission."
   },
-  "next_gate": "Obtain Maverick's explicit approval for the exact compact finding-focused package before receipt creation, transmission, or model invocation; controlled Crew Chief fixture acceptance remains contingent on an accepted bootstrap disposition.",
+  "next_gate": "Maverick selects and authorizes a mission.",
   "supersedes": null,
   "superseded_by": null,
   "paused": false,
   "cancelled": false,
-  "capability_health": "healthy"
+  "capability_health": "maintenance_pending"
 }
 -->
 
-Lifecycle: **active** and **portfolio-primary**. Call sign: **CREW-CHIEF**.
+Lifecycle: **completed by Maverick with accepted limitations**. The retained
+`portfolio_primary` value is historical metadata and does not make Crew Chief
+the current primary. Call sign: **CREW-CHIEF**.
 
-Maverick authorized Crew Chief v1 implementation, bounded enforcement and
-closeout corrections, service-schema compatibility, the package-bound
-bootstrap-governance correction, and the focused `BOOTSTRAP-003`/`004`
-correction recorded above. The six earlier code-bearing commits are locally
-committed at the exact hashes in `implementation_commits`. The single current
-correction commit cannot embed its own final hash; the finding-focused package
-must bind that final commit externally as its reviewed subject and exact diff.
+Crew Chief v1 is implemented at
+`6658076e8c9440665245793621edf1e309bedfdf`, and the previously recorded
+deterministic suites passed. The full ordinary bootstrap audit completed with
+`FAIL`; it was not a Crew Chief audit. The later finding-focused re-audit did
+not complete because the frozen external workspace was rejected before
+service execution: the canonical command omitted `--skip-git-repo-check`.
+The seeded-defect and corrected-fixture audits therefore did not run. Crew
+Chief is not independently acceptance-certified or proven operational.
 
-Implemented, tested, locally committed, service-schema-corrected,
-bootstrap-reviewed, acceptance-validated, Maverick-approved, published,
-operational, and mission-complete are distinct states. The first completed
-ordinary bootstrap returned `BLOCKED` with `BOOTSTRAP-001` and `002`. A later
-ordinary bootstrap over evidence snapshot
-`e88f25579e2c976c50e3abf49118abadb118f5b9` returned `FAIL` with
-`BOOTSTRAP-003` and `004`, used 256,383 tokens, and was not a Crew Chief audit.
-Both blocking results stopped conditional fixture acceptance, so zero Crew
-Chief acceptance audits ran. `BOOTSTRAP-004` is corrected locally;
-`BOOTSTRAP-003` is disputed within the approved v1 trust boundary with the
-same-account impersonation risk escalated for Maverick's decision. Crew Chief
-remains unapproved, unpublished, non-operational, and not mission-complete.
+Maverick accepted the residual risk that a malicious process already operating
+as the trusted local operating-system account could impersonate Maverick to the
+authorization wrapper. Maverick also accepted the frozen-workspace launcher
+limitation and completed the mission without claiming the failed or unexecuted
+acceptance gates passed. No successor mission is active; the repository is
+between missions, and Maverick selects and authorizes the next mission.
 
 ## Approved responsibility
 
 The [Wingman Vault](../../../../WINGMAN_VAULT.md#crew-chief) defines Crew Chief
-as the independent audit function in the mandatory review loop: receive the
-Codex report and evidence, independently audit the authorized work, return
-findings to Codex for resolution or evidence-backed dispute, and support a
-final evidence package for Maverick. Findings begin as advisory, and Crew Chief
-cannot expand scope, mutate repository state, authorize work, or overrule
-Maverick.
+as a repository audit function: receive the Codex report and evidence, audit
+the authorized work, return findings for resolution or evidence-backed
+dispute, and support a final evidence package for Maverick. Self-review must be
+labeled as self-review; independent review requires a separate reviewer.
+Findings begin as advisory, and Crew Chief cannot expand scope, mutate
+repository state, authorize work, or overrule Maverick.
 
 ## Implemented boundary
 
@@ -147,12 +155,12 @@ The exact evidence and validation record belongs in [`evidence.md`](evidence.md)
 with chronological build notes in [`journal.md`](journal.md). The completed
 first blocked review and dispositions are frozen under
 [`artifacts/bootstrap-blocked-20260810/`](artifacts/bootstrap-blocked-20260810/).
-The later `FAIL` report and complete external evidence remain preserved at
-their reported hashes; the focused
+The later `FAIL` report and historical evidence remain preserved at their
+reported hashes; the focused
 [`disposition.json`](artifacts/bootstrap-failed-20260810/disposition.json)
-artifact binds them.
-No receipt exists for the finding-focused package because its final binding
-has not been approved. The next gate is Maverick's approval of that exact
-package before receipt creation or one focused re-audit. Conditional fixture
-acceptance remains contingent on an accepted bootstrap disposition. Neither
-review transfers Maverick's authority.
+artifact binds them. The final failed focused-run evidence, authorization
+receipt, invocation, run record, short stderr, and external evidence bindings
+are preserved under
+[`artifacts/focused-run-failed-20260810/`](artifacts/focused-run-failed-20260810/).
+No structured focused report exists, no fixture audit ran, and neither review
+transfers Maverick's authority.

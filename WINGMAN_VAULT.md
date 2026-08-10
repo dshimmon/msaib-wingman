@@ -15,34 +15,23 @@ The Wingman Vault preserves approved future capabilities, promoted roadmap
 items, deferred architectural obligations, active principles, and completed or
 superseded records without confusing one lifecycle state for another.
 
-Preservation is not implementation authorization. Priority does not permit a
-capability to skip dependencies, evidence requirements, testing, human review,
-or approval gates.
+Each entry preserves its actual approved scope. Lifecycle and priority labels
+do not expand or narrow the approval text recorded for that entry.
 
 ---
 
 ## 2. Governing Rules
 
 1. Every preserved entry has a canonical name, definition, lifecycle state,
-   priority, and provenance.
-2. **Approved** means Maverick approved preservation of the concept. It does
-   not mean its architecture, implementation, mission brief, or execution is
-   approved.
-3. **Required** means the capability is mandatory before the dependent
-   workflow may be treated as complete. It does not authorize unbounded work.
-4. **High priority** expresses strategic importance. Dependencies and mission
-   gates still control sequence.
-5. Promotion into a numbered mission requires Maverick's explicit approval of
-   that mission's objective, scope, exclusions, constraints, deliverables,
-   tests, and acceptance criteria.
-6. Active capabilities, promoted roadmap work, deferred obligations, and
+   priority, provenance, and the scope actually approved by Maverick.
+2. Active capabilities, promoted roadmap work, deferred obligations, and
    completed infrastructure are recorded separately from future concepts.
-7. Superseded entries remain historically visible. They are not silently
+3. Superseded entries remain historically visible. They are not silently
    deleted or presented as active commitments.
-8. When records conflict, use the authority order defined by Mission Control:
+4. When records conflict, use the authority order defined by Mission Control:
    Maverick's current instruction, canonical repository records, Git and test
    evidence, Project files, conversations, then explicitly labeled inference.
-9. No agent may promote, discard, merge, rename, or materially reinterpret a
+5. No agent may promote, discard, merge, rename, or materially reinterpret a
    Vault entry without preserving provenance and surfacing the change for
    Maverick's approval.
 
@@ -203,15 +192,15 @@ gates.
 
 #### Crew Chief
 
-**Status:** Active successor portfolio-primary mission; v1 implementation
-candidate locally committed and awaiting independent bootstrap audit
+**Status:** Completed by Maverick with accepted limitations; v1 implementation
+locally committed and not independently certified
 **Priority:** High priority  
 **Requirement:** Required
 
 **Canonical mission record:**
 [`governance/crew-chief`](docs/missions/governance/crew-chief/mission.md)
 
-Crew Chief is the independent audit agent in the mandatory Codex review loop:
+Crew Chief is the repository audit agent in the Codex review loop:
 
 1. Codex completes its bounded work and produces an evidence-based report.
 2. The system automatically sends that report and the required review evidence
@@ -226,10 +215,11 @@ Crew Chief is the independent audit agent in the mandatory Codex review loop:
    report, Crew Chief findings, resolutions or disputes, remaining risks, and
    exact evidence for Goose and Maverick.
 
-The audit handoff is mandatory. Crew Chief begins with advisory findings:
-recommendations do not automatically mutate code, expand mission scope,
-authorize commits, or overrule Maverick. Maverick may later approve defined
-blocking rules through Rules of Engagement or constitutional assurance.
+Crew Chief begins with advisory findings: recommendations do not automatically
+mutate code, expand mission scope, authorize commits, or overrule Maverick.
+Self-review must be labeled as self-review; independent certification requires
+a genuinely separate reviewer. Maverick may approve defined blocking rules
+through Rules of Engagement or constitutional assurance.
 
 **Sequencing:** Crew Chief remains required, but it was not a prerequisite for
 Mission 028. The Development Flightline Independent Auditor may audit Mission
@@ -237,9 +227,11 @@ Mission 028. The Development Flightline Independent Auditor may audit Mission
 occurred. On 2026-08-08 Maverick promoted Crew Chief as the successor
 portfolio-primary planning mission after Repository Architecture and before
 the relevant Assurance mission. On 2026-08-09 Maverick separately authorized
-the v1 implementation and one local commit. The candidate remains unpublished,
-non-operational, independently unaudited, and not mission-complete until its
-bootstrap and later controlled acceptance gates are satisfied.
+the v1 implementation and local correction commits. On 2026-08-10 Maverick
+completed the mission while accepting the same-account authorization risk and
+the frozen-workspace launcher limitation. Deterministic tests passed. The full
+bootstrap review failed, and the focused re-audit and fixture audits did not
+complete. No independent certification is claimed.
 
 Crew Chief should measure mixed responsibilities, duplication, dependency
 complexity, circular imports, repeated navigation, excessive context or tool
@@ -262,16 +254,18 @@ authoritative.
 
 ### 3.6 Future products
 
-#### Portfolio Wingman — Radar
+#### Portfolio Wingman/Radar
 
 **Status:** Approved future product  
 **Priority:** Approved for preservation; implementation sequence remains
 dependency-bound
 
-Radar is a separate product built on Wingman OS. It must not be confused with
-Atlas or coupled prematurely to Core. It will provide public-company discovery,
-qualitative research, reproducible financial analysis, and complete sourced,
-traceable investor reports with visible agent activity and human oversight.
+Portfolio Wingman and Radar are the same separate product, expressed as
+Portfolio Wingman/Radar. It is built on Wingman OS, must not be confused with
+Atlas, and must not be coupled prematurely to Core. It will provide
+public-company discovery, qualitative research, reproducible financial
+analysis, and complete sourced, traceable investor reports with visible agent
+activity and human oversight.
 
 Radar's planned agent team is:
 
@@ -364,12 +358,12 @@ replacing durable identity.
 
 ## 5. Promoted Roadmap Items
 
-Promotion records the destination and preserves Vault lineage. It does not
-replace the requirement for a complete, approved mission brief.
+Promotion records the destination and preserves Vault lineage. The actual
+approval scope associated with each promoted entry controls.
 
 | Capability | Destination | State |
 |---|---|---|
-| Crew Chief | `governance/crew-chief` | Active portfolio-primary; v1 implementation candidate locally committed and awaiting independent bootstrap audit |
+| Crew Chief | `governance/crew-chief` | Completed by Maverick with accepted limitations; not independently certified |
 | Wingman Assurance v1 | Mission 029 — Rangefinder | Planned direction |
 | Retrieval Test Range | Mission 029 — Rangefinder | Planned component |
 | Flight Recorder | Mission 029 — Rangefinder | Planned component |
@@ -480,10 +474,12 @@ Maverick approved the Vault on August 1, 2026, and it was committed as
 `726dbbe981364e3e58a6650d176d0b7edf436286`. Root `AGENTS.md` was subsequently
 committed as `7518bf717ce9974dcbb9d24fefe6a1b91bfee7b3`.
 
-This document owns approved future capabilities, strategic ideas, and deferred
-obligations. It does not own the current mission or next execution gate. Use
+This document owns approved future capabilities, strategic ideas, deferred
+obligations, and the approval scope recorded in its entries. Use
 [`CURRENT_MISSION.md`](CURRENT_MISSION.md) for the generated entry point and
-[`docs/roadmap.md`](docs/roadmap.md) for approved sequence. Crew Chief is the
-required successor portfolio-primary mission. Its v1 candidate is implemented,
-tested, and locally committed, but no independent bootstrap or Crew Chief audit
-has occurred; it is not published, operational, or mission-complete.
+[`docs/roadmap.md`](docs/roadmap.md) for approved sequence. Crew Chief v1 is
+implemented, deterministically tested, locally committed, and completed by
+Maverick with accepted limitations. The full bootstrap failed; the focused
+re-audit and fixture audits did not complete; no independent certification is
+claimed. The repository is between missions, and Maverick selects and
+authorizes the next mission.
