@@ -312,3 +312,55 @@ merge, publication, successor activation, or operational claim occurred. The
 next gate is explicit authority for one code-bearing correction commit; only
 then can the committed subject enter the already authorized two-job synthetic
 pool acceptance run.
+
+## 2026-08-10 — Synthetic operational pool accepted
+
+- Repeated `CANOPY-7C2F-ATLAS`, staged exactly the 17 authorized correction
+  paths, and created code-bearing commit
+  `370c38c0a5dac664a9359af54e0153a379a20e5f` with subject
+  `Fix Crew Chief report lifecycle and retention`. Its parent is
+  `03984e04f2f6f45ce7316071a0c95ce3d880f2e9`; the post-commit worktree and
+  index were clean.
+- Created two separate tiny Git repositories, envelopes, and frozen non-Git
+  review workspaces. The seeded-defect head changed addition to subtraction and
+  failed its deterministic test with `-1 != 5`; the corrected head changed
+  subtraction to addition and passed its one test.
+- Scanned both frozen envelopes before launch. They contained only synthetic
+  calculator material, canonical Crew Chief instructions, required schemas,
+  and synthetic evidence. No credential pattern, `.env` file, Wingman product
+  source, Wingman mission history, live data, or unrelated content was found.
+- Ran exactly one `tools.crew_chief pool --execute` command with two jobs,
+  requested and observed concurrency two, and zero retries. The installed CLI
+  had no non-interactive custom-agent selector, so both explicitly configured
+  jobs used the existing fresh-session fallback with frozen Crew Chief
+  instructions and all canonical isolation controls.
+- Both authenticated subprocesses completed. The seeded-defect job returned
+  schema-valid `FAIL` with high, blocking finding `CC-0001`, exact head source
+  line 6, and the bound synthetic validation artifact. The corrected job
+  returned schema-valid `PASS` with no findings. Token counts were 27,162 and
+  27,059, for 54,221 total.
+- The pool preserved manifest order, two distinct workspaces and consumption
+  markers, official canonical/service reports and run records, unchanged
+  repository states, three separate completed retention bundles, maximum
+  observed concurrency two, and overall operational status `PASS`.
+- The required retention dry-run validated all three completed bundles and
+  proposed zero removals. It did not delete or alter acceptance evidence.
+- Independently revalidated both canonical reports, both service reports,
+  source and artifact citations, pool and retention schemas, artifact hashes,
+  run-record Git bindings, repository cleanliness, workspace separation, and
+  consumption markers. The first external validation-script command omitted
+  the repository root from `PYTHONPATH` and stopped at import; the corrected
+  `PYTHONPATH=.:src` command passed every assertion without a model call.
+- The first governance-generation attempt used unsupported capability-health
+  value `operational` and failed schema validation before generation. Replacing
+  it with the canonical successful value `healthy` allowed generation to pass;
+  this documentation correction invoked no model.
+- Preserved the compact JSON evidence under
+  `artifacts/operational-pool-accepted-20260810/`, with external envelope and
+  stderr evidence retained by exact size and SHA-256.
+
+Crew Chief's single-audit runner, concurrent pool, report persistence, and
+retention lifecycle are operational for the validated synthetic acceptance
+scope. This is not independent certification of every future audit. No push,
+merge, publication, main mutation, successor activation, third invocation, or
+retry occurred. Maverick's publication decision is the next gate.

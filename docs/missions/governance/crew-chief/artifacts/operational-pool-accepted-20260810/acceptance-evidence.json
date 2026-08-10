@@ -1,0 +1,163 @@
+{
+  "schema_version": "1.0",
+  "canary": "CANOPY-7C2F-ATLAS",
+  "event": "crew_chief_operational_pool_synthetic_acceptance",
+  "implementation_commit": "370c38c0a5dac664a9359af54e0153a379a20e5f",
+  "implementation_parent": "03984e04f2f6f45ce7316071a0c95ce3d880f2e9",
+  "pool_started_at": "2026-08-10T18:57:11Z",
+  "pool_completed_at": "2026-08-10T18:57:30Z",
+  "pool_executions": 1,
+  "authenticated_model_invocations": 2,
+  "automatic_retries": 0,
+  "requested_max_concurrency": 2,
+  "maximum_observed_concurrency": 2,
+  "overall_status": "PASS",
+  "token_count_total": 54221,
+  "execution_mode": "fresh-session-fallback",
+  "execution_mode_evidence": "The installed codex-cli 0.147.0-alpha.6.5 exposed no non-interactive custom-agent selector. Both manifest jobs explicitly enabled the existing frozen-instruction fallback and retained read-only, ephemeral, approval-denied, tool-disabled isolation.",
+  "scope": "Two tiny synthetic calculator repositories, frozen canonical Crew Chief controls, required schemas, and synthetic validation evidence only.",
+  "sensitive_content_scan": {
+    "credential_matches": 0,
+    "env_files": 0,
+    "wingman_product_source_files": 0,
+    "wingman_mission_history_files": 0,
+    "live_data_files": 0,
+    "unrelated_content_detected": false
+  },
+  "pool_report": {
+    "path": "pool-report.json",
+    "size": 4080,
+    "sha256": "b6d1d0eb8988b7032cd35c7e733083962a51a085cf393204645cdbfe6ab7b712"
+  },
+  "manifest": {
+    "path": "jobs.json",
+    "size": 480,
+    "sha256": "5c7c81efde24ad9e64f34415ad1f9b3fbe1d8f9e61b99b7f333217b6494aa81a"
+  },
+  "jobs": [
+    {
+      "job_id": "seeded-defect",
+      "expected_verdict": "FAIL",
+      "observed_verdict": "FAIL",
+      "operational_state": "COMPLETED",
+      "attempts": 1,
+      "token_count": 27162,
+      "audit_id": "c4785a03502688f2562d9a798010acab23291bfa4cd7fb79aa5006a96dd394ed",
+      "envelope_id": "533099626cb4df5fb549649c99a0d9b1a6671f50b5541b92e1f56b7deef6e925",
+      "subject_head": "2bbc6b7902f23be4720882bfd559c000711c9936",
+      "finding": {
+        "finding_id": "CC-0001",
+        "severity": "high",
+        "blocking": true,
+        "source_citation": "src/calculator.py:6 (head)",
+        "artifact_citation": "evidence:001/evidence/artifact-001.log",
+        "citations_validated": true
+      },
+      "report": {
+        "path": "seeded-defect-report.json",
+        "size": 1609,
+        "sha256": "ba307da379da2fdd74cd21a9c0dbde8c77ea18a4f5be0739025abc909465bc7b"
+      },
+      "run_record": {
+        "path": "seeded-defect-run-record.json",
+        "size": 3525,
+        "sha256": "a9ddf827487a94f5369906c467cd80b21ebe74e3f12045c335ec60ccef28ab5a"
+      },
+      "invocation": {
+        "path": "seeded-defect-invocation.json",
+        "size": 4856,
+        "sha256": "e6e6e2c4e6deb83eb6096a0208b90eda9491924aaa1e39a28a746f65e51e8130"
+      },
+      "consumption_marker": {
+        "path": "seeded-defect-consumption-marker.json",
+        "size": 205,
+        "sha256": "d820438300284495d519bd93fd06826ebf7efd57380d36a7cb3e65e1dcc457e6"
+      },
+      "external_envelope": {
+        "size": 1806,
+        "sha256": "2b88c55a678d2ca6f8aa81eb9173fb6c588bf2b3844e07c57618f9b53658b567"
+      },
+      "external_stderr": {
+        "size": 52242,
+        "sha256": "3ebd355b20b7445cae8d7bbcde47bee3c8563c7f5f2534da6a62ed88ae6b35fa"
+      }
+    },
+    {
+      "job_id": "corrected-fixture",
+      "expected_verdict": "PASS_OR_PASS_WITH_ADVISORIES",
+      "observed_verdict": "PASS",
+      "operational_state": "COMPLETED",
+      "attempts": 1,
+      "token_count": 27059,
+      "audit_id": "f3283981a7cf5e87982d4e3a7472835e47bd9a7b420c642bc3c165e95857d1e7",
+      "envelope_id": "1ee8068de8a2c596b48b32dd398829da3debc0391206b7cadeef446547a9512e",
+      "subject_head": "68a6f5957eaed105b63d24d7fa9f0b64bf9a9ca8",
+      "finding_count": 0,
+      "citations_and_artifact_references_validated": true,
+      "report": {
+        "path": "corrected-fixture-report.json",
+        "size": 779,
+        "sha256": "8cf88e50293cf45dd088db49de4175a4039b569a23ced3a705eb56e35fbf1b2b"
+      },
+      "run_record": {
+        "path": "corrected-fixture-run-record.json",
+        "size": 3553,
+        "sha256": "0eacb3502f3c5c2e4b9063332085a9d3be8c786f3f79f05672af0cf68304a08e"
+      },
+      "invocation": {
+        "path": "corrected-fixture-invocation.json",
+        "size": 4896,
+        "sha256": "cf5f5f04a0872969732f8676bd0fcf1494817f6b418ee5ec6c528ff811891b02"
+      },
+      "consumption_marker": {
+        "path": "corrected-fixture-consumption-marker.json",
+        "size": 205,
+        "sha256": "763f045f3e228d07b3400c59d7586de0bb440a146d85da8d7f0c8a719197baa6"
+      },
+      "external_envelope": {
+        "size": 1806,
+        "sha256": "a448386f5d0c5a7cfb5f5911480cc3bb5b48fc539fff4154137b38abe15c155a"
+      },
+      "external_stderr": {
+        "size": 51404,
+        "sha256": "5c4f1675714fa7f06a926baa9995b791effcef29c2c4756194a6010625a88a22"
+      }
+    }
+  ],
+  "retention": {
+    "retention_days": 30,
+    "max_retained_reports": 100,
+    "completed_report_count": 3,
+    "active_report_count": 0,
+    "retained_report_count": 3,
+    "automatic_cleanup_removed": 0,
+    "dry_run": true,
+    "dry_run_remove_count": 0,
+    "dry_run_candidates": [],
+    "acceptance_evidence_deleted": false,
+    "state_path": "retention-state.json",
+    "state_size": 174,
+    "state_sha256": "7b5b198a7ad72b6bfa54cd7baad6e87379a3a1cec93f31fd7c20704d3da344d7"
+  },
+  "validation": {
+    "canonical_reports_valid": true,
+    "service_reports_valid": true,
+    "pool_report_valid": true,
+    "retention_records_valid": true,
+    "repository_states_unchanged": true,
+    "workspaces_separate": true,
+    "consumption_markers_separate": true,
+    "manifest_order_preserved": true,
+    "validation_setup_note": "The first external validation-script command omitted the repository root from PYTHONPATH and stopped at import with ModuleNotFoundError before validation. The corrected PYTHONPATH=.:src command passed every assertion. No model invocation was involved."
+  },
+  "external_root": "/private/tmp/wingman-crew-chief-pool-acceptance-20260810-n98Xfx",
+  "external_path_stability": "The absolute temporary path is provenance only. Copied canonical JSON is preserved here; uncopied envelope manifests and stderr remain bound by size and SHA-256.",
+  "acceptance": {
+    "single_audit_runner_operational": true,
+    "concurrent_pool_operational": true,
+    "retention_persistence_operational": true,
+    "independently_certified_for_every_future_audit": false,
+    "published": false,
+    "merged": false
+  }
+}

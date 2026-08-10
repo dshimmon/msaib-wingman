@@ -77,10 +77,12 @@
     "0f7057896d2abfa9d04daa83e332f2015123c154",
     "2a868bac1088bd6523048623032af6d277143858",
     "f34c7ad810a50b36be453493d17fee8ac4c3ea00",
-    "6658076e8c9440665245793621edf1e309bedfdf"
+    "6658076e8c9440665245793621edf1e309bedfdf",
+    "03984e04f2f6f45ce7316071a0c95ce3d880f2e9",
+    "370c38c0a5dac664a9359af54e0153a379a20e5f"
   ],
-  "pushed": true,
-  "merged": true,
+  "pushed": false,
+  "merged": false,
   "official_decisions": [
     "docs/decisions/governance/roadmap-sequencing.md",
     "docs/decisions/governance/repository-records.md",
@@ -112,15 +114,15 @@
       "tools/crew_chief/",
       "tools/governance/repository.py"
     ],
-    "state": "completed_with_authorized_operational_correction",
-    "next_gate": "Complete deterministic validation, obtain explicit authority for the code-bearing correction commit, then run exactly one authorized two-job synthetic pool acceptance with zero retries."
+    "state": "operationally_accepted_with_synthetic_pool_evidence",
+    "next_gate": "Maverick decides whether to publish the two local operational commits; no successor mission is active."
   },
   "next_gate": "Maverick selects and authorizes a mission.",
   "supersedes": null,
   "superseded_by": null,
   "paused": false,
   "cancelled": false,
-  "capability_health": "maintenance_pending"
+  "capability_health": "healthy"
 }
 -->
 
@@ -145,9 +147,13 @@ one authenticated model invocation, but the process could not persist its
 otherwise generated output because the configured output directory did not
 exist. Maverick replaced that smoke with a narrow lifecycle-and-retention
 correction and exactly one two-job concurrent synthetic pool acceptance run.
-Capability health remains maintenance-pending until that replacement run
-succeeds and its evidence is preserved. No independent certification is
-claimed.
+The replacement run completed with exactly two concurrent authenticated
+invocations and zero retries: the seeded-defect job returned a schema-valid,
+evidence-backed blocking `FAIL`, the corrected job returned `PASS`, maximum
+observed concurrency was two, both run records and separate report bundles
+were preserved, and retention dry-run removed nothing. Crew Chief's normal
+runner and bounded pool are therefore operational for this validated synthetic
+acceptance scope. This does not independently certify every future audit.
 
 Maverick accepted the residual risk that a malicious process already operating
 as the trusted local operating-system account could impersonate Maverick to the
@@ -186,5 +192,8 @@ artifact binds them. The final failed focused-run evidence, authorization
 receipt, invocation, run record, short stderr, and external evidence bindings
 are preserved under
 [`artifacts/focused-run-failed-20260810/`](artifacts/focused-run-failed-20260810/).
-No structured focused report exists, no fixture audit ran, and neither review
-transfers Maverick's authority.
+The successful operational acceptance evidence is preserved under
+[`artifacts/operational-pool-accepted-20260810/`](artifacts/operational-pool-accepted-20260810/).
+The earlier focused run still has no structured report and its conditional
+fixture audits did not run; neither historical review transfers Maverick's
+authority.

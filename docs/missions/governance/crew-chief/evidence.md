@@ -579,3 +579,92 @@ activation, independent-certification claim, or operational claim occurred.
 The user authorized an evidence-only acceptance commit only after a successful
 two-job run; explicit authority for the intervening code-bearing correction
 commit remains the next required gate.
+
+## 2026-08-10 successful synthetic operational pool acceptance
+
+Maverick authorized the additional correction commit. Codex staged only the
+17 previously validated paths and created
+`370c38c0a5dac664a9359af54e0153a379a20e5f` (`Fix Crew Chief report lifecycle
+and retention`) on parent `03984e04f2f6f45ce7316071a0c95ce3d880f2e9`.
+Commit inspection showed exactly those 17 paths, and the index and worktree
+were clean before fixture preparation.
+
+Two isolated temporary repositories were then created:
+
+| Job | Base | Reviewed head | Deterministic fixture result |
+|---|---|---|---|
+| `seeded-defect` | `2cd4e2ede5528d5bc0948e483c78edf3da2b2940` | `2bbc6b7902f23be4720882bfd559c000711c9936` | Expected failure: `-1 != 5` |
+| `corrected-fixture` | `f82fb992ee21795314e0a5d92451f5ce6e43aaae` | `68a6f5957eaed105b63d24d7fa9f0b64bf9a9ca8` | One test passed |
+
+Both envelope controls matched the committed canonical `AGENTS.md`, Crew Chief
+agent file, and ten required Schemas byte for byte. The frozen inventories
+contained only the base and head states of `src/calculator.py`, the synthetic
+mission, engineer report, test claim, validation log, committed diff, and
+canonical controls. A high-precision scan found zero credential patterns,
+`.env` files, live data, unrelated material, Wingman product source, or
+Wingman mission history.
+
+Exactly one pool command launched exactly two authenticated model invocations
+with `--max-concurrency 2` and zero retries. The installed Codex CLI exposed no
+supported non-interactive custom-agent selector, so both manifest entries used
+the explicitly configured fresh-session fallback. Each still used the frozen
+Crew Chief instructions, ephemeral execution, ignored user configuration and
+rules, strict configuration, approval denial, read-only sandbox, trusted-
+directory accommodation, exact schemas/output/workspaces, all enabled
+capabilities disabled, and standard-input evidence.
+
+Observed pool result:
+
+| Field | Result |
+|---|---|
+| Pool start/completion | `2026-08-10T18:57:11Z` / `2026-08-10T18:57:30Z` |
+| Requested/effective/observed concurrency | `2 / 2 / 2` |
+| Automatic retries | `0` |
+| Manifest order | `seeded-defect`, then `corrected-fixture` |
+| Operational states | `COMPLETED`, `COMPLETED` |
+| Audit verdicts | `FAIL`, `PASS` |
+| Tokens | `27,162 + 27,059 = 54,221` |
+| Overall operational status | `PASS` |
+
+The seeded-defect report contains one high-severity blocking finding,
+`CC-0001`, citing exact head line 6 of `src/calculator.py` and
+`evidence:001/evidence/artifact-001.log`. It requires restoration of addition
+and a passing test before approval. The corrected report contains no findings.
+Both canonical reports, raw service reports, evidence references, scope,
+identity, verdict logic, and citations independently revalidated.
+
+Key preserved bindings:
+
+| Artifact | Bytes | SHA-256 |
+|---|---:|---|
+| `jobs.json` | 480 | `5c7c81efde24ad9e64f34415ad1f9b3fbe1d8f9e61b99b7f333217b6494aa81a` |
+| `pool-report.json` | 4,080 | `b6d1d0eb8988b7032cd35c7e733083962a51a085cf393204645cdbfe6ab7b712` |
+| `seeded-defect-report.json` | 1,609 | `ba307da379da2fdd74cd21a9c0dbde8c77ea18a4f5be0739025abc909465bc7b` |
+| `seeded-defect-run-record.json` | 3,525 | `a9ddf827487a94f5369906c467cd80b21ebe74e3f12045c335ec60ccef28ab5a` |
+| `corrected-fixture-report.json` | 779 | `8cf88e50293cf45dd088db49de4175a4039b569a23ced3a705eb56e35fbf1b2b` |
+| `corrected-fixture-run-record.json` | 3,553 | `0eacb3502f3c5c2e4b9063332085a9d3be8c786f3f79f05672af0cf68304a08e` |
+| `retention-state.json` | 174 | `7b5b198a7ad72b6bfa54cd7baad6e87379a3a1cec93f31fd7c20704d3da344d7` |
+
+The bounded retention state records three completed reports, zero active
+reports, and zero automatic removals. The required 30-day/100-report dry-run
+again validated the complete tree, proposed zero candidates, removed nothing,
+and did not mutate retention state or evidence.
+
+[`acceptance-evidence.json`](artifacts/operational-pool-accepted-20260810/acceptance-evidence.json)
+contains the complete compact result, both invocation and consumption-marker
+bindings, external envelope and stderr bindings, sensitive-content result,
+retention result, and validation dispositions. The first external validation
+script command omitted the repository root from `PYTHONPATH` and stopped with
+`ModuleNotFoundError` before validation; the corrected `PYTHONPATH=.:src`
+command passed every assertion. The first governance-generation attempt then
+used unsupported capability-health value `operational` and failed schema
+validation before generation; the canonical successful value `healthy`
+generated cleanly. These setup corrections invoked no model.
+
+The normal single-audit runner, fail-independent concurrent pool, separate
+report persistence, run-record creation, frozen-workspace isolation,
+deterministic aggregation, and retention lifecycle are operational for this
+synthetic acceptance scope. This operational evidence does not independently
+certify every future audit, grant publication authority, or start another
+mission. No retry, third invocation, push, merge, main mutation, publication,
+or successor activation occurred.

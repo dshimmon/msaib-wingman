@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "jobs": [
+    {
+      "job_id": "seeded-defect",
+      "audit_envelope": "/private/tmp/wingman-crew-chief-pool-acceptance-20260810-n98Xfx/job-a/envelope/audit-envelope.json",
+      "allow_fresh_session_fallback": true
+    },
+    {
+      "job_id": "corrected-fixture",
+      "audit_envelope": "/private/tmp/wingman-crew-chief-pool-acceptance-20260810-n98Xfx/job-b/envelope/audit-envelope.json",
+      "allow_fresh_session_fallback": true
+    }
+  ]
+}

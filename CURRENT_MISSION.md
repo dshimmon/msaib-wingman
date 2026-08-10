@@ -13,7 +13,7 @@
 ## Last completed work
 
 - **governance/crew-chief — Crew Chief Independent Audit**
-- Commit: `6658076e8c9440665245793621edf1e309bedfdf`
+- Commit: `370c38c0a5dac664a9359af54e0153a379a20e5f`
 - Official record: [docs/missions/governance/crew-chief/mission.md](docs/missions/governance/crew-chief/mission.md)
 
 ## Active workstreams
