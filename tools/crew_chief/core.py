@@ -22,6 +22,8 @@ SCHEMA_NAMES = (
     "finding-v1.schema.json",
     "pool-manifest-v1.schema.json",
     "pool-report-v1.schema.json",
+    "retention-report-v1.schema.json",
+    "retention-state-v1.schema.json",
     "report-v1.schema.json",
     "reconciliation-v1.schema.json",
 )

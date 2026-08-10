@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "canary": "CANOPY-7C2F-ATLAS",
+  "event": "authorized_single_synthetic_smoke_failed_during_output_persistence",
+  "implementation_head": "03984e04f2f6f45ce7316071a0c95ce3d880f2e9",
+  "synthetic_subject": {
+    "base_commit": "bf6f95015b0d76be6e138740e67a3238c00c1d1d",
+    "head_commit": "4048a48167b7a20a29189366625cd3d5a403f11c",
+    "audit_id": "650be4bb9dc7571a30a306eef2ce45534464dd803e9214c6750aed424e3c2743",
+    "envelope_id": "9986558bf04047a5da2314291ea97c52c77eb6b56b8e13b8b1cc6f8d77fffd1a"
+  },
+  "invocations_attempted": 1,
+  "invocations_completed_by_service": 1,
+  "automatic_retries": 0,
+  "tokens_used": 26308,
+  "observed_generated_verdict": "FAIL",
+  "observed_generated_finding_id": "CC-0001",
+  "official_report_written": false,
+  "run_record_written": false,
+  "failure": "Codex generated the expected schema-shaped seeded-defect FAIL, then exited with status 1 because --output-last-message targeted a parent directory that did not exist.",
+  "external_root": "/private/tmp/wingman-crew-chief-operational-smoke-20260810-KNCYNA",
+  "external_path_stability": "The absolute temporary path is provenance only and is not claimed to remain available.",
+  "bindings": {
+    "envelope": {
+      "path": "envelope/audit-envelope.json",
+      "size": 1794,
+      "sha256": "582a3307274f93c359decef6d74d420a1321eb1fdb35e0d3c0dfdb2702015952"
+    },
+    "invocation": {
+      "path": "review/invocation.json",
+      "size": 4455,
+      "sha256": "4ede389195645d9a43ab7ae1d89e8a8f301c9542e04506ba480b20d3b871ce8f"
+    },
+    "consumption_marker": {
+      "path": "review/.crew-chief-consumed.json",
+      "size": 205,
+      "sha256": "0c9b742d536d608e7a9d61fad8fbd27d2c56278ce29cdbf2cbb098bc4f14e375"
+    },
+    "stderr_with_generated_payload": {
+      "path": "review/output/codex-stderr.log",
+      "size": 49550,
+      "sha256": "036098df016e8ddd3073124cc06686f221f68009cca492f303516789e47c2802"
+    }
+  },
+  "scope": "Synthetic fixture material only; no Wingman product source, mission history, credentials, .env content, or live data was transmitted.",
+  "disposition": "Preserved as failed historical evidence. Maverick prohibited retrying this smoke and replaced it with one separately authorized two-job pool acceptance run after deterministic correction validation."
+}

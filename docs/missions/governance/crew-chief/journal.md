@@ -266,3 +266,49 @@ No model or network service was invoked, no live pool was run, and no push,
 merge, publication, successor activation, or capability-health claim occurred.
 The next authorized gate is the exact implementation commit followed by one
 tiny synthetic, single-job live smoke audit with zero retry.
+
+## 2026-08-10 — Failed smoke and bounded report-retention correction
+
+- The one authorized synthetic smoke used exactly one authenticated model
+  invocation and zero retries. The model produced the expected seeded-defect
+  `FAIL` with blocking finding `CC-0001`, but Codex then exited with status 1
+  because the parent of `--output-last-message` did not exist. It reported
+  26,308 tokens. No official report or run record was written, so Crew Chief
+  was not declared operational.
+- Preserved a bounded canonical failure record with hashes for the external
+  envelope, invocation, consumption marker, and 49,550-byte stderr evidence in
+  `artifacts/operational-smoke-failed-20260810/failure-evidence.json`. The
+  temporary absolute path is provenance only.
+- Applied Maverick's replacement correction without retrying the smoke or
+  invoking another model. The runner now creates a separately identified
+  report bundle and queued metadata before constructing the launch command, so
+  the exact output destination exists before process launch.
+- Added external report retention with defaults of 30 days and 100 completed
+  bundles, explicit normal/pool CLI options, a dry-run command, completion-time
+  age calculation, deterministic count ordering, complete-bundle deletion,
+  active-run preservation, and one bounded retention-state record.
+- Retention validates a marked absolute external root, refuses Git-internal
+  roots, symlinks, ambiguous or escaping paths, malformed or duplicated
+  metadata, future or reversed timestamps, and incomplete completed bundles.
+  Automatic cleanup occurs only after successful report and run-record writes;
+  a pool cleans up only after operational success.
+- Separated pool operational state from audit verdict. A valid seeded-defect
+  `FAIL` is an operationally completed job, while preparation, control, or
+  runner failure makes the pool fail. Manifest ordering, zero retries, isolated
+  workspaces, separate report bundles, and maximum observed concurrency remain
+  explicit.
+- Passed 151 focused Crew Chief, pool, retention, and repository-governance
+  tests in 148.537 seconds; 199 governance tests in 157.396 seconds; and all
+  428 repository tests in 166.865 seconds. The recorded Flightline,
+  diagnostic-failure, and bare-Streamlit messages were expected negative-path
+  evidence in green suites.
+- Repository governance generation and validation passed. All ten canonical
+  Crew Chief JSON Schemas loaded, the complete changed Python scope passed
+  Ruff, the historical failure JSON parsed, and both working and staged diff
+  checks passed.
+
+No additional model or network invocation, live pool, retry, commit, push,
+merge, publication, successor activation, or operational claim occurred. The
+next gate is explicit authority for one code-bearing correction commit; only
+then can the committed subject enter the already authorized two-job synthetic
+pool acceptance run.

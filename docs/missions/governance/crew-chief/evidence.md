@@ -495,3 +495,87 @@ network service, or live pool was invoked. A successful implementation commit
 does not yet prove operation, acceptance, or independent certification. The
 only remaining authorized execution gate is one tiny synthetic single-job
 smoke audit against the committed implementation, with zero retry.
+
+## 2026-08-10 failed smoke and retention-correction evidence
+
+The one authorized single-job smoke ran against implementation commit
+`03984e04f2f6f45ce7316071a0c95ce3d880f2e9` using only a tiny synthetic
+calculator repository, frozen Crew Chief controls, and required schemas. It
+made exactly one authenticated invocation with zero retry. The generated
+schema-shaped payload contained the required `FAIL`, high-severity blocking
+finding `CC-0001`, exact source citation to the seeded subtraction defect, and
+the frozen synthetic validation artifact. The subprocess then exited with
+status 1 because its exact `--output-last-message` parent directory was absent:
+
+```text
+Failed to write last message file ".../review/output/crew-chief-report.json":
+No such file or directory (os error 2)
+```
+
+The CLI reported 26,308 tokens. The consumption marker exists, but no official
+report or run record exists and no retry occurred. The exact external evidence
+bindings are preserved in
+[`failure-evidence.json`](artifacts/operational-smoke-failed-20260810/failure-evidence.json):
+
+| Artifact | Bytes | SHA-256 |
+|---|---:|---|
+| `envelope/audit-envelope.json` | 1,794 | `582a3307274f93c359decef6d74d420a1321eb1fdb35e0d3c0dfdb2702015952` |
+| `review/invocation.json` | 4,455 | `4ede389195645d9a43ab7ae1d89e8a8f301c9542e04506ba480b20d3b871ce8f` |
+| `review/.crew-chief-consumed.json` | 205 | `0c9b742d536d608e7a9d61fad8fbd27d2c56278ce29cdbf2cbb098bc4f14e375` |
+| `review/output/codex-stderr.log` | 49,550 | `036098df016e8ddd3073124cc06686f221f68009cca492f303516789e47c2802` |
+
+Maverick prohibited repeating that smoke and replaced it with the bounded
+output-lifecycle and report-retention correction followed by one conditional
+two-job concurrent synthetic pool acceptance run.
+
+The correction creates each audit output bundle before process launch and
+stores every audit and pool report separately. Completed-bundle retention
+defaults to 30 days or 100 reports, whichever threshold is exceeded first.
+Operators can set both values on normal and pool commands and can inspect exact
+candidates through the deletion-free `retention --dry-run` command. Validated
+completion metadata—not file modification time—determines age. Count removal
+sorts oldest first by completion time and report ID. Cleanup removes the whole
+bundle and replaces a single bounded state record without deletion history.
+
+Queued, running, and currently written reports are ineligible. Cleanup is
+confined to a canonically marked absolute external root and rejects Git-
+internal roots, symlink components or tree entries, relative or ambiguous
+paths, escapes, duplicate IDs, malformed metadata, inconsistent timestamps,
+and missing completed artifacts before deleting anything. Normal execution
+prunes only after the canonical report and run record succeed; pool execution
+prunes only after every job completes operationally and the pool report is
+written. Ordinary deletion is explicitly not represented as secure erasure.
+
+The pool report now distinguishes operational `state` from audit `verdict`.
+This preserves the acceptance contract: the seeded-defect job can complete
+successfully with a valid blocking `FAIL`, the corrected job can complete with
+`PASS` or `PASS_WITH_ADVISORIES`, and the pool can report operational success
+only when both subprocess, validation, persistence, and aggregation paths
+succeed. Preparation, control, runner, schema, or persistence failure remains
+an operational pool failure with no retry.
+
+Deterministic correction validation:
+
+- `PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src python -m
+  unittest -q tests.governance.test_crew_chief
+  tests.governance.test_crew_chief_pool
+  tests.governance.test_crew_chief_retention
+  tests.governance.test_repository_governance` passed 151 tests in 148.537
+  seconds.
+- Governance discovery passed 199 tests in 157.396 seconds.
+- Complete repository discovery with `-s tests -t .` passed all 428 tests in
+  166.865 seconds. Expected Flightline cancellation/time-budget messages,
+  Atlas diagnostic-failure fixtures, and bare Streamlit warnings appeared
+  without failures.
+- Governance generation and validation passed. Canonical loading validated ten
+  Crew Chief Schemas, including the new `retention-report-v1` and
+  `retention-state-v1` contracts.
+- Ruff passed the complete changed Python scope. The preserved failure JSON
+  parsed, and working plus staged `git diff --check` passed.
+
+No invocation beyond the failed historical smoke occurred during this
+correction. No live pool, retry, commit, push, merge, publication, successor
+activation, independent-certification claim, or operational claim occurred.
+The user authorized an evidence-only acceptance commit only after a successful
+two-job run; explicit authority for the intervening code-bearing correction
+commit remains the next required gate.

@@ -142,11 +142,14 @@ The exact checked projection is written to
 passed unchanged to `--output-schema`. The full bundled canonical report is
 bound separately. After generation, the raw service-shaped result is validated
 against the checked projection and preserved as
-`output/crew-chief-service-report.json`; deterministic normalization removes
-only nullable placeholders for canonical optional fields. The normalized
-report must then pass the full canonical schema and all evidence, verdict,
-risk-focus, citation, finding-uniqueness, and authority checks. Projection
-therefore does not replace or weaken canonical validation.
+`reports/<report-id>/crew-chief-service-report.json`; deterministic
+normalization removes only nullable placeholders for canonical optional
+fields. The normalized report and run record are written separately in that
+same bundle. The output bundle is created before process launch so the exact
+`--output-last-message` destination always has an existing parent directory.
+The normalized report must then pass the full canonical schema and all
+evidence, verdict, risk-focus, citation, finding-uniqueness, and authority
+checks. Projection therefore does not replace or weaken canonical validation.
 
 Because the shell tool is disabled, the controller deterministically embeds
 the complete frozen evidence set in standard input. Each block names its exact
@@ -227,20 +230,23 @@ manifest, every current unexpired envelope, all Git bindings, the external
 output root, every workspace, and every workspace overlap. Structural failure
 therefore launches zero jobs. Preparation failure also stops the launch phase.
 
-Once launched, jobs are fail-independent: a failed, blocked, malformed, or
-timed-out job is recorded without cancelling the others. Each job is attempted
-once. There is no retry loop. Every job has separate frozen inputs, canonical
-agent copy, schemas, prompt, invocation, output, diagnostics, run record, and
-consumption marker. Findings are never synthesized across jobs, and report
-entries stay in input order even when completion order differs.
+Once launched, jobs are fail-independent: an operationally failed, malformed,
+or timed-out job is recorded without cancelling the others. A schema-valid
+`FAIL` or `BLOCKED` verdict is a completed audit job, not a runner failure.
+Each job is attempted once. There is no retry loop. Every job has separate
+frozen inputs, canonical agent copy, schemas, prompt, invocation, output,
+diagnostics, run record, and consumption marker. Findings are never
+synthesized across jobs, and report entries stay in input order even when
+completion order differs.
 
 `pool-report.json` records requested and effective concurrency, maximum
 observed concurrency, zero retries, totals, per-job audit and envelope IDs,
 execution modes, statuses, verdicts, artifact bindings, categorized errors,
 start and completion times, and token counts when the installed CLI reports
-them. The CLI exits nonzero if any executed job returns `FAIL`, `BLOCKED`, or a
-control/runner error. `PASS_WITH_ADVISORIES` is accepted but still requires the
-normal finding reconciliation.
+them. The CLI exits nonzero for preparation, control, or runner failure. A
+valid `FAIL` or `BLOCKED` remains a completed job and does not convert
+operational success into runner failure; its findings still require the normal
+reconciliation or escalation.
 
 Every executed pool job is a separate authenticated model invocation. Token
 use and cost are additive; increasing concurrency reduces waiting time but
@@ -248,6 +254,64 @@ does not reduce work or grant more authority. The default of two is the normal
 operating balance. Pool evidence proves only the recorded executions. It is
 not independent certification, Maverick approval, publication authority, or
 mission completion.
+
+## Bound external report retention
+
+Crew Chief stores every audit and pool report as a separate bundle under the
+explicit external output root. It does not append reports to a growing JSON
+history. Automatic cleanup runs only after a completed audit has both its
+canonical report and run record, or after an operationally successful pool has
+written all completed job artifacts and its pool report.
+
+The defaults are 30 days and at most 100 completed report bundles. A completed
+bundle is eligible when either limit is exceeded. Age comes only from the
+validated completion timestamp in `retention-report.json`, never filesystem
+modification time. Count cleanup retains the newest completion times and uses
+report ID as the deterministic tie-breaker. Queued and running bundles are
+never eligible.
+
+Configure either normal or pool execution explicitly when different limits
+are required:
+
+```text
+PYTHONDONTWRITEBYTECODE=1 python -m tools.crew_chief run \
+  /private/tmp/<envelope>/audit-envelope.json \
+  --workspace /private/tmp/crew-chief-review-<audit-id> \
+  --retention-days 14 \
+  --max-retained-reports 50 \
+  --execute
+
+PYTHONDONTWRITEBYTECODE=1 python -m tools.crew_chief pool \
+  /absolute/jobs.json \
+  --output-root /private/tmp/crew-chief-pool-<run-id> \
+  --retention-days 30 \
+  --max-retained-reports 100 \
+  --execute
+```
+
+Inspect cleanup without deleting anything:
+
+```text
+PYTHONDONTWRITEBYTECODE=1 python -m tools.crew_chief retention \
+  /private/tmp/crew-chief-pool-<run-id> \
+  --retention-days 30 \
+  --max-retained-reports 100 \
+  --dry-run
+```
+
+Cleanup validates the exact marked output root, every bundle and completion
+record, and the complete tree before deleting anything. Symlinks, relative or
+ambiguous roots, path escapes, repository-internal roots, duplicate IDs,
+malformed metadata, missing completed artifacts, or future timestamps fail
+closed. An expired bundle is removed as a unit so its canonical JSON, service
+output, stderr, run record, and temporary output do not diverge. The bounded
+`retention-state.json` contains only the active limits, retained completed
+count, last cleanup time, and number removed by that cleanup; it has no
+deletion history.
+
+Ordinary deletion is lifecycle cleanup, not guaranteed secure erasure. Use an
+approved storage and media sanitization procedure when secure erasure is a
+separate requirement.
 
 ## Canonical schema inventory
 
@@ -262,6 +326,8 @@ canonical directory `tools/crew_chief/schemas/`:
 - `pool-report-v1.schema.json`
 - `reconciliation-v1.schema.json`
 - `report-v1.schema.json`
+- `retention-report-v1.schema.json`
+- `retention-state-v1.schema.json`
 
 The pool manifest and report schemas govern orchestration only. Every model
 result still validates against the canonical per-audit report and finding

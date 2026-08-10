@@ -18,11 +18,21 @@ from tools.crew_chief.core import (
     clock_value,
     ensure_external_path,
     isoformat,
+    parse_time,
     read_json,
     redact_text,
     sha256_file,
     utc_now,
     write_canonical_json,
+)
+from tools.crew_chief.retention import (
+    DEFAULT_MAX_RETAINED_REPORTS,
+    DEFAULT_RETENTION_DAYS,
+    initialize_retention_root,
+    prune_reports,
+    validate_retention_limits,
+    validate_new_retention_root_path,
+    write_report_metadata,
 )
 from tools.crew_chief.runner import (
     CodexCapabilities,
@@ -92,7 +102,7 @@ def _preflight(
 
     if not output_root.is_absolute():
         raise CrewChiefError("pool output root must be an absolute path")
-    output_root = output_root.resolve()
+    output_root = validate_new_retention_root_path(output_root)
     if output_root.exists():
         raise CrewChiefError(f"pool output root already exists: {output_root}")
     if not output_root.parent.is_dir():
@@ -186,7 +196,7 @@ def _job_record(index: int, job: PoolJob) -> dict[str, Any]:
         "envelope_path": str(job.envelope_path),
         "workspace": str(job.workspace),
         "execution_mode": None,
-        "status": "QUEUED",
+        "state": "QUEUED",
         "attempts": 0,
         "verdict": None,
         "bindings": {
@@ -214,14 +224,19 @@ def _token_count(stderr_path: Path) -> int | None:
 def _totals(records: list[dict[str, Any]]) -> dict[str, int]:
     return {
         "jobs": len(records),
-        "queued": sum(item["status"] == "QUEUED" for item in records),
-        "pass": sum(item["status"] == "PASS" for item in records),
-        "pass_with_advisories": sum(
-            item["status"] == "PASS_WITH_ADVISORIES" for item in records
+        "queued": sum(item["state"] == "QUEUED" for item in records),
+        "running": sum(item["state"] == "RUNNING" for item in records),
+        "completed": sum(item["state"] == "COMPLETED" for item in records),
+        "failed": sum(item["state"] == "FAILED" for item in records),
+        "verdict_pass": sum(item["verdict"] == "PASS" for item in records),
+        "verdict_pass_with_advisories": sum(
+            item["verdict"] == "PASS_WITH_ADVISORIES" for item in records
         ),
-        "fail": sum(item["status"] == "FAIL" for item in records),
-        "blocked": sum(item["status"] == "BLOCKED" for item in records),
-        "errors": sum(item["status"] == "ERROR" for item in records),
+        "verdict_fail": sum(item["verdict"] == "FAIL" for item in records),
+        "verdict_blocked": sum(
+            item["verdict"] == "BLOCKED" for item in records
+        ),
+        "verdict_unavailable": sum(item["verdict"] is None for item in records),
     }
 
 
@@ -238,19 +253,30 @@ def _write_report(
     records: list[dict[str, Any]],
 ) -> dict[str, Any]:
     totals = _totals(records)
-    if not execute and totals["errors"] == 0:
+    if not execute and totals["failed"] == 0:
         status = "PREPARED"
-    elif all(
-        item["status"] in {"PASS", "PASS_WITH_ADVISORIES"}
-        for item in records
-    ):
+    elif all(item["state"] == "COMPLETED" for item in records):
         status = "PASS"
     else:
         status = "FAIL"
-    report_path = output_root / "pool-report.json"
+    manifest_binding = _binding(manifest_path)
+    report_id = f"pool-{manifest_binding['sha256']}"
+    output_bundle = output_root / "reports" / report_id
+    if output_bundle.exists() or output_bundle.is_symlink():
+        raise CrewChiefError(f"pool report bundle already exists: {output_bundle}")
+    output_bundle.mkdir(parents=True, mode=0o700)
+    write_report_metadata(
+        output_root,
+        output_bundle,
+        report_id=report_id,
+        report_kind="pool",
+        state="running",
+        created_at=parse_time(started_at),
+    )
+    report_path = output_bundle / "pool-report.json"
     report = {
         "schema_version": "1.0",
-        "manifest": _binding(manifest_path),
+        "manifest": manifest_binding,
         "output_root": str(output_root),
         "report_path": str(report_path),
         "execute_requested": execute,
@@ -268,6 +294,15 @@ def _write_report(
     }
     validate_instance("pool-report-v1.schema.json", report)
     write_canonical_json(report_path, report)
+    write_report_metadata(
+        output_root,
+        output_bundle,
+        report_id=report_id,
+        report_kind="pool",
+        state="completed",
+        created_at=parse_time(started_at),
+        completed_at=parse_time(completed_at),
+    )
     return report
 
 
@@ -278,12 +313,15 @@ def run_pool(
     max_concurrency: int = 2,
     execute: bool = False,
     codex_executable: str = "codex",
+    retention_days: int = DEFAULT_RETENTION_DAYS,
+    max_retained_reports: int = DEFAULT_MAX_RETAINED_REPORTS,
     detector: Callable[..., CodexCapabilities] = detect_codex_capabilities,
     process_runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
     job_executor: Callable[..., dict[str, Any]] = execute_prepared_review,
     clock: Callable[[], datetime] = utc_now,
 ) -> dict[str, Any]:
     """Prepare or execute a fail-independent, zero-retry audit pool."""
+    validate_retention_limits(retention_days, max_retained_reports)
     started_at = isoformat(clock_value(clock))
     manifest_path, output_root, jobs = _preflight(
         manifest_path, output_root, max_concurrency, clock=clock
@@ -291,6 +329,7 @@ def run_pool(
     capabilities = detector(codex_executable)
     effective_concurrency = min(max_concurrency, len(jobs))
     output_root.mkdir(mode=0o700)
+    initialize_retention_root(output_root)
     schema_source = (
         Path(__file__).resolve().parent / "schemas" / "pool-report-v1.schema.json"
     )
@@ -304,6 +343,8 @@ def run_pool(
             invocation = prepare_review_workspace(
                 job.envelope_path,
                 job.workspace,
+                retention_root=output_root,
+                report_id=f"audit-{job.job_id}",
                 codex_executable=codex_executable,
                 detector=lambda _executable, value=capabilities: value,
                 clock=clock,
@@ -315,7 +356,7 @@ def run_pool(
             )
         except CrewChiefError as error:
             preparation_failed = True
-            records[index]["status"] = "ERROR"
+            records[index]["state"] = "FAILED"
             records[index]["errors"] = [
                 {
                     "category": "PREPARATION_FAILURE",
@@ -347,6 +388,7 @@ def run_pool(
             maximum_observed = max(maximum_observed, active)
             records[index]["started_at"] = isoformat(clock_value(clock))
             records[index]["attempts"] = 1
+            records[index]["state"] = "RUNNING"
         try:
             invocation = invocations[index]
             if invocation is None:
@@ -356,10 +398,14 @@ def run_pool(
                 invocation,
                 allow_fresh_session_fallback=job.allow_fresh_session_fallback,
                 runner=process_runner,
+                retention_days=retention_days,
+                max_retained_reports=max_retained_reports,
+                perform_retention=False,
                 clock=clock,
             )
-            report_path = job.workspace / "output" / "crew-chief-report.json"
-            run_record_path = job.workspace / "output" / "run-record.json"
+            report_path = Path(invocation["report_path"])
+            output_bundle = Path(invocation["output_bundle"])
+            run_record_path = output_bundle / "run-record.json"
             report = read_json(report_path)
             if not isinstance(report, dict) or report.get("verdict") not in {
                 "PASS",
@@ -369,14 +415,14 @@ def run_pool(
             }:
                 raise CrewChiefError("pool job returned an invalid verdict")
             records[index]["verdict"] = report["verdict"]
-            records[index]["status"] = report["verdict"]
+            records[index]["state"] = "COMPLETED"
             records[index]["bindings"]["report"] = _binding(report_path)
             records[index]["bindings"]["run_record"] = _binding(run_record_path)
             records[index]["token_count"] = _token_count(
-                job.workspace / "output" / "codex-stderr.log"
+                output_bundle / "codex-stderr.log"
             )
         except CrewChiefError as error:
-            records[index]["status"] = "ERROR"
+            records[index]["state"] = "FAILED"
             records[index]["errors"] = [
                 {
                     "category": "CONTROL_FAILURE",
@@ -384,7 +430,7 @@ def run_pool(
                 }
             ]
         except Exception as error:  # pragma: no cover - defensive runner boundary
-            records[index]["status"] = "ERROR"
+            records[index]["state"] = "FAILED"
             records[index]["errors"] = [
                 {
                     "category": "RUNNER_FAILURE",
@@ -404,7 +450,7 @@ def run_pool(
         for future in as_completed(futures):
             future.result()
 
-    return _write_report(
+    report = _write_report(
         manifest_path=manifest_path,
         output_root=output_root,
         execute=True,
@@ -415,8 +461,16 @@ def run_pool(
         completed_at=isoformat(clock_value(clock)),
         records=records,
     )
+    if report["overall_status"] == "PASS":
+        prune_reports(
+            output_root,
+            retention_days=retention_days,
+            max_retained_reports=max_retained_reports,
+            clock=clock,
+        )
+    return report
 
 
 def pool_exit_code(report: dict[str, Any]) -> int:
-    """Return success only for a prepared pool or all accepted job verdicts."""
+    """Return success for preparation or fully completed operational jobs."""
     return 0 if report.get("overall_status") in {"PREPARED", "PASS"} else 1

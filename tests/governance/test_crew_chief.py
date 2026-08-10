@@ -2059,6 +2059,45 @@ class CrewChiefRunnerTests(unittest.TestCase):
             (Path(invocation["workspace"]) / ".crew-chief-consumed.json").exists()
         )
 
+    def test_invalid_retention_controls_fail_before_authentication_or_consumption(self):
+        invocation = prepare_review_workspace(
+            self.envelope_path,
+            Path(self.temporary.name) / "invalid-retention-review",
+            detector=lambda _: self.capabilities(selector=True),
+            clock=lambda: FIXED_TIME,
+        )
+        runner = mock.Mock()
+        with self.assertRaisesRegex(CrewChiefError, "at least one"):
+            execute_prepared_review(
+                self.envelope_path,
+                invocation,
+                max_retained_reports=0,
+                runner=runner,
+                clock=lambda: FIXED_TIME,
+            )
+        runner.assert_not_called()
+        self.assertFalse(
+            (Path(invocation["workspace"]) / ".crew-chief-consumed.json").exists()
+        )
+
+    def test_malformed_retention_report_id_fails_before_process(self):
+        invocation = prepare_review_workspace(
+            self.envelope_path,
+            Path(self.temporary.name) / "malformed-report-id-review",
+            detector=lambda _: self.capabilities(selector=True),
+            clock=lambda: FIXED_TIME,
+        )
+        invocation["report_id"] = "../escape"
+        runner = mock.Mock()
+        with self.assertRaisesRegex(CrewChiefError, "ID is malformed"):
+            execute_prepared_review(
+                self.envelope_path,
+                invocation,
+                runner=runner,
+                clock=lambda: FIXED_TIME,
+            )
+        runner.assert_not_called()
+
     def test_atomic_consumption_prevents_reuse(self):
         invocation = prepare_review_workspace(
             self.envelope_path,
@@ -2071,7 +2110,7 @@ class CrewChiefRunnerTests(unittest.TestCase):
         def successful(arguments, **_kwargs):
             if arguments[-2:] == ["login", "status"]:
                 return subprocess.CompletedProcess(arguments, 0, "logged in", "")
-            Path(invocation["report_path"]).parent.mkdir(parents=True, exist_ok=True)
+            self.assertTrue(Path(invocation["report_path"]).parent.is_dir())
             canonical_schema = read_json(Path(invocation["canonical_schema_path"]))
             Path(invocation["report_path"]).write_text(
                 json.dumps(
@@ -2097,6 +2136,53 @@ class CrewChiefRunnerTests(unittest.TestCase):
                 runner=successful,
                 clock=lambda: FIXED_TIME,
             )
+
+    def test_failed_run_record_write_never_triggers_retention(self):
+        invocation = prepare_review_workspace(
+            self.envelope_path,
+            Path(self.temporary.name) / "failed-write-review",
+            detector=lambda _: self.capabilities(selector=True),
+            clock=lambda: FIXED_TIME,
+        )
+        envelope = read_json(self.envelope_path)
+
+        def successful(arguments, **_kwargs):
+            if arguments[-2:] == ["login", "status"]:
+                return subprocess.CompletedProcess(arguments, 0, "logged in", "")
+            canonical_schema = read_json(Path(invocation["canonical_schema_path"]))
+            Path(invocation["report_path"]).write_text(
+                json.dumps(
+                    canonical_to_service_output(
+                        report_for(envelope), canonical_schema
+                    )
+                ),
+                encoding="utf-8",
+            )
+            return subprocess.CompletedProcess(arguments, 0, "{}", "")
+
+        def fail_run_record(path, value):
+            if path.name == "run-record.json":
+                raise OSError("synthetic run-record write failure")
+            write_canonical_json(path, value)
+
+        with (
+            mock.patch(
+                "tools.crew_chief.runner.write_canonical_json",
+                side_effect=fail_run_record,
+            ),
+            mock.patch("tools.crew_chief.runner.prune_reports") as prune,
+        ):
+            with self.assertRaisesRegex(OSError, "run-record write failure"):
+                execute_prepared_review(
+                    self.envelope_path,
+                    invocation,
+                    runner=successful,
+                    clock=lambda: FIXED_TIME,
+                )
+        prune.assert_not_called()
+        bundle = Path(invocation["output_bundle"])
+        self.assertFalse((bundle / "run-record.json").exists())
+        self.assertEqual(read_json(bundle / "retention-report.json")["state"], "running")
 
     def test_repository_mutation_during_review_is_rejected(self):
         invocation = prepare_review_workspace(
@@ -2144,7 +2230,9 @@ class CrewChiefRunnerTests(unittest.TestCase):
             )
         workspace = Path(invocation["workspace"])
         self.assertTrue((workspace / ".crew-chief-consumed.json").is_file())
-        diagnostic = (workspace / "output/codex-stderr.log").read_text(
+        diagnostic = (
+            Path(invocation["output_bundle"]) / "codex-stderr.log"
+        ).read_text(
             encoding="utf-8"
         )
         self.assertNotIn("do-not-preserve", diagnostic)

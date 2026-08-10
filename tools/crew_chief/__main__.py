@@ -23,6 +23,11 @@ from tools.crew_chief.core import (
     write_canonical_json,
 )
 from tools.crew_chief.pool import pool_exit_code, run_pool
+from tools.crew_chief.retention import (
+    DEFAULT_MAX_RETAINED_REPORTS,
+    DEFAULT_RETENTION_DAYS,
+    prune_reports,
+)
 from tools.crew_chief.runner import run_audit
 from tools.crew_chief.validation import validate_report
 
@@ -81,6 +86,12 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--codex", default="codex")
     run.add_argument("--execute", action="store_true")
     run.add_argument("--allow-fresh-session-fallback", action="store_true")
+    run.add_argument("--retention-days", type=int, default=DEFAULT_RETENTION_DAYS)
+    run.add_argument(
+        "--max-retained-reports",
+        type=int,
+        default=DEFAULT_MAX_RETAINED_REPORTS,
+    )
 
     pool = commands.add_parser(
         "pool", help="prepare or run a bounded concurrent audit pool"
@@ -90,6 +101,26 @@ def _parser() -> argparse.ArgumentParser:
     pool.add_argument("--max-concurrency", type=int, default=2)
     pool.add_argument("--codex", default="codex")
     pool.add_argument("--execute", action="store_true")
+    pool.add_argument("--retention-days", type=int, default=DEFAULT_RETENTION_DAYS)
+    pool.add_argument(
+        "--max-retained-reports",
+        type=int,
+        default=DEFAULT_MAX_RETAINED_REPORTS,
+    )
+
+    retention = commands.add_parser(
+        "retention", help="inspect or prune completed external report bundles"
+    )
+    retention.add_argument("output_root", type=Path)
+    retention.add_argument(
+        "--retention-days", type=int, default=DEFAULT_RETENTION_DAYS
+    )
+    retention.add_argument(
+        "--max-retained-reports",
+        type=int,
+        default=DEFAULT_MAX_RETAINED_REPORTS,
+    )
+    retention.add_argument("--dry-run", action="store_true")
 
     validate = commands.add_parser(
         "validate-report", help="validate a structured Crew Chief report"
@@ -181,6 +212,8 @@ def main(argv: list[str] | None = None) -> int:
                 execute=args.execute,
                 allow_fresh_session_fallback=args.allow_fresh_session_fallback,
                 codex_executable=args.codex,
+                retention_days=args.retention_days,
+                max_retained_reports=args.max_retained_reports,
             )
         elif args.command == "pool":
             result = run_pool(
@@ -189,8 +222,17 @@ def main(argv: list[str] | None = None) -> int:
                 max_concurrency=args.max_concurrency,
                 execute=args.execute,
                 codex_executable=args.codex,
+                retention_days=args.retention_days,
+                max_retained_reports=args.max_retained_reports,
             )
             exit_code = pool_exit_code(result)
+        elif args.command == "retention":
+            result = prune_reports(
+                args.output_root,
+                retention_days=args.retention_days,
+                max_retained_reports=args.max_retained_reports,
+                dry_run=args.dry_run,
+            )
         elif args.command == "validate-report":
             result = _validate_report(args)
         else:

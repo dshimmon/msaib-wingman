@@ -15,6 +15,7 @@ from unittest import mock
 from tests.governance.test_crew_chief import (
     FIXED_TIME,
     FixtureRepository,
+    finding,
     report_for,
 )
 from tools.crew_chief.core import CrewChiefError, read_json, write_canonical_json
@@ -30,7 +31,7 @@ from tools.crew_chief.validation import validate_instance
 class CrewChiefPoolTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
-        self.root = Path(self.temporary.name)
+        self.root = Path(self.temporary.name).resolve()
         first_root = self.root / "first"
         second_root = self.root / "second"
         first_root.mkdir()
@@ -80,10 +81,13 @@ class CrewChiefPoolTests(unittest.TestCase):
             },
         ]
 
-    def model_runner(self, delays=None, failures=None, calls=None):
+    def model_runner(
+        self, delays=None, failures=None, calls=None, verdicts=None
+    ):
         delays = delays or {}
         failures = failures or set()
         calls = calls if calls is not None else []
+        verdicts = verdicts or {}
 
         def run(arguments, **_kwargs):
             if arguments[-2:] == ["login", "status"]:
@@ -103,11 +107,14 @@ class CrewChiefPoolTests(unittest.TestCase):
             canonical_schema = read_json(
                 workspace / "schemas/crew-chief-canonical-report.schema.json"
             )
-            report_path.parent.mkdir(parents=True, exist_ok=True)
+            self.assertTrue(report_path.parent.is_dir())
+            verdict = verdicts.get(job_id, "PASS")
+            findings = [finding()] if verdict == "FAIL" else []
             report_path.write_text(
                 json.dumps(
                     canonical_to_service_output(
-                        report_for(envelope), canonical_schema
+                        report_for(envelope, findings, verdict=verdict),
+                        canonical_schema,
                     )
                 ),
                 encoding="utf-8",
@@ -135,7 +142,7 @@ class CrewChiefPoolTests(unittest.TestCase):
             "first",
             "second",
         ])
-        self.assertEqual([item["status"] for item in report["jobs"]], [
+        self.assertEqual([item["state"] for item in report["jobs"]], [
             "QUEUED",
             "QUEUED",
         ])
@@ -181,10 +188,56 @@ class CrewChiefPoolTests(unittest.TestCase):
             [item["job_id"] for item in report["jobs"]],
             [f"job-{index}" for index in range(5)],
         )
-        self.assertTrue(all(item["status"] == "PASS" for item in report["jobs"]))
+        self.assertTrue(
+            all(item["state"] == "COMPLETED" for item in report["jobs"])
+        )
+        self.assertTrue(all(item["verdict"] == "PASS" for item in report["jobs"]))
         self.assertTrue(all(item["token_count"] == 42 for item in report["jobs"]))
         self.assertEqual(report["automatic_retries"], 0)
         self.assertTrue(all(item["attempts"] == 1 for item in report["jobs"]))
+
+    def test_audit_fail_verdict_is_an_operationally_completed_pool_job(self):
+        report = run_pool(
+            self.manifest(self.jobs()),
+            self.root / "pool-output",
+            max_concurrency=2,
+            execute=True,
+            detector=lambda _: self.capabilities(),
+            process_runner=self.model_runner(
+                delays={"first": 0.05, "second": 0.05},
+                verdicts={"first": "FAIL", "second": "PASS"},
+            ),
+            clock=lambda: FIXED_TIME,
+        )
+        self.assertEqual(report["overall_status"], "PASS")
+        self.assertEqual(report["maximum_observed_concurrency"], 2)
+        self.assertEqual(
+            [item["state"] for item in report["jobs"]],
+            ["COMPLETED", "COMPLETED"],
+        )
+        self.assertEqual(
+            [item["verdict"] for item in report["jobs"]],
+            ["FAIL", "PASS"],
+        )
+        self.assertEqual(report["totals"]["verdict_fail"], 1)
+        self.assertEqual(report["totals"]["verdict_pass"], 1)
+        self.assertEqual(pool_exit_code(report), 0)
+        for job_id in ("first", "second"):
+            bundle = self.root / "pool-output" / "reports" / f"audit-{job_id}"
+            self.assertTrue((bundle / "crew-chief-report.json").is_file())
+            self.assertTrue((bundle / "run-record.json").is_file())
+            self.assertTrue((bundle / "retention-report.json").is_file())
+            self.assertTrue(
+                (self.root / "pool-output" / job_id / ".crew-chief-consumed.json").is_file()
+            )
+        self.assertTrue(
+            Path(report["report_path"]).parent.joinpath(
+                "retention-report.json"
+            ).is_file()
+        )
+        self.assertTrue(
+            (self.root / "pool-output" / "retention-state.json").is_file()
+        )
 
     def test_one_failure_does_not_cancel_other_jobs_or_retry(self):
         calls = []
@@ -199,12 +252,16 @@ class CrewChiefPoolTests(unittest.TestCase):
         self.assertEqual(sorted(calls), ["first", "second"])
         self.assertEqual(len(calls), 2)
         self.assertEqual(report["overall_status"], "FAIL")
-        self.assertEqual(report["jobs"][0]["status"], "ERROR")
+        self.assertEqual(report["jobs"][0]["state"], "FAILED")
         self.assertEqual(
             report["jobs"][0]["errors"][0]["category"], "CONTROL_FAILURE"
         )
-        self.assertEqual(report["jobs"][1]["status"], "PASS")
+        self.assertEqual(report["jobs"][1]["state"], "COMPLETED")
+        self.assertEqual(report["jobs"][1]["verdict"], "PASS")
         self.assertEqual(pool_exit_code(report), 1)
+        self.assertFalse(
+            (self.root / "pool-output" / "retention-state.json").exists()
+        )
 
     def test_fallback_authorization_is_scoped_per_job(self):
         jobs = self.jobs()
@@ -217,8 +274,8 @@ class CrewChiefPoolTests(unittest.TestCase):
             process_runner=self.model_runner(),
             clock=lambda: FIXED_TIME,
         )
-        self.assertEqual(report["jobs"][0]["status"], "PASS")
-        self.assertEqual(report["jobs"][1]["status"], "ERROR")
+        self.assertEqual(report["jobs"][0]["state"], "COMPLETED")
+        self.assertEqual(report["jobs"][1]["state"], "FAILED")
         self.assertIn(
             "requires explicit authorization",
             report["jobs"][1]["errors"][0]["diagnostic"],
@@ -335,7 +392,9 @@ class CrewChiefPoolTests(unittest.TestCase):
         )
         self.assertEqual(sorted(attempts), ["first", "second"])
         self.assertEqual(len(attempts), 2)
-        self.assertTrue(all(item["status"] == "ERROR" for item in report["jobs"]))
+        self.assertTrue(
+            all(item["state"] == "FAILED" for item in report["jobs"])
+        )
         self.assertTrue(
             all(
                 item["errors"][0]["category"] == "RUNNER_FAILURE"

@@ -62,6 +62,11 @@
       "date": "2026-08-10",
       "authority": "Maverick",
       "scope": "Authorized operational Crew Chief maintenance: add the canonical frozen-workspace trusted-directory control, implement a bounded concurrent audit pool and deterministic validation, make exactly one implementation commit, then perform exactly one tiny synthetic live smoke audit and, only if successful, one evidence-only acceptance commit; prohibited live pool execution, push, merge, publication, CI model access, and successor activation."
+    },
+    {
+      "date": "2026-08-10",
+      "authority": "Maverick",
+      "scope": "After the authorized single smoke failed because its model output directory was absent, expanded the narrow correction to create that directory before launch, add bounded external report retention, replace the single smoke with exactly one two-job concurrent synthetic pool acceptance run and zero retries, and conditionally authorize one evidence-only operational acceptance commit after both expected audit outcomes succeed."
     }
   ],
   "baseline_commit": "b1910d0c69a52d73ddde93cb9722f12540c5d1e7",
@@ -102,12 +107,13 @@
       "docs/runbooks/crew-chief.md",
       "tests/governance/test_crew_chief.py",
       "tests/governance/test_crew_chief_pool.py",
+      "tests/governance/test_crew_chief_retention.py",
       "tests/governance/test_repository_governance.py",
       "tools/crew_chief/",
       "tools/governance/repository.py"
     ],
-    "state": "completed_with_authorized_operational_maintenance",
-    "next_gate": "Complete the authorized deterministic implementation gate, then the single synthetic smoke gate."
+    "state": "completed_with_authorized_operational_correction",
+    "next_gate": "Complete deterministic validation, obtain explicit authority for the code-bearing correction commit, then run exactly one authorized two-job synthetic pool acceptance with zero retries."
   },
   "next_gate": "Maverick selects and authorizes a mission.",
   "supersedes": null,
@@ -134,9 +140,14 @@ Maverick subsequently authorized bounded operational maintenance to add that
 exact trusted-directory accommodation to the shared normal/bootstrap command,
 require it during capability detection and tamper validation, and add an
 isolated concurrent audit pool. Deterministic implementation does not by
-itself prove live operation. Capability health remains maintenance-pending
-until the one authorized tiny synthetic smoke audit succeeds and its evidence
-is preserved. No independent certification is claimed.
+itself prove live operation. The first authorized tiny synthetic smoke reached
+one authenticated model invocation, but the process could not persist its
+otherwise generated output because the configured output directory did not
+exist. Maverick replaced that smoke with a narrow lifecycle-and-retention
+correction and exactly one two-job concurrent synthetic pool acceptance run.
+Capability health remains maintenance-pending until that replacement run
+succeeds and its evidence is preserved. No independent certification is
+claimed.
 
 Maverick accepted the residual risk that a malicious process already operating
 as the trusted local operating-system account could impersonate Maverick to the

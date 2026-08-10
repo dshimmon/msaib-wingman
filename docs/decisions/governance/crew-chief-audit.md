@@ -99,8 +99,10 @@ tree, prompt, schemas, invocation, output directory, and atomic consumption
 marker for every job. One failed job does not cancel another, and there is no
 automatic retry. Pool reports retain manifest order, record requested and
 observed concurrency, per-job bindings, verdicts, errors, timestamps, and token
-counts when exposed by the CLI, and fail overall when any job fails or blocks.
-They do not combine or synthesize findings across subjects.
+counts when exposed by the CLI. Operational states are distinct from audit
+verdicts: a schema-valid `FAIL` or `BLOCKED` is a completed audit job, while
+preparation, control, or runner failure makes the pool fail operationally.
+Pool reports do not combine or synthesize findings across subjects.
 
 Concurrency controls latency, not cost. Every executed job remains a distinct
 authenticated model invocation with its own token use, so total cost is
@@ -109,5 +111,29 @@ resource and service pressure; increasing it requires an operator decision and
 does not expand audit authority. Pool execution is operational evidence, not
 independent certification, approval, publication authority, or mission
 completion.
+
+## External report retention
+
+Normal and pool execution store each audit or pool report as a separate bundle
+inside one explicitly marked external output root. The controller creates the
+bundle before process launch and never keeps an append-only report-history
+array. Automatic pruning occurs only after the new canonical report and run
+record are written successfully; pool pruning additionally requires overall
+operational success.
+
+Retention defaults to 30 days and 100 completed report bundles, with explicit
+CLI overrides for both limits. A bundle is eligible when either limit is
+exceeded. Age is derived from validated completion metadata. Count pruning is
+deterministic by completion time and report ID, retaining the newest bundles.
+Queued, running, and currently written reports are never candidates.
+
+The marked root, every metadata record, required completed artifacts, and the
+whole tree are validated before any removal. Symlinks, ambiguous roots, path
+escapes, repository-internal roots, duplicate identifiers, malformed metadata,
+and incomplete completed bundles fail closed. Cleanup removes the complete
+bundle and replaces one bounded `retention-state.json`; it does not preserve an
+unbounded deletion log. A dry-run command reports the same candidate set with
+no deletion or state mutation. This lifecycle deletion is not represented as
+secure erasure.
 
 This decision does not itself authorize publication or a live model audit.

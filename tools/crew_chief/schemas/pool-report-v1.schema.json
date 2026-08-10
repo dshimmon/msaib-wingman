@@ -43,20 +43,26 @@
       "required": [
         "jobs",
         "queued",
-        "pass",
-        "pass_with_advisories",
-        "fail",
-        "blocked",
-        "errors"
+        "running",
+        "completed",
+        "failed",
+        "verdict_pass",
+        "verdict_pass_with_advisories",
+        "verdict_fail",
+        "verdict_blocked",
+        "verdict_unavailable"
       ],
       "properties": {
         "jobs": {"type": "integer", "minimum": 1},
         "queued": {"type": "integer", "minimum": 0},
-        "pass": {"type": "integer", "minimum": 0},
-        "pass_with_advisories": {"type": "integer", "minimum": 0},
-        "fail": {"type": "integer", "minimum": 0},
-        "blocked": {"type": "integer", "minimum": 0},
-        "errors": {"type": "integer", "minimum": 0}
+        "running": {"type": "integer", "minimum": 0},
+        "completed": {"type": "integer", "minimum": 0},
+        "failed": {"type": "integer", "minimum": 0},
+        "verdict_pass": {"type": "integer", "minimum": 0},
+        "verdict_pass_with_advisories": {"type": "integer", "minimum": 0},
+        "verdict_fail": {"type": "integer", "minimum": 0},
+        "verdict_blocked": {"type": "integer", "minimum": 0},
+        "verdict_unavailable": {"type": "integer", "minimum": 0}
       }
     },
     "jobs": {
@@ -113,7 +119,7 @@
         "envelope_path",
         "workspace",
         "execution_mode",
-        "status",
+        "state",
         "attempts",
         "verdict",
         "bindings",
@@ -133,16 +139,7 @@
           "type": ["string", "null"],
           "enum": ["custom-agent", "fresh-session-fallback", null]
         },
-        "status": {
-          "enum": [
-            "QUEUED",
-            "PASS",
-            "PASS_WITH_ADVISORIES",
-            "FAIL",
-            "BLOCKED",
-            "ERROR"
-          ]
-        },
+        "state": {"enum": ["QUEUED", "RUNNING", "COMPLETED", "FAILED"]},
         "attempts": {"type": "integer", "minimum": 0, "maximum": 1},
         "verdict": {
           "type": ["string", "null"],

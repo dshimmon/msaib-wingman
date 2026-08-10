@@ -18,9 +18,12 @@ from tools.crew_chief.core import (
     atomic_write,
     bind_file,
     canonical_json_bytes,
+    clock_value,
     ensure_external_path,
+    isoformat,
     new_external_directory,
     normalize_repo_path,
+    parse_time,
     payload_encoding,
     read_json,
     redact_text,
@@ -37,7 +40,18 @@ from tools.crew_chief.service_schema import (
     validate_service_instance,
     validate_service_schema,
 )
-from tools.crew_chief.validation import validate_report
+from tools.crew_chief.retention import (
+    DEFAULT_MAX_RETAINED_REPORTS,
+    DEFAULT_RETENTION_DAYS,
+    REPORT_METADATA,
+    initialize_retention_root,
+    prune_reports,
+    validate_retention_root,
+    validate_retention_limits,
+    validate_report_id,
+    write_report_metadata,
+)
+from tools.crew_chief.validation import validate_instance, validate_report
 
 
 _DISABLED_REVIEW_FEATURES = (
@@ -408,14 +422,35 @@ def prepare_review_workspace(
     envelope_path: Path,
     workspace: Path | None,
     *,
+    retention_root: Path | None = None,
+    report_id: str | None = None,
     codex_executable: str = "codex",
     detector: Callable[..., CodexCapabilities] = detect_codex_capabilities,
     clock: Callable[[], datetime] = utc_now,
 ) -> dict[str, Any]:
     envelope = verify_envelope(envelope_path, clock=clock)
     repository = Path(envelope["repository"]["repository_root"])
+    report_id = validate_report_id(report_id or envelope["audit_id"])
     target = new_external_directory(
         repository, workspace, prefix="wingman-crew-chief-review-"
+    )
+    configured_retention_root = (
+        initialize_retention_root(target)
+        if retention_root is None
+        else validate_retention_root(retention_root)
+    )
+    output_bundle = configured_retention_root / "reports" / report_id
+    if output_bundle.exists() or output_bundle.is_symlink():
+        raise CrewChiefError(f"Crew Chief report bundle already exists: {output_bundle}")
+    output_bundle.mkdir(parents=True, mode=0o700)
+    created_at = clock_value(clock)
+    write_report_metadata(
+        configured_retention_root,
+        output_bundle,
+        report_id=report_id,
+        report_kind="audit",
+        state="queued",
+        created_at=created_at,
     )
     frozen_root = target / "frozen"
     _copy_regular_tree(envelope_path.resolve().parent, frozen_root)
@@ -439,7 +474,7 @@ def prepare_review_workspace(
     schema_path = target / "schemas" / "crew-chief-report.schema.json"
     write_canonical_json(canonical_schema_path, canonical_schema)
     write_canonical_json(schema_path, service_schema)
-    report_output = target / "output" / "crew-chief-report.json"
+    report_output = output_bundle / "crew-chief-report.json"
     capabilities = detector(codex_executable)
     mode = (
         "custom-agent"
@@ -456,6 +491,9 @@ def prepare_review_workspace(
         "audit_id": envelope["audit_id"],
         "envelope_id": envelope["envelope_id"],
         "workspace": str(target),
+        "retention_root": str(configured_retention_root),
+        "report_id": report_id,
+        "output_bundle": str(output_bundle),
         "execution_mode": mode,
         "capabilities": asdict(capabilities),
         "argv": command,
@@ -539,9 +577,13 @@ def execute_prepared_review(
     allow_fresh_session_fallback: bool = False,
     runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
     timeout_seconds: int = 3600,
+    retention_days: int = DEFAULT_RETENTION_DAYS,
+    max_retained_reports: int = DEFAULT_MAX_RETAINED_REPORTS,
+    perform_retention: bool = True,
     clock: Callable[[], datetime] = utc_now,
 ) -> dict[str, Any]:
     """Execute one explicitly authorized live audit; tests inject a fake runner."""
+    validate_retention_limits(retention_days, max_retained_reports)
     envelope = verify_envelope(envelope_path, clock=clock)
     workspace = Path(invocation["workspace"]).resolve()
     repository = Path(envelope["repository"]["repository_root"])
@@ -576,7 +618,14 @@ def execute_prepared_review(
         workspace / "schemas" / "crew-chief-canonical-report.schema.json"
     )
     schema_path = workspace / "schemas" / "crew-chief-report.schema.json"
-    report_path = workspace / "output" / "crew-chief-report.json"
+    retention_root = validate_retention_root(
+        Path(invocation.get("retention_root", ""))
+    )
+    report_id = validate_report_id(invocation.get("report_id"))
+    output_bundle = (retention_root / "reports" / report_id).resolve()
+    if Path(invocation.get("output_bundle", "")).resolve() != output_bundle:
+        raise CrewChiefError("review invocation output bundle is invalid")
+    report_path = output_bundle / "crew-chief-report.json"
     if (
         Path(invocation.get("prompt_path", "")).resolve() != prompt_path
         or Path(invocation.get("canonical_schema_path", "")).resolve()
@@ -585,6 +634,23 @@ def execute_prepared_review(
         or Path(invocation.get("report_path", "")).resolve() != report_path
     ):
         raise CrewChiefError("review invocation paths are invalid")
+    consumption_marker = workspace / ".crew-chief-consumed.json"
+    if consumption_marker.exists() or consumption_marker.is_symlink():
+        raise CrewChiefError(
+            "audit envelope was already consumed in this workspace"
+        )
+    metadata_path = output_bundle / REPORT_METADATA
+    metadata = read_json(metadata_path)
+    if not isinstance(metadata, dict):
+        raise CrewChiefError("review retention metadata is invalid")
+    validate_instance("retention-report-v1.schema.json", metadata)
+    if (
+        metadata.get("report_id") != report_id
+        or metadata.get("report_kind") != "audit"
+        or metadata.get("state") != "queued"
+        or metadata.get("completed_at") is not None
+    ):
+        raise CrewChiefError("review retention metadata is not queued")
     expected_argv = build_launch_command(
         capabilities, workspace, schema_path, report_path
     )
@@ -608,6 +674,14 @@ def execute_prepared_review(
         raise CrewChiefError("Codex authentication is unavailable")
 
     before = git_state(repository)
+    write_report_metadata(
+        retention_root,
+        output_bundle,
+        report_id=report_id,
+        report_kind="audit",
+        state="running",
+        created_at=parse_time(metadata["created_at"]),
+    )
     _consume(workspace, envelope)
     prompt = prompt_path.read_text(encoding="utf-8")
     result: subprocess.CompletedProcess[str] | None = None
@@ -641,7 +715,7 @@ def execute_prepared_review(
     if result is not None:
         diagnostic = result.stderr
     atomic_write(
-        workspace / "output" / "codex-stderr.log",
+        output_bundle / "codex-stderr.log",
         redact_text(diagnostic).encode("utf-8"),
     )
     if before != after:
@@ -658,7 +732,7 @@ def execute_prepared_review(
     if not isinstance(service_report, dict):
         raise CrewChiefError("Crew Chief report must be a JSON object")
     validate_service_instance(service_schema, service_report)
-    service_report_path = workspace / "output" / "crew-chief-service-report.json"
+    service_report_path = output_bundle / "crew-chief-service-report.json"
     write_canonical_json(service_report_path, service_report)
     canonical_schema = read_json(canonical_schema_path)
     if not isinstance(canonical_schema, dict):
@@ -668,6 +742,7 @@ def execute_prepared_review(
         raise CrewChiefError("normalized Crew Chief report must be a JSON object")
     validate_report(envelope, report)
     write_canonical_json(report_path, report)
+    completed_at = clock_value(clock)
     record = {
         "schema_version": "1.0",
         "audit_id": envelope["audit_id"],
@@ -675,14 +750,37 @@ def execute_prepared_review(
         "cli_version": invocation["capabilities"]["version"],
         "argv": invocation["argv"],
         "execution_mode": invocation["execution_mode"],
+        "report_id": report_id,
+        "output_bundle": str(output_bundle),
         "repository_state_before": before,
         "repository_state_after": after,
         "report_path": str(report_path),
         "service_report_path": str(service_report_path),
         "service_schema_sha256": sha256_file(schema_path),
+        "completed_at": isoformat(completed_at),
+        "retention_policy": {
+            "retention_days": retention_days,
+            "max_retained_reports": max_retained_reports,
+        },
         "live_audit_performed": True,
     }
-    write_canonical_json(workspace / "output" / "run-record.json", record)
+    write_canonical_json(output_bundle / "run-record.json", record)
+    write_report_metadata(
+        retention_root,
+        output_bundle,
+        report_id=report_id,
+        report_kind="audit",
+        state="completed",
+        created_at=parse_time(metadata["created_at"]),
+        completed_at=completed_at,
+    )
+    if perform_retention:
+        prune_reports(
+            retention_root,
+            retention_days=retention_days,
+            max_retained_reports=max_retained_reports,
+            clock=clock,
+        )
     return record
 
 
@@ -693,10 +791,13 @@ def run_audit(
     execute: bool = False,
     allow_fresh_session_fallback: bool = False,
     codex_executable: str = "codex",
+    retention_days: int = DEFAULT_RETENTION_DAYS,
+    max_retained_reports: int = DEFAULT_MAX_RETAINED_REPORTS,
     detector: Callable[..., CodexCapabilities] = detect_codex_capabilities,
     runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
     clock: Callable[[], datetime] = utc_now,
 ) -> dict[str, Any]:
+    validate_retention_limits(retention_days, max_retained_reports)
     invocation = prepare_review_workspace(
         envelope_path,
         workspace,
@@ -711,5 +812,7 @@ def run_audit(
         invocation,
         allow_fresh_session_fallback=allow_fresh_session_fallback,
         runner=runner,
+        retention_days=retention_days,
+        max_retained_reports=max_retained_reports,
         clock=clock,
     )
