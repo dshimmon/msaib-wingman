@@ -294,3 +294,63 @@ These dispositions do not retroactively convert the `BLOCKED` report to a
 passing verdict. A new package and a later package-bound receipt require new
 Maverick approval. Crew Chief remains unaccepted, uncertified, unpublished,
 non-operational, and not mission-complete.
+
+## 2026-08-10 failed bootstrap review and bounded finding correction
+
+The later compacted-package ordinary bootstrap review completed over reviewed
+HEAD `e88f25579e2c976c50e3abf49118abadb118f5b9` and returned `FAIL` with
+blocking findings `BOOTSTRAP-003` and `BOOTSTRAP-004`. The exact structured
+report was 5,891 bytes with SHA-256
+`c5a330475b0a698218fd81143c99444eba3fbf36a15a67acac753f024007b7bf`.
+It reported 256,383 tokens, zero advisories, and no Crew Chief fixture audit.
+The original report, validation, citation validation, invocation, run record,
+stdout, and stderr bindings remain unchanged in external evidence and are
+recorded in
+[`artifacts/bootstrap-failed-20260810/disposition.json`](artifacts/bootstrap-failed-20260810/disposition.json).
+
+Maverick authorized one bounded correction. `BOOTSTRAP-004` is resolved in the
+correction candidate by eliminating caller-supplied bootstrap argv. The
+bootstrap wrapper now detects and binds the approved executable, constructs
+the ordinary-review command through the canonical isolation builder, and
+records its exact contract. Immediately before receipt consumption and process
+launch, it re-detects capabilities, verifies the executable bytes, reconstructs
+the command, and requires exact equality. Tests reject every one-token omission
+and altered executable, duplicate, added, meaningfully reordered, weakened
+approval, sandbox, schema, output, workspace, color, disabled-capability, or
+standard-input control. They also reject command-hash, capability-record, and
+executable-file tampering before receipt consumption or runner invocation.
+
+`BOOTSTRAP-003` is disputed with evidence rather than hidden or falsely marked
+fixed. Crew Chief v1 deliberately trusts Maverick's authenticated Mission
+Control interaction and the local operating-system account as the external
+authorization boundary. The receipt is a tamper-evident, package-bound record
+created after that external decision; it does not independently prove human
+identity and cannot reject a forged matching receipt created by a malicious
+process already operating inside the trusted local account. That same-account
+impersonation risk is explicitly escalated to Maverick for acceptance or
+rejection. No signing keys, Keychain integration, cryptographic identity, or
+remote identity service was introduced.
+
+Final code-path validation passed 13 focused bootstrap-authorization tests in
+2.742 seconds, 87 complete Crew Chief tests in 51.508 seconds, 115 combined
+Crew Chief/repository-governance tests in 56.397 seconds, 163 governance tests
+in 61.714 seconds, and 392 complete repository tests in 68.689 seconds. Six
+canonical JSON Schemas and both exact service-schema forms passed. Expected
+negative-path diagnostics appeared in the green broader suites. Two setup
+attempts are also preserved honestly: governance discovery first lacked its
+offline dummy key (one import error), and repository discovery first lacked
+the repository top-level flag (26 collection errors); the corrected commands
+then passed. Exact commands and dispositions are in
+[`correction-validation.json`](artifacts/bootstrap-failed-20260810/correction-validation.json).
+
+Both the changed-file Ruff scope and the established Crew Chief/governance
+Ruff scope passed. A repository-wide Ruff probe also surfaced 77 existing
+findings only in unchanged, out-of-scope Atlas, Wingman, Flightline, and legacy
+test files. Those unrelated baseline findings are preserved in the validation
+record and were not modified under this bounded authorization. Repository
+governance validation passed.
+
+No receipt was created, no model or network service was invoked, no fixture
+audit ran, and the original `FAIL` verdict remains unchanged. The correction
+and evidence require one finding-focused independent re-audit before any
+acceptance sequence can resume.

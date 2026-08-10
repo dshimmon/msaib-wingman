@@ -42,6 +42,7 @@ from tools.crew_chief.runner import (
     _PERMITTED_REVIEW_FEATURES,
     _REQUIRED_EXEC_FLAGS,
     CodexCapabilities,
+    build_ordinary_bootstrap_launch_command,
     build_launch_command,
     detect_codex_capabilities,
     execute_prepared_review,
@@ -260,6 +261,23 @@ class BootstrapAuthorizationTests(unittest.TestCase):
         self.package = self.root / "bootstrap-package.md"
         self.schema = self.root / "bootstrap-report.schema.json"
         self.receipt_path = self.root / "authorization-receipt.json"
+        self.codex = self.root / "codex"
+        self.codex.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        self.codex.chmod(0o755)
+        self.capabilities = CodexCapabilities(
+            executable=str(self.codex.resolve()),
+            version="codex-cli test",
+            exec_flags=tuple(sorted(_REQUIRED_EXEC_FLAGS)),
+            features=("shell_tool",),
+            shell_tool_control=True,
+            custom_agent_selector=True,
+        )
+        capability_patch = mock.patch(
+            "tools.crew_chief.bootstrap_authorization.detect_codex_capabilities",
+            return_value=self.capabilities,
+        )
+        capability_patch.start()
+        self.addCleanup(capability_patch.stop)
         self.package.write_text("frozen implementation evidence\n", encoding="utf-8")
         self.schema.write_text(
             '{"additionalProperties":false,"properties":{},"required":[],"type":"object"}\n',
@@ -297,10 +315,34 @@ class BootstrapAuthorizationTests(unittest.TestCase):
             self.schema,
             self.receipt_path,
             self.root / name,
-            argv=["codex", "exec", "-"],
             expectation=self.expectation,
             clock=lambda: FIXED_TIME,
         )
+
+    def assert_command_rejected_before_consumption(
+        self,
+        name,
+        mutate,
+        *,
+        message="canonical contract|binding|capability evidence",
+    ):
+        invocation = self.prepare(name)
+        invocation_path = Path(invocation["workspace"]) / "invocation.json"
+        persisted = read_json(invocation_path)
+        mutate(persisted)
+        write_canonical_json(invocation_path, persisted)
+        marker = self.receipt_path.with_name(
+            f".{self.receipt_path.name}.{self.receipt['receipt_id']}.consumed.json"
+        )
+        runner = mock.Mock()
+        with self.assertRaisesRegex(CrewChiefError, message):
+            execute_authorized_bootstrap(
+                invocation_path,
+                runner=runner,
+                clock=lambda: FIXED_TIME,
+            )
+        runner.assert_not_called()
+        self.assertFalse(marker.exists())
 
     def test_valid_receipt_binds_exact_authorized_subject(self):
         validated = validate_authorization_receipt(
@@ -404,6 +446,106 @@ class BootstrapAuthorizationTests(unittest.TestCase):
                 clock=lambda: FIXED_TIME,
             )
         self.assertEqual(runner.call_count, 1)
+
+    def test_bootstrap_command_is_internally_constructed_for_ordinary_reviewer(self):
+        invocation = self.prepare()
+        workspace = Path(invocation["workspace"])
+        expected = build_ordinary_bootstrap_launch_command(
+            self.capabilities,
+            workspace,
+            workspace / "frozen/bootstrap-report.schema.json",
+            workspace / "output/bootstrap-report.json",
+        )
+        self.assertEqual(invocation["argv"], expected)
+        self.assertEqual(invocation["argv"][0], str(self.codex.resolve()))
+        self.assertEqual(invocation["argv"][-1], "-")
+        self.assertNotIn("--agent", invocation["argv"])
+        self.assertNotIn("crew_chief", invocation["argv"])
+        self.assertEqual(
+            invocation["command_contract"]["role"],
+            "ordinary_codex_bootstrap_reviewer",
+        )
+
+    def test_every_command_token_omission_fails_before_receipt_consumption(self):
+        template = self.prepare("omission-template")["argv"]
+        for index, token in enumerate(template):
+            with self.subTest(index=index, token=token):
+                self.assert_command_rejected_before_consumption(
+                    f"omission-{index}",
+                    lambda value, index=index: value["argv"].pop(index),
+                )
+
+    def test_duplicate_added_reordered_and_weakened_controls_fail_closed(self):
+        def duplicate_ephemeral(value):
+            index = value["argv"].index("--ephemeral")
+            value["argv"].insert(index, "--ephemeral")
+
+        def add_control(value):
+            value["argv"].insert(-1, "--dangerously-added-control")
+
+        def reorder_control(value):
+            value["argv"][0], value["argv"][1] = (
+                value["argv"][1],
+                value["argv"][0],
+            )
+
+        def replace_value(flag, replacement):
+            def mutate(value):
+                index = value["argv"].index(flag)
+                value["argv"][index + 1] = replacement
+
+            return mutate
+
+        alterations = [
+            ("duplicate", duplicate_ephemeral),
+            ("added", add_control),
+            ("reordered", reorder_control),
+            ("executable", lambda value: value["argv"].__setitem__(0, "/bin/false")),
+            ("approval", replace_value("--config", 'approval_policy="on-request"')),
+            ("sandbox", replace_value("--sandbox", "workspace-write")),
+            ("schema", replace_value("--output-schema", "/tmp/other.schema.json")),
+            ("output", replace_value("--output-last-message", "/tmp/other.json")),
+            ("workspace", replace_value("--cd", "/tmp/other-workspace")),
+            ("color", replace_value("--color", "always")),
+            ("disable", replace_value("--disable", "apps")),
+            ("stdin", lambda value: value["argv"].__setitem__(-1, "prompt.txt")),
+        ]
+        for name, mutate in alterations:
+            with self.subTest(alteration=name):
+                self.assert_command_rejected_before_consumption(name, mutate)
+
+    def test_command_binding_and_capability_tampering_fail_closed(self):
+        self.assert_command_rejected_before_consumption(
+            "command-binding",
+            lambda value: value["command_contract"].__setitem__(
+                "argv_sha256", "0" * 64
+            ),
+            message="command binding",
+        )
+        self.assert_command_rejected_before_consumption(
+            "capabilities",
+            lambda value: value["command_contract"]["capabilities"].__setitem__(
+                "version", "tampered"
+            ),
+            message="capability evidence changed",
+        )
+
+    def test_approved_executable_change_fails_before_receipt_consumption(self):
+        invocation = self.prepare("executable-change")
+        invocation_path = Path(invocation["workspace"]) / "invocation.json"
+        self.codex.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+        runner = mock.Mock()
+        marker = self.receipt_path.with_name(
+            f".{self.receipt_path.name}.{self.receipt['receipt_id']}.consumed.json"
+        )
+        with self.assertRaisesRegex(CrewChiefError, "executable binding hash changed"):
+            execute_authorized_bootstrap(
+                invocation_path,
+                runner=runner,
+                clock=lambda: FIXED_TIME,
+            )
+        runner.assert_not_called()
+        self.assertFalse(marker.exists())
 
     def test_receipt_creation_and_preparation_do_not_change_subject_files(self):
         package_before = (self.package.stat().st_size, sha256_file(self.package))

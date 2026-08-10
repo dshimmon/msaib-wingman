@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "canary": "CANOPY-7C2F-ATLAS",
+  "record_type": "failed_bootstrap_finding_disposition",
+  "review_subject": {
+    "base_commit": "b1910d0c69a52d73ddde93cb9722f12540c5d1e7",
+    "reviewed_head": "e88f25579e2c976c50e3abf49118abadb118f5b9",
+    "correction_commit": {
+      "value": null,
+      "binding_source": "finding_focused_reaudit_package.reviewed_head",
+      "self_hash_embedded": false,
+      "reason": "The single authorized correction commit cannot contain its own final Git hash; the focused package binds it externally."
+    }
+  },
+  "review": {
+    "audit_id": "ad91a206256e0b030e4d28799e81b403ae41acf9d07d29443756e4b322b4b1ac",
+    "envelope_id": "995886252aa615ccb39a34916fe3fc6bdfbdca485cff0b1bf60401a0e08bcc35",
+    "role": "ordinary_codex_bootstrap_reviewer",
+    "verdict": "FAIL",
+    "tokens_used": 256383,
+    "blocking_issue_count": 2,
+    "advisory_count": 0,
+    "fixture_audits_attempted": 0,
+    "repository_mutation": false
+  },
+  "dispositions": [
+    {
+      "issue_id": "BOOTSTRAP-003",
+      "disposition": "disputed_with_evidence_escalated_to_maverick",
+      "counter_evidence": [
+        "docs/decisions/governance/crew-chief-audit.md#authorization-trust-boundary",
+        "docs/runbooks/crew-chief.md#package-bound-bootstrap-authorization",
+        "tools/crew_chief/bootstrap_authorization.py"
+      ],
+      "reasoning": "Crew Chief v1 receives authorization provenance from Maverick's authenticated Mission Control interaction and the local operating-system account. The receipt is deliberately a tamper-evident exact-package record after that decision, not an independent human-identity authenticator.",
+      "residual_risk": "A malicious process already operating as the trusted local account can impersonate Maverick to the local wrapper, construct a matching expectation and receipt, and race or replace local execution state.",
+      "decision_requested": "Maverick must explicitly accept or reject the residual same-account impersonation risk for Crew Chief v1. Stronger identity proof requires separately authorized cryptographic or remote identity infrastructure."
+    },
+    {
+      "issue_id": "BOOTSTRAP-004",
+      "disposition": "resolved_in_implementation_pending_focused_reaudit",
+      "implementation_evidence": [
+        "tools/crew_chief/bootstrap_authorization.py",
+        "tools/crew_chief/runner.py",
+        "tests/governance/test_crew_chief.py",
+        "docs/runbooks/crew-chief.md",
+        "docs/decisions/governance/crew-chief-audit.md"
+      ],
+      "resolution": "Bootstrap preparation no longer accepts caller-supplied argv. It detects and binds the resolved executable, constructs the ordinary-review command from the canonical isolation builder, and records the exact command contract. Execution re-detects capabilities, verifies the executable binding, recomputes the complete command, and requires exact equality immediately before receipt consumption and runner invocation.",
+      "negative_coverage": "Tests reject every single-token omission plus altered executable, duplicate, added, reordered, weakened approval, sandbox, schema, output, workspace, color, disabled-feature, and standard-input controls; command-binding, capability, and executable-file tampering also fail before receipt consumption or runner invocation."
+    }
+  ],
+  "artifact_bindings": {
+    "bootstrap_report": {
+      "path": "/private/tmp/wingman-crew-chief-bootstrap-compacted-20260810-iODizg/bootstrap-authorized-review-retry/output/bootstrap-report.json",
+      "size": 5891,
+      "sha256": "c5a330475b0a698218fd81143c99444eba3fbf36a15a67acac753f024007b7bf"
+    },
+    "bootstrap_validation": {
+      "path": "/private/tmp/wingman-crew-chief-bootstrap-compacted-20260810-iODizg/bootstrap-authorized-review-retry/output/bootstrap-validation.json",
+      "size": 1899,
+      "sha256": "f1665ff3c62e1004331d49726d19ceaca13116e67dfa0264aaf72deea580a3a5"
+    },
+    "citation_validation": {
+      "path": "/private/tmp/wingman-crew-chief-bootstrap-compacted-20260810-iODizg/bootstrap-authorized-review-retry/output/bootstrap-citation-validation.json",
+      "size": 4652,
+      "sha256": "d35bf0d22e7e37d6f04023fbc91a59d39d3f52c8ee9b28fb1190e17462f9fe4b"
+    },
+    "run_record": {
+      "path": "/private/tmp/wingman-crew-chief-bootstrap-compacted-20260810-iODizg/bootstrap-authorized-review-retry/output/bootstrap-run-record.json",
+      "size": 1707,
+      "sha256": "b66b98668cd0c9d7d5a14a8b8d29ae886b08f749b09cf20048ec051e9105c0a9"
+    },
+    "invocation": {
+      "path": "/private/tmp/wingman-crew-chief-bootstrap-compacted-20260810-iODizg/bootstrap-authorized-review-retry/invocation.json",
+      "size": 6587,
+      "sha256": "5345b56f6a66647e93ccc7ee4c11034d4a1ec695d76cbfd89e03c10c455c4c45"
+    },
+    "stdout": {
+      "path": "/private/tmp/wingman-crew-chief-bootstrap-compacted-20260810-iODizg/bootstrap-authorized-review-retry/output/codex-stdout.log",
+      "size": 5892,
+      "sha256": "e567d8fd49e8e7d432613e4d40113f7818801991c65873ce1dd26eb5265ec3db"
+    },
+    "stderr": {
+      "path": "/private/tmp/wingman-crew-chief-bootstrap-compacted-20260810-iODizg/bootstrap-authorized-review-retry/output/codex-stderr.log",
+      "size": 1007745,
+      "sha256": "91a715b41a16fae571446dd9ea98a036e7550a805caeed3e9bc8c7cea491869a",
+      "committed": false
+    }
+  },
+  "authority_statement": "Maverick retains final authority over the BOOTSTRAP-003 dispute and residual risk. This disposition does not authorize receipt creation, transmission, model invocation, fixture acceptance, push, merge, publication, or mission completion."
+}

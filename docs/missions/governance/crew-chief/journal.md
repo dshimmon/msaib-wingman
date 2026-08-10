@@ -154,3 +154,43 @@ mission-complete declaration is authorized.
 No authorization receipt exists for the new package. The next gate is to
 report its exact binding and obtain Maverick's explicit package-bound approval
 before receipt creation, transmission, or any invocation.
+
+## 2026-08-10 — Failed compacted bootstrap and bounded finding correction
+
+- Preserved the later ordinary-bootstrap `FAIL` report with
+  `BOOTSTRAP-003` and `BOOTSTRAP-004`, its 256,383-token usage, and every
+  report, validation, citation, invocation, run-record, stdout, and stderr
+  binding. Zero fixture audits occurred.
+- Repeated the `CANOPY-7C2F-ATLAS` check and verified the clean expected branch
+  at `e88f25579e2c976c50e3abf49118abadb118f5b9`, seven commits ahead and zero
+  behind unchanged `origin/main`.
+- Corrected `BOOTSTRAP-004` by internally constructing the ordinary-bootstrap
+  command from the same canonical isolation contract as Crew Chief execution.
+  The wrapper re-detects capabilities, verifies the executable bytes, and
+  reconstructs and compares the complete command immediately before receipt
+  consumption and process launch.
+- Added negative tests for every one-token omission, altered executable,
+  duplicate, added, meaningfully reordered, or weakened control, plus command,
+  capability-record, and executable-file tampering. All are rejected before
+  receipt consumption or injected-runner invocation.
+- Disputed `BOOTSTRAP-003` within Maverick's bounded scope. The v1 external
+  trust boundary is the authenticated Mission Control interaction plus local
+  operating-system account. The receipt preserves a tamper-evident exact
+  package record after that decision; it is not independent human-identity
+  authentication. The residual malicious-same-account impersonation risk is
+  escalated to Maverick without introducing new identity infrastructure.
+- Passed 13 focused authorization tests, 87 complete Crew Chief tests, 115
+  combined Crew Chief/repository-governance tests, 163 governance tests, and
+  392 complete repository tests, plus six canonical Schemas and two exact
+  service-schema forms. Preserved one missing-test-key setup error and one
+  incorrect-unittest-top-level collection error; both corrected commands
+  passed.
+- Passed the changed-file and established Crew Chief/governance Ruff scopes.
+  A repository-wide Ruff probe found 77 pre-existing findings only in
+  unchanged, out-of-scope files; they were recorded and left untouched.
+- Passed repository governance validation.
+
+No receipt, model or network invocation, fixture audit, push, merge,
+publication, main mutation, certification, or mission-completion claim is
+authorized or performed. The next gate is Maverick's package-bound approval
+for exactly one finding-focused independent re-audit.

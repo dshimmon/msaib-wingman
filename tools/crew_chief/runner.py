@@ -213,11 +213,13 @@ def detect_codex_capabilities(
     return capabilities
 
 
-def build_launch_command(
+def _build_isolated_launch_command(
     capabilities: CodexCapabilities,
     workspace: Path,
     schema: Path,
     report_output: Path,
+    *,
+    agent: str | None,
 ) -> list[str]:
     _validate_capabilities(capabilities)
     command = [
@@ -243,10 +245,45 @@ def build_launch_command(
     for feature in _DISABLED_REVIEW_FEATURES:
         if feature in capabilities.features:
             command.extend(["--disable", feature])
-    if capabilities.custom_agent_selector:
-        command.extend(["--agent", "crew_chief"])
+    if agent is not None:
+        if not capabilities.custom_agent_selector:
+            raise CrewChiefError("Codex custom-agent selection is unavailable")
+        command.extend(["--agent", agent])
     command.append("-")
     return command
+
+
+def build_launch_command(
+    capabilities: CodexCapabilities,
+    workspace: Path,
+    schema: Path,
+    report_output: Path,
+) -> list[str]:
+    """Construct the canonical isolated Crew Chief command."""
+    agent = "crew_chief" if capabilities.custom_agent_selector else None
+    return _build_isolated_launch_command(
+        capabilities,
+        workspace,
+        schema,
+        report_output,
+        agent=agent,
+    )
+
+
+def build_ordinary_bootstrap_launch_command(
+    capabilities: CodexCapabilities,
+    workspace: Path,
+    schema: Path,
+    report_output: Path,
+) -> list[str]:
+    """Construct the canonical isolated ordinary-bootstrap command."""
+    return _build_isolated_launch_command(
+        capabilities,
+        workspace,
+        schema,
+        report_output,
+        agent=None,
+    )
 
 
 def _copy_regular_tree(source: Path, target: Path) -> None:

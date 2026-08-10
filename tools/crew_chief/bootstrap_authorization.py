@@ -1,10 +1,10 @@
-"""Package-bound authorization control for an ordinary bootstrap review."""
+"""Tamper-evident package binding for an externally authorized bootstrap."""
 
 from __future__ import annotations
 
 import os
 import subprocess
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
@@ -26,6 +26,11 @@ from tools.crew_chief.core import (
     validate_sha256,
     write_canonical_json,
 )
+from tools.crew_chief.runner import (
+    CodexCapabilities,
+    build_ordinary_bootstrap_launch_command,
+    detect_codex_capabilities,
+)
 from tools.crew_chief.validation import validate_instance
 
 
@@ -33,11 +38,13 @@ _CONTROL_NAME = "authorization-receipt.json"
 _PACKAGE_NAME = "bootstrap-package.md"
 _SCHEMA_NAME = "bootstrap-report.schema.json"
 _PROMPT_NAME = "bootstrap-review-input.md"
+_BOOTSTRAP_ROLE = "ordinary_codex_bootstrap_reviewer"
+_COMMAND_CONTRACT_VERSION = "1.0"
 
 
 @dataclass(frozen=True)
 class AuthorizationExpectation:
-    """Exact subject and invocation scope approved by Maverick."""
+    """Exact subject and scope supplied by the trusted local authorization boundary."""
 
     subject_head: str
     package_size: int
@@ -181,7 +188,7 @@ def validate_authorization_receipt(
     *,
     clock: Callable[[], datetime] = utc_now,
 ) -> dict[str, Any]:
-    """Fail closed unless one receipt exactly matches the approved subject."""
+    """Validate integrity and binding after an external authorization decision."""
     _validate_expectation(expectation)
     if not isinstance(receipt, dict):
         raise CrewChiefError("authorization receipt must be a JSON object")
@@ -256,6 +263,96 @@ def _validate_subject_files(
         raise CrewChiefError("approved service-schema binding is mismatched")
 
 
+def _detect_bootstrap_capabilities() -> CodexCapabilities:
+    capabilities = detect_codex_capabilities()
+    executable = Path(capabilities.executable).resolve()
+    if not executable.is_file() or not os.access(executable, os.X_OK):
+        raise CrewChiefError("approved Codex executable is unavailable")
+    return replace(capabilities, executable=str(executable))
+
+
+def _capabilities_from_record(value: Any) -> CodexCapabilities:
+    expected = {
+        "executable",
+        "version",
+        "exec_flags",
+        "features",
+        "shell_tool_control",
+        "custom_agent_selector",
+    }
+    if not isinstance(value, dict) or set(value) != expected:
+        raise CrewChiefError("bootstrap capability evidence is malformed")
+    if (
+        not isinstance(value["executable"], str)
+        or not value["executable"]
+        or not isinstance(value["version"], str)
+        or not value["version"]
+        or not isinstance(value["exec_flags"], list)
+        or any(not isinstance(item, str) or not item for item in value["exec_flags"])
+        or not isinstance(value["features"], list)
+        or any(not isinstance(item, str) or not item for item in value["features"])
+        or not isinstance(value["shell_tool_control"], bool)
+        or not isinstance(value["custom_agent_selector"], bool)
+    ):
+        raise CrewChiefError("bootstrap capability evidence is malformed")
+    return CodexCapabilities(
+        executable=value["executable"],
+        version=value["version"],
+        exec_flags=tuple(value["exec_flags"]),
+        features=tuple(value["features"]),
+        shell_tool_control=value["shell_tool_control"],
+        custom_agent_selector=value["custom_agent_selector"],
+    )
+
+
+def _command_sha256(argv: list[str]) -> str:
+    return sha256_bytes(canonical_json_bytes(argv))
+
+
+def _validate_bootstrap_command_contract(
+    invocation: dict[str, Any],
+    workspace: Path,
+    schema_path: Path,
+) -> list[str]:
+    contract = invocation.get("command_contract")
+    if not isinstance(contract, dict) or set(contract) != {
+        "schema_version",
+        "role",
+        "capabilities",
+        "approved_executable",
+        "argv_sha256",
+    }:
+        raise CrewChiefError("bootstrap command contract is malformed")
+    if contract["schema_version"] != _COMMAND_CONTRACT_VERSION:
+        raise CrewChiefError("bootstrap command contract version is unsupported")
+    if contract["role"] != _BOOTSTRAP_ROLE:
+        raise CrewChiefError("bootstrap command role is mismatched")
+    prepared_capabilities = _capabilities_from_record(contract["capabilities"])
+    current_capabilities = _detect_bootstrap_capabilities()
+    if asdict(current_capabilities) != asdict(prepared_capabilities):
+        raise CrewChiefError("bootstrap capability evidence changed before launch")
+    executable = _verify_binding(
+        contract["approved_executable"], "approved Codex executable"
+    )
+    if executable != Path(current_capabilities.executable):
+        raise CrewChiefError("approved Codex executable binding is mismatched")
+    report_output = workspace / "output" / "bootstrap-report.json"
+    expected_argv = build_ordinary_bootstrap_launch_command(
+        current_capabilities,
+        workspace,
+        schema_path,
+        report_output,
+    )
+    argv = invocation.get("argv")
+    if argv != expected_argv:
+        raise CrewChiefError("bootstrap command differs from the canonical contract")
+    if contract["argv_sha256"] != _command_sha256(expected_argv):
+        raise CrewChiefError("bootstrap command binding is mismatched")
+    if "--agent" in expected_argv or "crew_chief" in expected_argv:
+        raise CrewChiefError("ordinary bootstrap command selected Crew Chief")
+    return expected_argv
+
+
 def _composite_payload(package: bytes, receipt: bytes) -> bytes:
     try:
         package_text = package.decode("utf-8")
@@ -270,10 +367,12 @@ def _composite_payload(package: bytes, receipt: bytes) -> bytes:
             "",
             "FROZEN PACKAGE-BOUND INVOCATION CONTROL",
             "Validate the authorization receipt before reviewing the package.",
-            "Return BLOCKED if it is absent, malformed, expired, unauthorized,",
-            "or mismatched. A valid receipt satisfies the exact-package approval",
+            "Return BLOCKED if it is absent, malformed, expired, altered,",
+            "or mismatched. A valid receipt records the exact-package approval",
             "gate even when the older frozen mission snapshot says approval was",
             "pending. This is an ordinary Codex review, not a Crew Chief audit.",
+            "The trusted local wrapper supplies authorization provenance; the",
+            "receipt is tamper-evident and does not independently prove identity.",
             "",
             (
                 f"=== BEGIN FROZEN {_CONTROL_NAME} size={len(receipt)} "
@@ -301,18 +400,11 @@ def prepare_authorized_bootstrap_invocation(
     receipt_path: Path,
     workspace: Path,
     *,
-    argv: list[str],
     expectation: AuthorizationExpectation,
     clock: Callable[[], datetime] = utc_now,
 ) -> dict[str, Any]:
     """Freeze one receipt-bound composite without invoking a process."""
     _validate_expectation(expectation)
-    if (
-        not isinstance(argv, list)
-        or not argv
-        or any(not isinstance(item, str) or not item for item in argv)
-    ):
-        raise CrewChiefError("bootstrap invocation argv is malformed")
     _validate_subject_files(package_path, service_schema_path, expectation)
     receipt = read_json(receipt_path)
     validate_authorization_receipt(receipt, expectation, clock=clock)
@@ -346,6 +438,14 @@ def prepare_authorized_bootstrap_invocation(
         }
     )
     _validate_subject_files(package_path, service_schema_path, expectation)
+    capabilities = _detect_bootstrap_capabilities()
+    executable_binding = _absolute_binding(Path(capabilities.executable))
+    argv = build_ordinary_bootstrap_launch_command(
+        capabilities,
+        target,
+        schema_copy,
+        target / "output" / "bootstrap-report.json",
+    )
     invocation = {
         "schema_version": "1.0",
         "audit_id": expectation.audit_id,
@@ -353,6 +453,13 @@ def prepare_authorized_bootstrap_invocation(
         "subject_head": expectation.subject_head,
         "workspace": str(target),
         "argv": argv,
+        "command_contract": {
+            "schema_version": _COMMAND_CONTRACT_VERSION,
+            "role": _BOOTSTRAP_ROLE,
+            "capabilities": asdict(capabilities),
+            "approved_executable": executable_binding,
+            "argv_sha256": _command_sha256(argv),
+        },
         "authorization_expectation": asdict(expectation),
         "source_bindings": source_bindings,
         "workspace_bindings": workspace_bindings,
@@ -472,13 +579,11 @@ def execute_authorized_bootstrap(
     )
     if prompt_path.read_bytes() != expected_prompt:
         raise CrewChiefError("bootstrap composite payload is mismatched")
-    argv = invocation.get("argv")
-    if (
-        not isinstance(argv, list)
-        or not argv
-        or any(not isinstance(item, str) or not item for item in argv)
-    ):
-        raise CrewChiefError("bootstrap invocation argv is malformed")
+    argv = _validate_bootstrap_command_contract(
+        invocation,
+        workspace,
+        schema_copy,
+    )
     _consume_receipt(receipt_path, receipt["receipt_id"])
     result = runner(
         list(argv),
@@ -502,6 +607,7 @@ def execute_authorized_bootstrap(
         "frozen_authorization_receipt": _absolute_binding(receipt_copy),
         "composite_payload": _absolute_binding(prompt_path),
         "authorized_invocation_counts": _expected_authorization(expectation),
+        "command_contract": invocation["command_contract"],
         "invocation_attempted": True,
         "invocation_completed": True,
         "returncode": result.returncode,

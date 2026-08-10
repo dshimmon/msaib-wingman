@@ -38,6 +38,22 @@ or certify its own implementation. The v1 controller uses external,
 single-workspace consumption markers rather than a global audit database.
 Model audits occur only at an explicitly governed handoff and never in CI.
 
+## Authorization trust boundary
+
+Crew Chief v1 trusts Maverick's authenticated Mission Control interaction and
+the local operating-system account as the external authorization boundary.
+The package-bound receipt is created only after that external decision and is
+a tamper-evident record of the exact package, schema, subject, scope, and
+expiry. Its content-derived identifier does not independently authenticate
+Maverick, prove human identity, or reject a forged receipt created by a
+malicious process already operating as the trusted local account.
+
+That same-account impersonation risk is explicit residual risk for Maverick's
+acceptance or rejection. V1 does not introduce signing keys, Keychain
+integration, remote identity services, or other cryptographic identity
+infrastructure. A future stronger identity boundary requires separate
+architecture and authorization.
+
 ## Bootstrap boundary
 
 The initial implementation cannot be self-certified. Its local implementation
@@ -45,6 +61,15 @@ commit must be handed to a fresh ordinary Codex reviewer operating read-only
 and stating, “This bootstrap audit is not a Crew Chief audit.” Only a later,
 separately authorized controlled acceptance run may establish that the Crew
 Chief selection and execution path operates as designed.
+
+The ordinary-bootstrap command is constructed internally from the same
+canonical isolation contract as Crew Chief execution, without selecting the
+Crew Chief agent. Preparation binds the resolved Codex executable and exact
+command. Immediately before receipt consumption, execution re-detects the CLI,
+verifies the executable binding, and recomputes and exactly compares every
+required argument, disabled feature, frozen path, output path, and standard-
+input marker. Any omission, addition, duplication, meaningful reordering, or
+weakened control fails before process launch.
 
 This decision does not publish the implementation, make Crew Chief
 operational, complete the mission, or authorize a live model audit.

@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "canary": "CANOPY-7C2F-ATLAS",
+  "record_type": "bootstrap_finding_correction_validation",
+  "subject": {
+    "base_commit": "b1910d0c69a52d73ddde93cb9722f12540c5d1e7",
+    "correction_parent": "e88f25579e2c976c50e3abf49118abadb118f5b9",
+    "correction_commit_binding": "finding_focused_reaudit_package.reviewed_head"
+  },
+  "successful_results": [
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. python -m unittest tests.governance.test_crew_chief.BootstrapAuthorizationTests",
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "duration_seconds": 2.742,
+      "result": "PASS"
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. python -m unittest tests.governance.test_crew_chief",
+      "tests": 87,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "duration_seconds": 51.508,
+      "result": "PASS"
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src OPENAI_API_KEY=repository-governance-offline-placeholder PYTHON_DOTENV_DISABLED=1 python -m unittest tests.governance.test_crew_chief tests.governance.test_repository_governance",
+      "tests": 115,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "duration_seconds": 56.397,
+      "result": "PASS"
+    },
+    {
+      "command": "env OPENAI_API_KEY=test-key PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. python -m unittest discover -s tests/governance -p 'test_*.py'",
+      "tests": 163,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "duration_seconds": 61.714,
+      "result": "PASS",
+      "note": "The key is a non-secret offline test placeholder. Expected Flightline negative-path logs were emitted; the suite remained green."
+    },
+    {
+      "command": "env OPENAI_API_KEY=test-key PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=.:src python -m unittest discover -s tests -t . -p 'test_*.py'",
+      "tests": 392,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "duration_seconds": 68.689,
+      "result": "PASS",
+      "note": "The key is a non-secret offline test placeholder. Expected Flightline and Atlas negative-path diagnostics and bare-Streamlit warnings were emitted; the suite remained green."
+    },
+    {
+      "command": "ruff check tools/crew_chief/bootstrap_authorization.py tools/crew_chief/runner.py tests/governance/test_crew_chief.py tests/governance/test_repository_governance.py",
+      "result": "PASS",
+      "output": "All checks passed!"
+    },
+    {
+      "command": "ruff check tools/crew_chief tests/governance/test_crew_chief.py tools/governance/repository.py",
+      "result": "PASS",
+      "output": "All checks passed!"
+    },
+    {
+      "command": "load_schemas()",
+      "schemas": 6,
+      "result": "PASS",
+      "output": "Validated all six canonical Crew Chief JSON Schemas."
+    },
+    {
+      "command": "bind_bootstrap_service_schema(...); validate_service_schema(...); project_service_schema(bundle_report_schema(...)); validate_service_schema(...) ",
+      "schemas": 2,
+      "result": "PASS",
+      "output": "Validated the exact bootstrap and bundled Crew Chief service-schema forms."
+    }
+  ],
+  "non_product_failures": [
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. python -m unittest discover -s tests/governance -p 'test_*.py'",
+      "tests": 163,
+      "failures": 0,
+      "errors": 1,
+      "duration_seconds": 61.258,
+      "result": "ERROR",
+      "disposition": "One compatibility-import test instantiated the OpenAI client without the required offline placeholder environment variable. No request was sent. The same suite passed after supplying a non-secret dummy test key."
+    },
+    {
+      "command": "env OPENAI_API_KEY=test-key PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=.:src python -m unittest discover -s tests -p 'test_*.py'",
+      "tests": 189,
+      "failures": 0,
+      "errors": 26,
+      "duration_seconds": 62.915,
+      "result": "ERROR",
+      "disposition": "Unittest used the tests directory as its implicit top level and collected products.atlas and wingman modules under incorrect names. The corrected command added '-t .' and passed all 392 tests."
+    },
+    {
+      "command": "ruff check .",
+      "failures": 77,
+      "result": "FAIL",
+      "disposition": "All 77 findings are in unchanged, out-of-scope Atlas, Wingman, Flightline, and legacy test files. The changed-file and established Crew Chief/governance lint scopes both pass. Maverick did not authorize unrelated lint-baseline repairs."
+    }
+  ],
+  "final_checks": [
+    {
+      "command": "python -m tools.governance validate",
+      "result": "PASS",
+      "output": "Repository governance validation passed."
+    },
+    {
+      "command": "git diff --check",
+      "result": "PASS",
+      "output": ""
+    },
+    {
+      "command": "git diff --cached --check",
+      "result": "PASS",
+      "output": ""
+    }
+  ],
+  "model_or_network_invocation_during_correction": false,
+  "receipt_created": false,
+  "fixture_audit_run": false
+}

@@ -7,9 +7,9 @@
 
 - Mission: **governance/crew-chief — Crew Chief Independent Audit**
 - Lifecycle: **active**
-- Authorization gate: `bootstrap blockers reconciled locally; transmission, model invocation, and receipt creation prohibited pending approval of the exact new package binding`
+- Authorization gate: `BOOTSTRAP-003 disputed with explicit residual risk and BOOTSTRAP-004 corrected locally; focused re-audit receipt creation, transmission, and model invocation prohibited pending exact-package approval`
 - Official record: [docs/missions/governance/crew-chief/mission.md](docs/missions/governance/crew-chief/mission.md)
-- Next gate: Obtain Maverick's explicit approval for the exact freshly frozen bootstrap package and deterministic creation of its package-bound receipt before any transmission or model invocation; controlled Crew Chief fixture acceptance remains contingent on a successful bootstrap review.
+- Next gate: Obtain Maverick's explicit approval for the exact compact finding-focused package before receipt creation, transmission, or model invocation; controlled Crew Chief fixture acceptance remains contingent on an accepted bootstrap disposition.
 
 ## Last completed work
 
@@ -21,7 +21,7 @@
 
 | Mission | Role | Branch | Worktree | State | Next gate |
 |---|---|---|---|---|---|
-| `governance/crew-chief` | primary | `codex/crew-chief-v1-build-20260809` | `/Users/davidshimmon/.codex/worktrees/a83e/msaib-wingman` | blocked_bootstrap_reconciled_receipt_control_locally_committed_awaiting_new_bootstrap_transmission_approval | Obtain Maverick's explicit approval of the exact freshly frozen package and deterministic receipt creation before any transmission or invocation. |
+| `governance/crew-chief` | primary | `codex/crew-chief-v1-build-20260809` | `/Users/davidshimmon/.codex/worktrees/a83e/msaib-wingman` | bootstrap_003_disputed_004_corrected_awaiting_focused_reaudit_approval | Report the exact finding-focused package binding and obtain Maverick's explicit approval before receipt creation, transmission, or one finding-focused re-audit. |
 
 ## Canonical homes
 

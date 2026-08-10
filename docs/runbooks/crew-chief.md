@@ -286,29 +286,47 @@ approve it. Approval of those exact bytes is then recorded in a separate
 [`authorization-receipt-v1.schema.json`](../../tools/crew_chief/schemas/authorization-receipt-v1.schema.json)
 artifact. Never insert the receipt into the already-approved package or schema.
 Receipt creation records Maverick's explicit instruction; it does not create,
-infer, or transfer authority. Live conversation text is not an invocation
-control until its complete UTF-8 content hash is bound in a validated receipt.
+infer, authenticate, or transfer authority. The authenticated Mission Control
+interaction and local operating-system account are the v1 external trust
+boundary. Live conversation text is not an invocation control until its
+complete UTF-8 content hash is bound in a validated receipt.
 
-The receipt binds the Canary, Maverick identity, subject HEAD, package and
-service-schema byte sizes and SHA-256 values, audit and envelope IDs, package
-expiry, exact invocation counts, the no-automatic-retry rule, and the complete
-authorization-text hash. Its content-derived receipt ID, schema, subject,
-scope, and expiration must validate before a model process can start. Missing,
-malformed, expired, already consumed, unauthorized, altered, or mismatched
-receipt evidence fails closed. One receipt authorizes exactly one ordinary
-bootstrap invocation and no automatic retry; conditional fixture-audit counts
-are recorded but remain gated on a successful bootstrap verdict.
+The receipt binds the asserted Maverick identity, Canary, subject HEAD, package
+and service-schema byte sizes and SHA-256 values, audit and envelope IDs,
+package expiry, exact invocation counts, the no-automatic-retry rule, and the
+complete authorization-text hash. Its content-derived receipt ID, schema,
+subject, scope, and expiration must validate before a model process can start.
+Missing, malformed, expired, already consumed, altered, or mismatched receipt
+evidence fails closed. The receipt is tamper-evident after the external
+decision; it does not independently prove human identity or detect a forged
+receipt created by a malicious process already trusted as the same local
+account. That residual risk requires Maverick's explicit acceptance or
+rejection. One receipt records exactly one ordinary bootstrap invocation and
+no automatic retry; conditional fixture-audit counts are recorded but remain
+gated on a successful bootstrap verdict.
 
 Use `tools.crew_chief.bootstrap_authorization` to record a later explicit
 approval, prepare a fresh external invocation workspace, and execute only when
 that later authorization includes invocation. Preparation copies the exact
 package, schema, and receipt into frozen paths, verifies the original bindings
-again, and constructs one immutable composite standard-input payload. The
-payload presents the receipt first as a clearly delimited frozen invocation
+again, detects and binds the resolved Codex executable, and internally
+constructs the ordinary-bootstrap command from the canonical isolation
+contract. Callers cannot supply an argv. The command enforces ephemeral
+execution, ignored user configuration and repository rules, strict
+configuration, approval denial, read-only sandboxing, the exact frozen schema
+and output paths, the frozen workspace, all required disabled capabilities,
+ordinary-reviewer selection without Crew Chief, and the standard-input marker.
+
+Execution re-detects capabilities, revalidates the bound executable, and
+recomputes and exactly compares the complete command immediately before
+receipt consumption. Any altered executable or omitted, duplicated, added,
+meaningfully reordered, or weakened control fails before the runner is called.
+Preparation also constructs one immutable composite standard-input payload.
+The payload presents the receipt first as a clearly delimited frozen invocation
 control and then presents the unchanged approved package. The invocation and
 run record bind the absolute source-receipt path, exact size and SHA-256, its
-frozen copy, and the composite payload. Immediately before process launch, an
-atomic receipt-ID consumption marker prevents reuse from another workspace.
+frozen copy, executable contract, and composite payload. An atomic receipt-ID
+consumption marker then prevents reuse from another workspace.
 
 A valid receipt supersedes only the older package snapshot's statement that
 exact-package approval was still pending when the package was built. It does
