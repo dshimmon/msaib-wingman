@@ -75,4 +75,39 @@ required argument, disabled feature, frozen path, output path, and standard-
 input marker. Any omission, addition, duplication, meaningful reordering, or
 weakened control fails before process launch.
 
+The shared isolation contract includes `--skip-git-repo-check`. Crew Chief
+review workspaces are deliberately frozen external evidence directories, not
+Git checkouts; this flag permits that intended subject shape without weakening
+the read-only sandbox, approval denial, ignored configuration and rules,
+disabled-capability inventory, schema binding, output binding, or standard-
+input evidence contract. Capability detection requires the exact flag, and
+normal and bootstrap execution reject a prepared command that omits, changes,
+duplicates, adds, or meaningfully reorders any canonical control.
+
+## Operational audit pools
+
+One pool may prepare or run several independent Crew Chief subjects with a
+bounded standard-library thread executor. Each manifest job names one absolute
+audit envelope, one unique job ID, an optional unique external workspace, and
+an optional per-job fresh-session fallback decision. The default concurrency
+is two; operators may select one through four. Additional jobs remain queued.
+
+The controller validates the complete manifest, every envelope and expiry,
+repository bindings, external output paths, workspace uniqueness, and path
+overlap before any job can launch. It then creates a separate frozen evidence
+tree, prompt, schemas, invocation, output directory, and atomic consumption
+marker for every job. One failed job does not cancel another, and there is no
+automatic retry. Pool reports retain manifest order, record requested and
+observed concurrency, per-job bindings, verdicts, errors, timestamps, and token
+counts when exposed by the CLI, and fail overall when any job fails or blocks.
+They do not combine or synthesize findings across subjects.
+
+Concurrency controls latency, not cost. Every executed job remains a distinct
+authenticated model invocation with its own token use, so total cost is
+approximately additive. The default of two balances throughput against local
+resource and service pressure; increasing it requires an operator decision and
+does not expand audit authority. Pool execution is operational evidence, not
+independent certification, approval, publication authority, or mission
+completion.
+
 This decision does not itself authorize publication or a live model audit.

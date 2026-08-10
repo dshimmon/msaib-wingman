@@ -435,3 +435,63 @@ The first test attempt used the system Python 3.9 interpreter and stopped at
 import because `tomllib` is unavailable there; no test body ran. The first
 repository-governance run under Python 3.12 then reported only the three
 expected stale generated views. Generation and the exact rerun passed.
+
+## 2026-08-10 operational launcher and pool implementation evidence
+
+Maverick authorized one bounded operational maintenance pass after Crew Chief
+had already been merged to `origin/main` at repository base
+`509506cddffba93b496a7d74f930fa04293f9fba`. The implementation used the clean
+isolated branch `codex/crew-chief-operational-pool-20260810`; it did not touch
+the protected original checkout or its ten unrelated tracked modifications.
+
+The shared isolation command now requires `--skip-git-repo-check` immediately
+after `codex exec`. That is the intended accommodation for frozen external
+review workspaces, which are evidence directories rather than Git checkouts.
+It does not weaken `--ephemeral`, ignored user configuration and rules, strict
+configuration, approval denial, read-only sandboxing, exact schema/output/
+workspace paths, explicit disabled capabilities, project-agent selection when
+available, or the standard-input marker. Exact help-token detection rejects a
+lookalike. Negative tests remove, duplicate, add, reorder, weaken, or replace
+canonical command and executable controls and verify that the model-process
+runner is never called.
+
+The new standard-library concurrent orchestrator accepts a strict absolute-
+path manifest and produces one immutable review workspace and evidence tree per
+job. It prevalidates all jobs, current unexpired envelopes, Git bindings,
+external paths, and workspace overlap before launch. Concurrency defaults to
+two and is constrained to one through four. Additional work remains queued;
+each worker is attempted once; one failure does not cancel another; report
+records remain in manifest order. The canonical pool report binds the
+manifest, invocations, reports, and run records and records execution modes,
+statuses, verdicts, errors, timestamps, token counts when available, requested
+and observed concurrency, totals, and zero retries. It never synthesizes
+findings across subjects.
+
+Deterministic validation evidence:
+
+- `env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src python -m
+  unittest -q tests.governance.test_crew_chief
+  tests.governance.test_crew_chief_pool
+  tests.governance.test_repository_governance` passed 132 tests: 91 Crew Chief,
+  nine pool, and 32 repository-governance tests.
+- `env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src python -m
+  unittest discover -s tests/governance -p 'test_*.py'` passed 180 tests in
+  134.660 seconds.
+- The first full-repository command omitted unittest's required `-t .` and
+  ended with 26 collection import errors before the affected module bodies
+  ran. The corrected `env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0
+  PYTHONPATH=src python -m unittest discover -s tests -t . -p 'test_*.py'`
+  passed all 409 tests in 141.767 seconds.
+- `python -m tools.governance generate` regenerated derived views, and
+  `python -m tools.governance validate` passed.
+- Canonical loading validated eight Crew Chief Schemas:
+  `audit-envelope-v1`, `authorization-receipt-v1`, `bootstrap-report-v1`,
+  `finding-v1`, `pool-manifest-v1`, `pool-report-v1`, `reconciliation-v1`, and
+  `report-v1`.
+- Ruff passed the complete changed Python scope. `git diff --check` passed.
+
+Every deterministic model path used injected fake process runners. No model,
+network service, or live pool was invoked. A successful implementation commit
+does not yet prove operation, acceptance, or independent certification. The
+only remaining authorized execution gate is one tiny synthetic single-job
+smoke audit against the committed implementation, with zero retry.

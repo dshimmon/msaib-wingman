@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import os
+import re
 import shutil
 import subprocess
 from dataclasses import asdict, dataclass
@@ -100,6 +101,7 @@ _REQUIRED_EXEC_FLAGS = frozenset(
         "--output-last-message",
         "--output-schema",
         "--sandbox",
+        "--skip-git-repo-check",
         "--strict-config",
     }
 )
@@ -135,6 +137,13 @@ def _validate_capabilities(capabilities: CodexCapabilities) -> None:
         )
     if not capabilities.shell_tool_control:
         raise CrewChiefError("Codex shell-tool disable control is unavailable")
+
+
+def _help_has_flag(help_text: str, flag: str) -> bool:
+    return re.search(
+        rf"(?<![A-Za-z0-9_-]){re.escape(flag)}(?![A-Za-z0-9_-])",
+        help_text,
+    ) is not None
 
 
 def _completed(
@@ -190,7 +199,7 @@ def detect_codex_capabilities(
             features.append(fields[0])
     help_text = help_result.stdout
     flags = tuple(
-        sorted(flag for flag in _REQUIRED_EXEC_FLAGS if flag in help_text)
+        sorted(flag for flag in _REQUIRED_EXEC_FLAGS if _help_has_flag(help_text, flag))
     )
     if set(flags) != set(_REQUIRED_EXEC_FLAGS):
         missing = sorted(_REQUIRED_EXEC_FLAGS - set(flags))
@@ -207,7 +216,7 @@ def detect_codex_capabilities(
         exec_flags=flags,
         features=tuple(sorted(set(features))),
         shell_tool_control=True,
-        custom_agent_selector="--agent" in help_text,
+        custom_agent_selector=_help_has_flag(help_text, "--agent"),
     )
     _validate_capabilities(capabilities)
     return capabilities
@@ -225,6 +234,7 @@ def _build_isolated_launch_command(
     command = [
         capabilities.executable,
         "exec",
+        "--skip-git-repo-check",
         "--ephemeral",
         "--ignore-user-config",
         "--ignore-rules",

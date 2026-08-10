@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import ast
+import copy
 import shutil
 import subprocess
 import tempfile
@@ -1555,6 +1556,7 @@ class CrewChiefRunnerTests(unittest.TestCase):
         command = build_launch_command(self.capabilities(), workspace, schema, report)
         self.assertIsInstance(command, list)
         self.assertIn("--ephemeral", command)
+        self.assertIn("--skip-git-repo-check", command)
         self.assertIn("--ignore-user-config", command)
         self.assertIn("read-only", command)
         self.assertIn('approval_policy="never"', command)
@@ -1571,6 +1573,75 @@ class CrewChiefRunnerTests(unittest.TestCase):
         self.assertIn(str(workspace), command)
         self.assertNotIn("--agent", command)
         self.assertNotIn(";", command)
+
+    def test_bootstrap_uses_the_same_trusted_directory_control(self):
+        command = build_ordinary_bootstrap_launch_command(
+            self.capabilities(),
+            Path("/tmp/frozen-non-git-workspace"),
+            Path("/tmp/schema.json"),
+            Path("/tmp/report.json"),
+        )
+        self.assertEqual(command[0:3], [
+            "/fixture/codex",
+            "exec",
+            "--skip-git-repo-check",
+        ])
+        self.assertNotIn("--agent", command)
+
+    def test_normal_command_tampering_fails_before_process_runner(self):
+        invocation = prepare_review_workspace(
+            self.envelope_path,
+            Path(self.temporary.name) / "tampered-command-review",
+            detector=lambda _: self.capabilities(selector=True),
+            clock=lambda: FIXED_TIME,
+        )
+
+        def omit(value):
+            value["argv"].remove("--skip-git-repo-check")
+
+        def duplicate(value):
+            position = value["argv"].index("--skip-git-repo-check")
+            value["argv"].insert(position, "--skip-git-repo-check")
+
+        def add(value):
+            value["argv"].insert(-1, "--future-control")
+
+        def reorder(value):
+            position = value["argv"].index("--ephemeral")
+            value["argv"][position], value["argv"][position + 1] = (
+                value["argv"][position + 1],
+                value["argv"][position],
+            )
+
+        def weaken(value):
+            position = value["argv"].index("read-only")
+            value["argv"][position] = "workspace-write"
+
+        def alter_executable(value):
+            value["capabilities"]["executable"] = "/fixture/altered-codex"
+
+        for label, mutation in (
+            ("omitted", omit),
+            ("duplicated", duplicate),
+            ("added", add),
+            ("reordered", reorder),
+            ("weakened", weaken),
+            ("altered executable", alter_executable),
+        ):
+            with self.subTest(case=label):
+                candidate = copy.deepcopy(invocation)
+                mutation(candidate)
+                fake_runner = mock.Mock()
+                with self.assertRaisesRegex(
+                    CrewChiefError, "invocation argv changed after preparation"
+                ):
+                    execute_prepared_review(
+                        self.envelope_path,
+                        candidate,
+                        runner=fake_runner,
+                        clock=lambda: FIXED_TIME,
+                    )
+                fake_runner.assert_not_called()
 
     def test_every_known_prohibited_feature_is_explicitly_disabled(self):
         capabilities = self.capabilities()
@@ -1838,6 +1909,53 @@ class CrewChiefRunnerTests(unittest.TestCase):
             "tools.crew_chief.runner.shutil.which", return_value="/fixture/codex"
         ):
             with self.assertRaisesRegex(CrewChiefError, "shell-tool"):
+                detect_codex_capabilities("codex", runner=fake_runner)
+
+    def test_missing_trusted_directory_control_fails_closed(self):
+        def fake_runner(arguments, **_kwargs):
+            if arguments[-1] == "--version":
+                return subprocess.CompletedProcess(
+                    arguments, 0, "codex-cli fixture\n", ""
+                )
+            if arguments[-2:] == ["features", "list"]:
+                return subprocess.CompletedProcess(
+                    arguments, 0, "shell_tool stable true\n", ""
+                )
+            flags = _REQUIRED_EXEC_FLAGS - {"--skip-git-repo-check"}
+            return subprocess.CompletedProcess(
+                arguments, 0, " ".join(sorted(flags)), ""
+            )
+
+        with mock.patch(
+            "tools.crew_chief.runner.shutil.which", return_value="/fixture/codex"
+        ):
+            with self.assertRaisesRegex(
+                CrewChiefError, "--skip-git-repo-check"
+            ):
+                detect_codex_capabilities("codex", runner=fake_runner)
+
+    def test_trusted_directory_capability_requires_the_exact_flag(self):
+        def fake_runner(arguments, **_kwargs):
+            if arguments[-1] == "--version":
+                return subprocess.CompletedProcess(
+                    arguments, 0, "codex-cli fixture\n", ""
+                )
+            if arguments[-2:] == ["features", "list"]:
+                return subprocess.CompletedProcess(
+                    arguments, 0, "shell_tool stable true\n", ""
+                )
+            flags = _REQUIRED_EXEC_FLAGS - {"--skip-git-repo-check"}
+            help_text = " ".join(
+                [*sorted(flags), "--skip-git-repo-check-unsafe"]
+            )
+            return subprocess.CompletedProcess(arguments, 0, help_text, "")
+
+        with mock.patch(
+            "tools.crew_chief.runner.shutil.which", return_value="/fixture/codex"
+        ):
+            with self.assertRaisesRegex(
+                CrewChiefError, "--skip-git-repo-check"
+            ):
                 detect_codex_capabilities("codex", runner=fake_runner)
 
     def test_failed_or_malformed_feature_detection_fails_closed(self):

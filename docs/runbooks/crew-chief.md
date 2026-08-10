@@ -89,9 +89,11 @@ PYTHONDONTWRITEBYTECODE=1 python -m tools.crew_chief run \
 The controller feature-detects the installed Codex CLI with version, `exec
 --help`, and `features list`. It requires ephemeral execution, explicit
 read-only sandboxing, approval denial, structured output, ignored user
-configuration, ignored repository rules, exact output capture, and explicit
+configuration, ignored repository rules, `--skip-git-repo-check` for the
+intentionally non-Git frozen workspace, exact output capture, and explicit
 feature-disable controls. It refuses automated execution if any required
-control or the supported shell-tool disable feature is absent. Failed,
+control or the supported shell-tool disable feature is absent. The exact flag
+must be present; a lookalike flag does not satisfy detection. Failed,
 malformed, or duplicate feature evidence fails closed.
 
 The 2026-08-09 acceptance probe of `codex-cli 0.147.0-alpha.6.5` classified all
@@ -172,6 +174,98 @@ authentication output, supplies a minimal environment, uses a subprocess argv
 array rather than a shell string, captures redacted stderr, and compares the
 Git-visible repository state before and after review. A changed state or
 changed bound evidence invalidates the run.
+
+## Prepare or run an independent audit pool
+
+Use a pool only when the authorization names every audit subject. The manifest
+is strict JSON. Each envelope and optional workspace must be an absolute path;
+job IDs must be unique and safe as directory names. Omitting `workspace`
+selects the deterministic `<output-root>/<job-id>` path. The fallback decision
+is scoped to the named job and defaults to false.
+
+```json
+{
+  "schema_version": "1.0",
+  "jobs": [
+    {
+      "job_id": "atlas-intake",
+      "audit_envelope": "/private/tmp/atlas-intake/audit-envelope.json"
+    },
+    {
+      "job_id": "wingman-ledger",
+      "audit_envelope": "/private/tmp/wingman-ledger/audit-envelope.json",
+      "workspace": "/private/tmp/crew-chief-ledger-review",
+      "allow_fresh_session_fallback": true
+    }
+  ]
+}
+```
+
+Preparation creates isolated, non-Git review workspaces and the canonical pool
+report without invoking a model:
+
+```text
+PYTHONDONTWRITEBYTECODE=1 python -m tools.crew_chief pool \
+  /absolute/jobs.json \
+  --output-root /private/tmp/crew-chief-pool-<run-id> \
+  --max-concurrency 2
+```
+
+Execution requires the additional authorization represented by `--execute`:
+
+```text
+PYTHONDONTWRITEBYTECODE=1 python -m tools.crew_chief pool \
+  /absolute/jobs.json \
+  --output-root /private/tmp/crew-chief-pool-<run-id> \
+  --max-concurrency 2 \
+  --execute
+```
+
+Concurrency defaults to two and must be between one and four. Excess jobs wait
+in the executor queue. Before any job launches, the pool validates the entire
+manifest, every current unexpired envelope, all Git bindings, the external
+output root, every workspace, and every workspace overlap. Structural failure
+therefore launches zero jobs. Preparation failure also stops the launch phase.
+
+Once launched, jobs are fail-independent: a failed, blocked, malformed, or
+timed-out job is recorded without cancelling the others. Each job is attempted
+once. There is no retry loop. Every job has separate frozen inputs, canonical
+agent copy, schemas, prompt, invocation, output, diagnostics, run record, and
+consumption marker. Findings are never synthesized across jobs, and report
+entries stay in input order even when completion order differs.
+
+`pool-report.json` records requested and effective concurrency, maximum
+observed concurrency, zero retries, totals, per-job audit and envelope IDs,
+execution modes, statuses, verdicts, artifact bindings, categorized errors,
+start and completion times, and token counts when the installed CLI reports
+them. The CLI exits nonzero if any executed job returns `FAIL`, `BLOCKED`, or a
+control/runner error. `PASS_WITH_ADVISORIES` is accepted but still requires the
+normal finding reconciliation.
+
+Every executed pool job is a separate authenticated model invocation. Token
+use and cost are additive; increasing concurrency reduces waiting time but
+does not reduce work or grant more authority. The default of two is the normal
+operating balance. Pool evidence proves only the recorded executions. It is
+not independent certification, Maverick approval, publication authority, or
+mission completion.
+
+## Canonical schema inventory
+
+Crew Chief freezes and validates these versioned contracts from the one
+canonical directory `tools/crew_chief/schemas/`:
+
+- `audit-envelope-v1.schema.json`
+- `authorization-receipt-v1.schema.json`
+- `bootstrap-report-v1.schema.json`
+- `finding-v1.schema.json`
+- `pool-manifest-v1.schema.json`
+- `pool-report-v1.schema.json`
+- `reconciliation-v1.schema.json`
+- `report-v1.schema.json`
+
+The pool manifest and report schemas govern orchestration only. Every model
+result still validates against the canonical per-audit report and finding
+contracts; the pool does not replace them with a combined finding schema.
 
 ## Findings and reconciliation
 

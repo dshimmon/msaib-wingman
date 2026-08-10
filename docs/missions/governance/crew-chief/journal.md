@@ -223,3 +223,46 @@ for exactly one finding-focused independent re-audit.
   commands passed.
 
 The next gate is Maverick's selection and authorization of a mission.
+
+## 2026-08-10 — Operational launcher and audit-pool implementation
+
+- Repeated `CANOPY-7C2F-ATLAS` and created the authorized isolated worktree
+  from `origin/main` at `509506cddffba93b496a7d74f930fa04293f9fba`.
+  The protected original checkout retained the same ten tracked modifications
+  and exact file hashes throughout setup and implementation.
+- Added `--skip-git-repo-check` to the single normal/bootstrap isolation
+  command builder. Exact capability detection now requires that flag and
+  rejects lookalikes. Normal execution retains its complete prepared-command
+  equality check, while the bootstrap wrapper continues its immediate
+  pre-consumption reconstruction and executable binding.
+- Added the bounded `tools.crew_chief pool` orchestration command, strict pool
+  manifest and report schemas, default concurrency two with an allowed range
+  of one through four, complete pre-launch validation, isolated per-job
+  workspaces and evidence, stable input-order reporting, categorized errors,
+  zero automatic retry, and fail-independent workers.
+- Added deterministic fake-runner coverage for external non-Git workspaces,
+  exact launcher controls and negative tampering, malformed manifests,
+  duplicate IDs, path collisions, invalid and expired envelopes, concurrency
+  boundaries and observed concurrency, queued work, stable ordering,
+  independent failures, per-job fallback authorization, token accounting,
+  report validation, and absence of retries.
+- Updated GOV-004 and the canonical runbook with the launcher control, pool
+  manifest and CLI examples, schema inventory, isolation model, cost and
+  concurrency tradeoffs, and the distinction between operational evidence and
+  independent certification.
+- Passed 91 Crew Chief tests, nine dedicated pool tests, and 32 repository-
+  governance tests together (132 total). Complete governance discovery passed
+  180 tests in 134.660 seconds. Complete repository discovery passed 409 tests
+  in 141.767 seconds using the required unittest repository top-level.
+- Preserved one setup-only full-suite attempt that omitted `-t .` and therefore
+  produced 26 collection import errors before those module bodies ran; the
+  corrected complete command passed. Expected Flightline cancellation and
+  time-budget diagnostics, Atlas diagnostic-failure fixtures, and bare
+  Streamlit warnings appeared during the green broad suites.
+- Validated all eight canonical Crew Chief JSON Schemas. Repository governance,
+  governance generation, changed-scope Ruff, and Git whitespace checks passed.
+
+No model or network service was invoked, no live pool was run, and no push,
+merge, publication, successor activation, or capability-health claim occurred.
+The next authorized gate is the exact implementation commit followed by one
+tiny synthetic, single-job live smoke audit with zero retry.

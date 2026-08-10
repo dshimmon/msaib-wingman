@@ -22,6 +22,7 @@ from tools.crew_chief.core import (
     read_json,
     write_canonical_json,
 )
+from tools.crew_chief.pool import pool_exit_code, run_pool
 from tools.crew_chief.runner import run_audit
 from tools.crew_chief.validation import validate_report
 
@@ -80,6 +81,15 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--codex", default="codex")
     run.add_argument("--execute", action="store_true")
     run.add_argument("--allow-fresh-session-fallback", action="store_true")
+
+    pool = commands.add_parser(
+        "pool", help="prepare or run a bounded concurrent audit pool"
+    )
+    pool.add_argument("manifest", type=Path)
+    pool.add_argument("--output-root", type=Path, required=True)
+    pool.add_argument("--max-concurrency", type=int, default=2)
+    pool.add_argument("--codex", default="codex")
+    pool.add_argument("--execute", action="store_true")
 
     validate = commands.add_parser(
         "validate-report", help="validate a structured Crew Chief report"
@@ -160,6 +170,7 @@ def _reconcile(args: argparse.Namespace) -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    exit_code = 0
     try:
         if args.command == "prepare":
             result = _prepare(args)
@@ -171,6 +182,15 @@ def main(argv: list[str] | None = None) -> int:
                 allow_fresh_session_fallback=args.allow_fresh_session_fallback,
                 codex_executable=args.codex,
             )
+        elif args.command == "pool":
+            result = run_pool(
+                args.manifest,
+                args.output_root,
+                max_concurrency=args.max_concurrency,
+                execute=args.execute,
+                codex_executable=args.codex,
+            )
+            exit_code = pool_exit_code(result)
         elif args.command == "validate-report":
             result = _validate_report(args)
         else:
@@ -179,7 +199,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Crew Chief control failed: {error}", file=sys.stderr)
         return 2
     print(json.dumps(result, indent=2, sort_keys=True))
-    return 0
+    return exit_code
 
 
 if __name__ == "__main__":

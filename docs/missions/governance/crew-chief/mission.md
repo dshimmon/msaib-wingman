@@ -57,6 +57,11 @@
       "date": "2026-08-10",
       "authority": "Maverick",
       "scope": "Authorized governance simplification, preservation of FOCUSED-RUN-001 evidence, completion of governance/crew-chief with the frozen-workspace launcher limitation and incomplete acceptance evidence stated honestly, and exactly one local closeout commit; prohibited push, merge, publication, main modification, model invocation, and successor activation."
+    },
+    {
+      "date": "2026-08-10",
+      "authority": "Maverick",
+      "scope": "Authorized operational Crew Chief maintenance: add the canonical frozen-workspace trusted-directory control, implement a bounded concurrent audit pool and deterministic validation, make exactly one implementation commit, then perform exactly one tiny synthetic live smoke audit and, only if successful, one evidence-only acceptance commit; prohibited live pool execution, push, merge, publication, CI model access, and successor activation."
     }
   ],
   "baseline_commit": "b1910d0c69a52d73ddde93cb9722f12540c5d1e7",
@@ -69,17 +74,17 @@
     "f34c7ad810a50b36be453493d17fee8ac4c3ea00",
     "6658076e8c9440665245793621edf1e309bedfdf"
   ],
-  "pushed": false,
-  "merged": false,
+  "pushed": true,
+  "merged": true,
   "official_decisions": [
     "docs/decisions/governance/roadmap-sequencing.md",
     "docs/decisions/governance/repository-records.md",
     "docs/decisions/governance/crew-chief-audit.md"
   ],
   "workstream": {
-    "owner_session": "Codex Crew Chief closeout authorized by Maverick on 2026-08-10",
-    "branch": "codex/crew-chief-v1-build-20260809",
-    "worktree": "/Users/davidshimmon/.codex/worktrees/a83e/msaib-wingman",
+    "owner_session": "Codex Crew Chief operational maintenance authorized by Maverick on 2026-08-10",
+    "branch": "codex/crew-chief-operational-pool-20260810",
+    "worktree": "/Users/davidshimmon/.codex/worktrees/crew-chief-operational-pool-20260810/msaib-wingman",
     "writable_scope": [
       ".codex/agents/crew-chief.toml",
       ".github/workflows/governance.yml",
@@ -96,12 +101,13 @@
       "docs/roadmap.md",
       "docs/runbooks/crew-chief.md",
       "tests/governance/test_crew_chief.py",
+      "tests/governance/test_crew_chief_pool.py",
       "tests/governance/test_repository_governance.py",
       "tools/crew_chief/",
       "tools/governance/repository.py"
     ],
-    "state": "completed_by_maverick_with_accepted_limitations",
-    "next_gate": "Maverick selects and authorizes a mission."
+    "state": "completed_with_authorized_operational_maintenance",
+    "next_gate": "Complete the authorized deterministic implementation gate, then the single synthetic smoke gate."
   },
   "next_gate": "Maverick selects and authorizes a mission.",
   "supersedes": null,
@@ -116,14 +122,21 @@ Lifecycle: **completed by Maverick with accepted limitations**. The retained
 `portfolio_primary` value is historical metadata and does not make Crew Chief
 the current primary. Call sign: **CREW-CHIEF**.
 
-Crew Chief v1 is implemented at
+Crew Chief v1 was implemented at
 `6658076e8c9440665245793621edf1e309bedfdf`, and the previously recorded
 deterministic suites passed. The full ordinary bootstrap audit completed with
 `FAIL`; it was not a Crew Chief audit. The later finding-focused re-audit did
 not complete because the frozen external workspace was rejected before
 service execution: the canonical command omitted `--skip-git-repo-check`.
-The seeded-defect and corrected-fixture audits therefore did not run. Crew
-Chief is not independently acceptance-certified or proven operational.
+The seeded-defect and corrected-fixture audits therefore did not run.
+
+Maverick subsequently authorized bounded operational maintenance to add that
+exact trusted-directory accommodation to the shared normal/bootstrap command,
+require it during capability detection and tamper validation, and add an
+isolated concurrent audit pool. Deterministic implementation does not by
+itself prove live operation. Capability health remains maintenance-pending
+until the one authorized tiny synthetic smoke audit succeeds and its evidence
+is preserved. No independent certification is claimed.
 
 Maverick accepted the residual risk that a malicious process already operating
 as the trusted local operating-system account could impersonate Maverick to the

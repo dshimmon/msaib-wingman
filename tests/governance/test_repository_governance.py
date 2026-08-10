@@ -446,7 +446,17 @@ _expose(__name__, "knowledge")
         self.assertIn("Implementation authority: **none**", current)
         self.assertIn("Portfolio-primary: `none`", context)
         self.assertIn("governance/crew-chief", current)
-        self.assertIn("committed=yes; pushed=no; merged=no", index)
+        crew_chief = next(
+            record
+            for record in self.missions
+            if record.metadata["id"] == "governance/crew-chief"
+        )
+        delivery = (
+            "committed=yes; "
+            f"pushed={'yes' if crew_chief.metadata['pushed'] else 'no'}; "
+            f"merged={'yes' if crew_chief.metadata['merged'] else 'no'}"
+        )
+        self.assertIn(delivery, index)
 
 
 if __name__ == "__main__":
