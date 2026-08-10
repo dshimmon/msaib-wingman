@@ -6,7 +6,8 @@
     "branch": "codex/crew-chief-v1-build-20260809",
     "correction_parent": "82c5952e64eb8fe5638701fef1f9d289b7735d82",
     "acceptance_readiness_parent": "3e4edff5cc5e9b9810827331ca1024fd14c8f875",
-    "acceptance_readiness_commit": "1cddd1d65156d69053b30564c00343b3843cbe66"
+    "acceptance_readiness_commit": "1cddd1d65156d69053b30564c00343b3843cbe66",
+    "schema_compatibility_parent": "0f7057896d2abfa9d04daa83e332f2015123c154"
   },
   "acceptance_readiness": {
     "objective": "Reconcile closeout authority and make the fail-closed CLI policy compatible with the complete enabled inventory of the installed Codex CLI.",
@@ -29,6 +30,99 @@
       "finding_citation_binding": "resolved_in_correction_candidate"
     }
   },
+  "schema_compatibility_correction": {
+    "objective": "Project the ordinary bootstrap and bundled Crew Chief canonical contracts into strict Codex service schemas, fail closed on the exact final payload, and retain full canonical post-generation validation.",
+    "authenticated_bootstrap_request_rejected_before_model_generation": true,
+    "bootstrap_reviews_completed": 0,
+    "crew_chief_acceptance_audits_completed": 0,
+    "bootstrap_verdict_produced": false,
+    "old_package_and_consent_obsolete": true,
+    "old_package_size_bytes": 767450,
+    "old_package_sha256": "21acb4c941a200ff20d7c2d7a1037e7ce007a8d307e73cc581fcc799adb71d51",
+    "bootstrap_and_bundled_service_schemas_validate_offline": true,
+    "final_payload_checked_before_process_runner": true,
+    "canonical_post_generation_validation_preserved": true,
+    "model_or_network_invocation_during_correction": false
+  },
+  "schema_compatibility_results": [
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 python -c 'from tools.crew_chief.validation import load_schemas; schemas = load_schemas(); print(\"Validated canonical JSON for %d Crew Chief schemas: %s\" % (len(schemas), \", \".join(sorted(schemas))))'",
+      "schemas": 5,
+      "failures": 0,
+      "errors": 0,
+      "duration_seconds": 0.3,
+      "result": "PASS",
+      "output": "Validated canonical JSON for 5 Crew Chief schemas: audit-envelope-v1.schema.json, bootstrap-report-v1.schema.json, finding-v1.schema.json, reconciliation-v1.schema.json, report-v1.schema.json"
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 python -c 'from pathlib import Path; from tools.crew_chief.core import read_json; from tools.crew_chief.service_schema import bind_bootstrap_service_schema, bundle_report_schema, project_service_schema, validate_service_schema; root = Path(\"tools/crew_chief/schemas\"); bootstrap = bind_bootstrap_service_schema(read_json(root / \"bootstrap-report-v1.schema.json\"), audit_id=\"a\" * 64, envelope_id=\"b\" * 64, reviewed_commit=\"0f7057896d2abfa9d04daa83e332f2015123c154\"); crew = project_service_schema(bundle_report_schema(root)); validate_service_schema(bootstrap); validate_service_schema(crew); print(\"Validated final bootstrap and bundled Crew Chief service schemas.\")'",
+      "schemas": 2,
+      "failures": 0,
+      "errors": 0,
+      "duration_seconds": 0.2,
+      "result": "PASS",
+      "output": "Validated final bootstrap and bundled Crew Chief service schemas."
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 python -m unittest tests.governance.test_crew_chief",
+      "tests": 74,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "duration_seconds": 52.659,
+      "result": "PASS"
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src OPENAI_API_KEY=repository-governance-offline-placeholder PYTHON_DOTENV_DISABLED=1 python -m unittest tests.governance.test_crew_chief tests.governance.test_repository_governance",
+      "tests": 102,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "duration_seconds": 58.615,
+      "result": "PASS"
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src OPENAI_API_KEY=repository-governance-offline-placeholder PYTHON_DOTENV_DISABLED=1 python -m unittest discover -s tests/governance -t . -p 'test_*.py'",
+      "tests": 150,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "duration_seconds": 66.615,
+      "result": "PASS",
+      "note": "Expected negative-path Flightline diagnostics were emitted; the suite remained green."
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src OPENAI_API_KEY=repository-governance-offline-placeholder PYTHON_DOTENV_DISABLED=1 python -m unittest discover -s tests -t . -p 'test_*.py'",
+      "tests": 379,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "duration_seconds": 73.161,
+      "result": "PASS",
+      "note": "Expected negative-path Flightline and Atlas diagnostics and bare-Streamlit warnings were emitted; the suite remained green."
+    }
+  ],
+  "schema_compatibility_development_runs": [
+    {
+      "command": "initial canonical-schema one-liner",
+      "tests": 0,
+      "failures": 0,
+      "errors": 1,
+      "duration_seconds": 0.1,
+      "result": "ERROR",
+      "disposition": "The shell-safe Python reporting expression had a quoting SyntaxError before schema loading. The command was corrected and passed; no product validation ran or failed in this attempt."
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src OPENAI_API_KEY=repository-governance-offline-placeholder PYTHON_DOTENV_DISABLED=1 python -m unittest tests.governance.test_crew_chief tests.governance.test_repository_governance",
+      "tests": 102,
+      "failures": 1,
+      "errors": 0,
+      "skips": 0,
+      "duration_seconds": 58.458,
+      "result": "FAIL",
+      "disposition": "The repository-governance assertion still expected the superseded pre-rejection mission-state phrase. It was updated within the authorized record reconciliation, and the exact command then passed all 102 tests."
+    }
+  ],
   "live_model_audit_performed": false,
   "model_or_network_invocation_during_tests": false,
   "results": [

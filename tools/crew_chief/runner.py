@@ -29,6 +29,13 @@ from tools.crew_chief.core import (
     write_canonical_json,
 )
 from tools.crew_chief.git_evidence import git_state
+from tools.crew_chief.service_schema import (
+    bundle_report_schema,
+    normalize_service_output,
+    project_service_schema,
+    validate_service_instance,
+    validate_service_schema,
+)
 from tools.crew_chief.validation import validate_report
 
 
@@ -259,15 +266,7 @@ def _copy_regular_tree(source: Path, target: Path) -> None:
 
 
 def _bundled_report_schema(frozen_root: Path) -> dict[str, Any]:
-    schema_root = frozen_root / "controls" / "schemas"
-    report = read_json(schema_root / "report-v1.schema.json")
-    finding = read_json(schema_root / "finding-v1.schema.json")
-    finding.pop("$schema", None)
-    finding.pop("$id", None)
-    finding_definitions = finding.pop("$defs")
-    report["$defs"] = {**finding_definitions, "finding": finding}
-    report["properties"]["findings"]["items"] = {"$ref": "#/$defs/finding"}
-    return report
+    return bundle_report_schema(frozen_root / "controls" / "schemas")
 
 
 def _embedded_evidence(frozen_root: Path) -> str:
@@ -385,9 +384,14 @@ def prepare_review_workspace(
         agent_path,
         frozen_agent.read_bytes(),
     )
-    bundled_schema = _bundled_report_schema(frozen_root)
+    canonical_schema = _bundled_report_schema(frozen_root)
+    service_schema = project_service_schema(canonical_schema)
+    canonical_schema_path = (
+        target / "schemas" / "crew-chief-canonical-report.schema.json"
+    )
     schema_path = target / "schemas" / "crew-chief-report.schema.json"
-    write_canonical_json(schema_path, bundled_schema)
+    write_canonical_json(canonical_schema_path, canonical_schema)
+    write_canonical_json(schema_path, service_schema)
     report_output = target / "output" / "crew-chief-report.json"
     capabilities = detector(codex_executable)
     mode = (
@@ -409,12 +413,17 @@ def prepare_review_workspace(
         "capabilities": asdict(capabilities),
         "argv": command,
         "prompt_path": str(prompt_path),
+        "canonical_schema_path": str(canonical_schema_path),
         "schema_path": str(schema_path),
         "report_path": str(report_output),
         "workspace_bindings": [
             bind_file(instructions_path, "AGENTS.md"),
             bind_file(agent_path, ".codex/agents/crew-chief.toml"),
             bind_file(prompt_path, "audit-instructions.md"),
+            bind_file(
+                canonical_schema_path,
+                "schemas/crew-chief-canonical-report.schema.json",
+            ),
             bind_file(schema_path, "schemas/crew-chief-report.schema.json"),
         ],
         "live_audit_performed": False,
@@ -516,10 +525,15 @@ def execute_prepared_review(
     if invocation.get("execution_mode") != expected_mode:
         raise CrewChiefError("review invocation execution mode is invalid")
     prompt_path = workspace / "audit-instructions.md"
+    canonical_schema_path = (
+        workspace / "schemas" / "crew-chief-canonical-report.schema.json"
+    )
     schema_path = workspace / "schemas" / "crew-chief-report.schema.json"
     report_path = workspace / "output" / "crew-chief-report.json"
     if (
         Path(invocation.get("prompt_path", "")).resolve() != prompt_path
+        or Path(invocation.get("canonical_schema_path", "")).resolve()
+        != canonical_schema_path
         or Path(invocation.get("schema_path", "")).resolve() != schema_path
         or Path(invocation.get("report_path", "")).resolve() != report_path
     ):
@@ -533,6 +547,10 @@ def execute_prepared_review(
     if not isinstance(bindings, list):
         raise CrewChiefError("review workspace bindings are invalid")
     _verify_workspace_bindings(workspace, bindings)
+    service_schema = read_json(schema_path)
+    if not isinstance(service_schema, dict):
+        raise CrewChiefError("review service schema is invalid")
+    validate_service_schema(service_schema)
     if invocation["execution_mode"] == "fresh-session-fallback" and not allow_fresh_session_fallback:
         raise CrewChiefError(
             "installed CLI has no custom-agent selector; fresh-session fallback "
@@ -589,10 +607,20 @@ def execute_prepared_review(
     verify_envelope(envelope_path, clock=clock)
     if result.returncode != 0:
         raise CrewChiefError(f"Codex review failed with exit code {result.returncode}")
-    report = read_json(report_path)
-    if not isinstance(report, dict):
+    service_report = read_json(report_path)
+    if not isinstance(service_report, dict):
         raise CrewChiefError("Crew Chief report must be a JSON object")
+    validate_service_instance(service_schema, service_report)
+    service_report_path = workspace / "output" / "crew-chief-service-report.json"
+    write_canonical_json(service_report_path, service_report)
+    canonical_schema = read_json(canonical_schema_path)
+    if not isinstance(canonical_schema, dict):
+        raise CrewChiefError("review canonical schema is invalid")
+    report = normalize_service_output(service_report, canonical_schema)
+    if not isinstance(report, dict):
+        raise CrewChiefError("normalized Crew Chief report must be a JSON object")
     validate_report(envelope, report)
+    write_canonical_json(report_path, report)
     record = {
         "schema_version": "1.0",
         "audit_id": envelope["audit_id"],
@@ -603,6 +631,8 @@ def execute_prepared_review(
         "repository_state_before": before,
         "repository_state_after": after,
         "report_path": str(report_path),
+        "service_report_path": str(service_report_path),
+        "service_schema_sha256": sha256_file(schema_path),
         "live_audit_performed": True,
     }
     write_canonical_json(workspace / "output" / "run-record.json", record)

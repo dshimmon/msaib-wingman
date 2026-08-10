@@ -7,9 +7,9 @@
 
 - Mission: **governance/crew-chief — Crew Chief Independent Audit**
 - Lifecycle: **active**
-- Authorization gate: `acceptance-readiness implementation reconciled; fresh ordinary-Codex bootstrap review authorized before controlled fixture acceptance`
+- Authorization gate: `service-schema compatibility correction authorized locally; model invocation and package transmission prohibited pending new exact-package approval`
 - Official record: [docs/missions/governance/crew-chief/mission.md](docs/missions/governance/crew-chief/mission.md)
-- Next gate: Conduct the authorized fresh ordinary-Codex bootstrap review; controlled Crew Chief fixture acceptance remains contingent on a successful result.
+- Next gate: Obtain Maverick's explicit approval for the exact newly frozen bootstrap package before any transmission or model invocation; controlled Crew Chief fixture acceptance remains contingent on a successful bootstrap review.
 
 ## Last completed work
 
@@ -21,7 +21,7 @@
 
 | Mission | Role | Branch | Worktree | State | Next gate |
 |---|---|---|---|---|---|
-| `governance/crew-chief` | primary | `codex/crew-chief-v1-build-20260809` | `/Users/davidshimmon/.codex/worktrees/a83e/msaib-wingman` | implemented_tested_acceptance_ready_awaiting_fresh_bootstrap_review | Conduct one fresh ordinary-Codex deep-profile bootstrap review that begins with the required non-Crew-Chief statement. |
+| `governance/crew-chief` | primary | `codex/crew-chief-v1-build-20260809` | `/Users/davidshimmon/.codex/worktrees/a83e/msaib-wingman` | service_schema_compatibility_corrected_awaiting_new_bootstrap_transmission_approval | Obtain Maverick's explicit transmission approval for the newly frozen bootstrap package bound to the correction commit. |
 
 ## Canonical homes
 

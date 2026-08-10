@@ -123,6 +123,29 @@ credential, writable capability, approval path, or inherited mutable context.
 The controller records the CLI version, exact capabilities, argv array,
 selection mode, and any limitation.
 
+Before any `codex exec` process can start, the runner constructs the exact
+service-facing schema payload and validates that payload offline. Canonical
+schemas remain the full post-generation contract. The service projection adds
+explicit matching types to constants and enums, requires every property on
+every object, represents canonical optional fields as required nullable
+fields, replaces nested `oneOf` alternatives with `anyOf`, retains only
+resolving local references, and projects away unsupported generation-time
+keywords such as `uniqueItems`. The offline preflight rejects malformed
+schemas, non-local or unresolved references, unsupported keywords, untyped or
+mismatched constants and enums, incomplete object requirements, and any object
+without `additionalProperties: false`.
+
+The exact checked projection is written to
+`schemas/crew-chief-report.schema.json`, bound into the invocation record, and
+passed unchanged to `--output-schema`. The full bundled canonical report is
+bound separately. After generation, the raw service-shaped result is validated
+against the checked projection and preserved as
+`output/crew-chief-service-report.json`; deterministic normalization removes
+only nullable placeholders for canonical optional fields. The normalized
+report must then pass the full canonical schema and all evidence, verdict,
+risk-focus, citation, finding-uniqueness, and authority checks. Projection
+therefore does not replace or weaken canonical validation.
+
 Because the shell tool is disabled, the controller deterministically embeds
 the complete frozen evidence set in standard input. Each block names its exact
 frozen path, size, encoding, and SHA-256 digest. UTF-8 files without NUL bytes
@@ -215,6 +238,14 @@ Missing Codex, missing authentication, an unsupported required flag, invalid
 JSON, process timeout, or detected mutation fails clearly without a success
 claim.
 
+An authenticated bootstrap request on 2026-08-09 was rejected by Codex service
+schema validation before model generation because the service-facing
+`statement` constant lacked an explicit type. No bootstrap report or verdict
+was generated, and no Crew Chief acceptance audit ran. Any package whose HEAD
+or schema changes after approval is obsolete and requires a newly frozen
+package, a new exact byte size and SHA-256, a fresh sensitive-content scan, and
+new explicit Maverick transmission approval.
+
 The mutation comparison covers Git-visible files and explicitly bound
 evidence. It intentionally does not open ignored secret paths merely to hash
 them. Operating-system and Codex read-only sandboxing is therefore the primary
@@ -241,6 +272,12 @@ build, operating read-only over the implementation commit and frozen evidence.
 Its first report statement must be: “This bootstrap audit is not a Crew Chief
 audit.” Do not select the Crew Chief agent for bootstrap. A controlled real
 Crew Chief acceptance run is later and separately authorized.
+
+The canonical bootstrap contract is
+[`bootstrap-report-v1.schema.json`](../../tools/crew_chief/schemas/bootstrap-report-v1.schema.json).
+Bind its audit ID, envelope ID, and reviewed commit to the exact frozen subject,
+project it with the same service-schema compatibility code, validate the exact
+final payload offline, and pass only that checked payload to `--output-schema`.
 
 CI runs only deterministic schema, controller, safety, reconciliation, and
 governance tests with fake model-process runners. It never supplies

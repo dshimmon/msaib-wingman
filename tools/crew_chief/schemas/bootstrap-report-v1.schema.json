@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wingman.local/schemas/crew-chief/bootstrap-report-v1.schema.json",
+  "title": "Wingman Ordinary Codex Bootstrap Report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "issue_id",
+        "summary",
+        "evidence",
+        "impact",
+        "required_action"
+      ],
+      "properties": {
+        "issue_id": {"type": "string", "minLength": 1},
+        "summary": {"type": "string", "minLength": 1},
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "impact": {"type": "string", "minLength": 1},
+        "required_action": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "required": [
+    "statement",
+    "canary",
+    "role",
+    "audit_id",
+    "envelope_id",
+    "reviewed_commit",
+    "verdict",
+    "audit_scope",
+    "blocking_issues",
+    "advisories",
+    "evidence_summary",
+    "limitations",
+    "authority_statement"
+  ],
+  "properties": {
+    "statement": {
+      "type": "string",
+      "const": "This bootstrap audit is not a Crew Chief audit."
+    },
+    "canary": {
+      "type": "string",
+      "const": "CANOPY-7C2F-ATLAS"
+    },
+    "role": {
+      "type": "string",
+      "const": "ordinary_codex_bootstrap_reviewer"
+    },
+    "audit_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "envelope_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "reviewed_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "verdict": {
+      "type": "string",
+      "enum": ["PASS", "PASS_WITH_ADVISORIES", "FAIL", "BLOCKED"]
+    },
+    "audit_scope": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "blocking_issues": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/issue"}
+    },
+    "advisories": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/issue"}
+    },
+    "evidence_summary": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "limitations": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "authority_statement": {
+      "type": "string",
+      "const": "Maverick retains final authority over approval, push, merge, publication, and mission completion."
+    }
+  }
+}

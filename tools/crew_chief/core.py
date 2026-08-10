@@ -17,6 +17,7 @@ SCHEMA_VERSION = "1.0"
 AGENT_PATH = Path(".codex/agents/crew-chief.toml")
 SCHEMA_NAMES = (
     "audit-envelope-v1.schema.json",
+    "bootstrap-report-v1.schema.json",
     "finding-v1.schema.json",
     "report-v1.schema.json",
     "reconciliation-v1.schema.json",

@@ -160,3 +160,54 @@ No model process ran during this readiness implementation. The exact local
 readiness commit is `1cddd1d65156d69053b30564c00343b3843cbe66`. The next gate
 is a fresh, isolated ordinary Codex bootstrap review. Controlled Crew Chief
 fixture acceptance remains contingent on a successful bootstrap.
+
+## 2026-08-09 service-schema compatibility correction
+
+The first authenticated closeout bootstrap request reached the Codex service,
+but service schema validation rejected the output schema before model
+generation because the `statement` constant had no explicit `type`. The
+request produced no report and no verdict. Zero bootstrap reviews and zero
+controlled Crew Chief acceptance audits completed. This was a service
+rejection, not an ordinary bootstrap review and not a Crew Chief audit.
+
+Maverick then authorized one bounded local compatibility correction and one
+local commit. The correction adds a canonical bootstrap report schema and a
+shared deterministic projection/preflight used for both the exact bootstrap
+payload and the exact bundled Crew Chief report payload. The projection types
+every constant and enum, makes all service-facing objects strict with all
+properties required, converts canonical optionals to nullable service fields,
+uses supported nested `anyOf` alternatives, retains checked local references,
+and omits unsupported generation-only constraints. Raw service output is
+validated against that exact payload, deterministically normalized, and then
+validated without exception against the complete canonical Crew Chief
+contract and policy checks.
+
+Credential-free regression coverage includes the original untyped
+`statement` failure; string and boolean constants; typed property and array
+item enums; strict nested objects; embedded findings; nullable optional fields;
+source/artifact alternatives; canonical duplicate-scope and duplicate-finding
+rejection; PASS, blocking, and nonblocking reports; final-payload binding; and
+proof that compatibility failure prevents the process runner from being
+called. No model or network request is used by these tests.
+
+The final compatibility matrix validated all five canonical Crew Chief JSON
+Schemas and both exact service-schema forms. It passed 74 focused Crew Chief
+tests in 52.659 seconds, 102 combined Crew Chief/repository-governance tests in
+58.615 seconds, 150 governance tests in 66.615 seconds, and 379 complete
+repository tests in 73.161 seconds, with zero failures, errors, or skips in the
+final runs. Expected negative-path Flightline and Atlas diagnostics and bare
+Streamlit warnings appeared during the green broader suites. An initial
+canonical-schema reporting one-liner had a shell-quoting `SyntaxError` before
+validation and was corrected. The first combined run then exposed one stale
+mission-state assertion; it was reconciled to the authorized new state, and
+the exact command passed on rerun. Exact commands and both development-run
+dispositions are preserved in the adjacent claims artifact.
+
+The previous 767,450-byte package with SHA-256
+`21acb4c941a200ff20d7c2d7a1037e7ce007a8d307e73cc581fcc799adb71d51`
+and the consent tied to it are obsolete when this correction changes HEAD.
+Closeout remains incomplete. A new package must be frozen from the clean
+correction commit, verified, scanned for sensitive and unrelated content, and
+reported with a new exact byte size and SHA-256 before Maverick can consider a
+new transmission approval. No independent audit of this correction is
+claimed.

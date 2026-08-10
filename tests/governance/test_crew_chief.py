@@ -14,8 +14,6 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
-from jsonschema import Draft202012Validator, FormatChecker
-
 from tools.crew_chief.controller import (
     prepare_audit,
     reconcile_report,
@@ -25,9 +23,12 @@ from tools.crew_chief.core import (
     CANARY,
     PROFILE_FOCUS,
     CrewChiefError,
+    bind_file,
     canonical_json_bytes,
     read_json,
     sha256_bytes,
+    sha256_file,
+    write_canonical_json,
 )
 from tools.crew_chief.runner import (
     _DISABLED_REVIEW_FEATURES,
@@ -39,6 +40,15 @@ from tools.crew_chief.runner import (
     execute_prepared_review,
     prepare_review_workspace,
 )
+from tools.crew_chief.service_schema import (
+    bind_bootstrap_service_schema,
+    bundle_report_schema,
+    canonical_to_service_output,
+    normalize_service_output,
+    project_service_schema,
+    validate_service_instance,
+    validate_service_schema,
+)
 from tools.crew_chief.validation import (
     validate_instance,
     validate_reconciliation,
@@ -49,6 +59,10 @@ from tools.governance import repository as governance
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXED_TIME = datetime(2026, 8, 9, 12, 0, tzinfo=timezone.utc)
+
+
+def bundled_report_schema() -> dict:
+    return bundle_report_schema(ROOT / "tools/crew_chief/schemas")
 
 
 class FixtureRepository:
@@ -919,6 +933,219 @@ class CrewChiefReportTests(unittest.TestCase):
             )
 
 
+class CrewChiefServiceSchemaTests(unittest.TestCase):
+    def setUp(self):
+        self.canonical_report = bundled_report_schema()
+        self.service_report = project_service_schema(self.canonical_report)
+        self.envelope = {
+            "audit_id": "a" * 64,
+            "envelope_id": "b" * 64,
+            "risk_profile": {
+                "name": "standard",
+                "justification": "",
+                "required_focus": list(PROFILE_FOCUS["standard"]),
+            },
+            "_verified_evidence": {
+                "sources": [
+                    {
+                        "path": "src/example.py",
+                        "state": "head",
+                        "revision": "1" * 40,
+                        "file_type": "regular",
+                        "encoding": "utf-8",
+                        "line_count": 1,
+                        "reference": "source-content/sha256/" + "c" * 64,
+                    }
+                ],
+                "artifacts": [],
+                "exempt_governance_validation": False,
+            },
+        }
+
+    @staticmethod
+    def schema_keywords(value):
+        if isinstance(value, dict):
+            for name, child in value.items():
+                yield name
+                yield from CrewChiefServiceSchemaTests.schema_keywords(child)
+        elif isinstance(value, list):
+            for child in value:
+                yield from CrewChiefServiceSchemaTests.schema_keywords(child)
+
+    def service_round_trip(self, canonical):
+        service_value = canonical_to_service_output(
+            canonical, self.canonical_report
+        )
+        validate_service_instance(self.service_report, service_value)
+        normalized = normalize_service_output(
+            service_value, self.canonical_report
+        )
+        self.assertEqual(normalized, canonical)
+        validate_report(self.envelope, normalized)
+        return service_value
+
+    def test_projection_types_consts_enums_and_supported_composition(self):
+        validate_service_schema(self.service_report)
+        self.assertEqual(
+            self.service_report["properties"]["schema_version"],
+            {"type": "string", "const": "1.0"},
+        )
+        context = self.service_report["properties"]["reviewer_context"]
+        self.assertEqual(
+            context["properties"]["fresh_session"],
+            {"type": "boolean", "const": True},
+        )
+        self.assertEqual(
+            self.service_report["properties"]["verdict"]["type"], "string"
+        )
+        scope_items = self.service_report["properties"]["audit_scope"]["items"]
+        self.assertEqual(scope_items["type"], "string")
+        keywords = set(self.schema_keywords(self.service_report))
+        self.assertNotIn("oneOf", keywords)
+        self.assertNotIn("uniqueItems", keywords)
+        self.assertIn("anyOf", keywords)
+
+    def test_optional_fields_are_required_nullable_and_normalize_safely(self):
+        finding_schema = self.service_report["$defs"]["finding"]
+        self.assertIn("blocking_rationale", finding_schema["required"])
+        self.assertEqual(
+            finding_schema["properties"]["blocking_rationale"]["type"],
+            ["null", "string"],
+        )
+        source_schema = self.service_report["$defs"]["sourceEvidence"]
+        self.assertIn("detail", source_schema["required"])
+        canonical = report_for(
+            self.envelope,
+            [finding(severity="low", blocking=False)],
+            verdict="PASS_WITH_ADVISORIES",
+        )
+        canonical["findings"][0]["evidence"][0].pop("detail")
+        service_value = self.service_round_trip(canonical)
+        self.assertIsNone(service_value["findings"][0]["blocking_rationale"])
+        self.assertIsNone(service_value["findings"][0]["evidence"][0]["detail"])
+
+    def test_pass_blocking_and_nonblocking_reports_round_trip(self):
+        reports = (
+            report_for(self.envelope),
+            report_for(self.envelope, [finding()], verdict="FAIL"),
+            report_for(
+                self.envelope,
+                [finding(severity="advisory", blocking=False)],
+                verdict="PASS_WITH_ADVISORIES",
+            ),
+        )
+        for report in reports:
+            with self.subTest(verdict=report["verdict"]):
+                self.service_round_trip(report)
+
+    def test_bootstrap_schema_binds_exact_dynamic_values(self):
+        canonical = read_json(
+            ROOT / "tools/crew_chief/schemas/bootstrap-report-v1.schema.json"
+        )
+        schema = bind_bootstrap_service_schema(
+            canonical,
+            audit_id="a" * 64,
+            envelope_id="b" * 64,
+            reviewed_commit="c" * 40,
+        )
+        validate_service_schema(schema)
+        for name, expected in (
+            ("audit_id", "a" * 64),
+            ("envelope_id", "b" * 64),
+            ("reviewed_commit", "c" * 40),
+        ):
+            self.assertEqual(schema["properties"][name]["type"], "string")
+            self.assertEqual(schema["properties"][name]["const"], expected)
+        keywords = set(self.schema_keywords(schema))
+        self.assertNotIn("uniqueItems", keywords)
+        self.assertNotIn("pattern", keywords)
+        self.assertNotIn("minLength", keywords)
+
+    def test_preflight_rejects_old_and_malformed_service_schemas(self):
+        valid = {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["statement"],
+            "properties": {
+                "statement": {
+                    "const": "This bootstrap audit is not a Crew Chief audit."
+                }
+            },
+        }
+        cases = {
+            "untyped const": valid,
+            "untyped enum": {
+                **valid,
+                "properties": {"statement": {"enum": ["PASS", "FAIL"]}},
+            },
+            "missing required": {
+                **valid,
+                "required": [],
+                "properties": {"statement": {"type": "string"}},
+            },
+            "additional properties": {
+                **valid,
+                "additionalProperties": True,
+                "properties": {"statement": {"type": "string"}},
+            },
+            "oneOf": {
+                **valid,
+                "properties": {
+                    "statement": {
+                        "oneOf": [{"type": "string"}, {"type": "null"}]
+                    }
+                },
+            },
+            "uniqueItems": {
+                **valid,
+                "properties": {
+                    "statement": {
+                        "type": "array",
+                        "uniqueItems": True,
+                        "items": {"type": "string"},
+                    }
+                },
+            },
+            "invalid ref": {
+                **valid,
+                "properties": {"statement": {"$ref": "#/$defs/missing"}},
+            },
+            "malformed": {
+                **valid,
+                "properties": {"statement": {"type": 7}},
+            },
+        }
+        for label, schema in cases.items():
+            with self.subTest(case=label):
+                with self.assertRaises(CrewChiefError):
+                    validate_service_schema(schema)
+
+    def test_service_projection_does_not_weaken_canonical_invariants(self):
+        duplicate_scope = report_for(
+            self.envelope,
+            scope=[*PROFILE_FOCUS["standard"], "scope"],
+        )
+        duplicate_findings = report_for(
+            self.envelope,
+            [finding(), finding()],
+            verdict="FAIL",
+        )
+        for label, report, message in (
+            ("scope", duplicate_scope, "schema validation"),
+            ("finding", duplicate_findings, "finding IDs must be unique"),
+        ):
+            with self.subTest(case=label):
+                service_value = canonical_to_service_output(
+                    report, self.canonical_report
+                )
+                validate_service_instance(self.service_report, service_value)
+                normalized = normalize_service_output(
+                    service_value, self.canonical_report
+                )
+                with self.assertRaisesRegex(CrewChiefError, message):
+                    validate_report(self.envelope, normalized)
+
+
 class CrewChiefRunnerTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
@@ -1129,14 +1356,56 @@ class CrewChiefRunnerTests(unittest.TestCase):
             detector=lambda _: self.capabilities(selector=True),
             clock=lambda: FIXED_TIME,
         )
-        schema = read_json(Path(invocation["schema_path"]))
+        schema_path = Path(invocation["schema_path"])
+        schema = read_json(schema_path)
+        canonical_schema = read_json(Path(invocation["canonical_schema_path"]))
         envelope = read_json(self.envelope_path)
-        errors = list(
-            Draft202012Validator(
-                schema, format_checker=FormatChecker()
-            ).iter_errors(report_for(envelope, [finding()], verdict="FAIL"))
+        service_value = canonical_to_service_output(
+            report_for(envelope, [finding()], verdict="FAIL"),
+            canonical_schema,
         )
-        self.assertEqual(errors, [])
+        validate_service_instance(schema, service_value)
+        self.assertEqual(
+            normalize_service_output(service_value, canonical_schema),
+            report_for(envelope, [finding()], verdict="FAIL"),
+        )
+        self.assertEqual(
+            invocation["argv"][invocation["argv"].index("--output-schema") + 1],
+            str(schema_path),
+        )
+        binding = next(
+            item
+            for item in invocation["workspace_bindings"]
+            if item["path"] == "schemas/crew-chief-report.schema.json"
+        )
+        self.assertEqual(binding["sha256"], sha256_file(schema_path))
+
+    def test_incompatible_final_schema_fails_before_process_runner(self):
+        invocation = prepare_review_workspace(
+            self.envelope_path,
+            Path(self.temporary.name) / "incompatible-schema-review",
+            detector=lambda _: self.capabilities(selector=True),
+            clock=lambda: FIXED_TIME,
+        )
+        schema_path = Path(invocation["schema_path"])
+        schema = read_json(schema_path)
+        schema["properties"]["schema_version"].pop("type")
+        write_canonical_json(schema_path, schema)
+        invocation["workspace_bindings"] = [
+            bind_file(schema_path, "schemas/crew-chief-report.schema.json")
+            if item["path"] == "schemas/crew-chief-report.schema.json"
+            else item
+            for item in invocation["workspace_bindings"]
+        ]
+        fake_runner = mock.Mock()
+        with self.assertRaisesRegex(CrewChiefError, "const lacks"):
+            execute_prepared_review(
+                self.envelope_path,
+                invocation,
+                runner=fake_runner,
+                clock=lambda: FIXED_TIME,
+            )
+        fake_runner.assert_not_called()
 
     def test_missing_codex_is_reported_clearly(self):
         with mock.patch(
@@ -1315,8 +1584,14 @@ class CrewChiefRunnerTests(unittest.TestCase):
             if arguments[-2:] == ["login", "status"]:
                 return subprocess.CompletedProcess(arguments, 0, "logged in", "")
             Path(invocation["report_path"]).parent.mkdir(parents=True, exist_ok=True)
+            canonical_schema = read_json(Path(invocation["canonical_schema_path"]))
             Path(invocation["report_path"]).write_text(
-                json.dumps(report_for(envelope)), encoding="utf-8"
+                json.dumps(
+                    canonical_to_service_output(
+                        report_for(envelope), canonical_schema
+                    )
+                ),
+                encoding="utf-8",
             )
             return subprocess.CompletedProcess(arguments, 0, "{}", "")
 
@@ -1392,6 +1667,12 @@ class CrewChiefGovernanceTests(unittest.TestCase):
     def test_schemas_and_governance_are_discoverable(self):
         self.assertEqual(governance.validate_schemas_and_first_reads(), [])
         self.assertTrue((ROOT / "tools/crew_chief/schemas/report-v1.schema.json").is_file())
+        self.assertTrue(
+            (
+                ROOT
+                / "tools/crew_chief/schemas/bootstrap-report-v1.schema.json"
+            ).is_file()
+        )
         self.assertTrue((ROOT / ".codex/agents/crew-chief.toml").is_file())
 
     def test_no_test_invokes_a_real_model_or_network(self):

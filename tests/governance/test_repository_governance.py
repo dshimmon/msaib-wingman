@@ -367,7 +367,9 @@ _expose(__name__, "knowledge")
         context = repository.render_context(self.missions)
         index = repository.render_mission_index(self.missions)
         self.assertIn("governance/crew-chief", current)
-        self.assertIn("awaiting_fresh_bootstrap_review", current)
+        self.assertIn(
+            "awaiting_new_bootstrap_transmission_approval", current
+        )
         self.assertIn("pushed=`false`; merged=`false`", context)
         self.assertIn("committed=yes; pushed=no; merged=no", index)
 

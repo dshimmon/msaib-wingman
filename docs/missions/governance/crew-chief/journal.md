@@ -84,3 +84,37 @@ The readiness implementation was committed locally as
 `1cddd1d65156d69053b30564c00343b3843cbe66`. This subsequent canonical
 reconciliation binds that exact hash before the authorized fresh
 ordinary-Codex bootstrap review.
+
+## 2026-08-09 — Authorized service-schema compatibility correction
+
+- Repeated the `CANOPY-7C2F-ATLAS` check and verified the clean expected branch
+  at reconciliation commit `0f7057896d2abfa9d04daa83e332f2015123c154`, four
+  commits ahead of `origin/main` with the expected merge base and no upstream.
+- Recorded that the authenticated bootstrap request was rejected by service
+  schema validation before model generation. It produced no report, no
+  bootstrap verdict, no completed bootstrap review, and no Crew Chief
+  acceptance audit.
+- Added one canonical ordinary-bootstrap report schema and one deterministic
+  service-schema projection and fail-closed offline preflight shared with the
+  bundled Crew Chief report path.
+- Preserved the full canonical report and policy contract after service output
+  normalization, including duplicate detection, evidence and citation binding,
+  verdict enforcement, risk coverage, finding uniqueness, and Maverick's
+  authority boundary.
+- Added credential-free regression tests for the complete final schemas and
+  confirmed that an incompatible exact final payload prevents the injected
+  process runner from being called.
+- Final validation passed five canonical schemas, both exact service-schema
+  forms, 74 focused tests, 102 combined Crew Chief/repository-governance tests,
+  150 governance tests, and 379 repository tests. One stale mission-state test
+  failed on the first combined run, was reconciled within scope, and passed on
+  the exact rerun. One earlier schema-reporting one-liner had a quoting
+  `SyntaxError` before validation and was corrected.
+- Marked the previous package and its consent obsolete. The correction does not
+  authorize model invocation or transmission; a newly frozen and scanned
+  package requires a new exact size, SHA-256, and explicit Maverick approval.
+
+Closeout remains incomplete. No bootstrap review or Crew Chief acceptance audit
+has completed, no independent audit of this correction is claimed, and no
+push, merge, publication, main modification, operational status, or
+mission-complete declaration is authorized.
