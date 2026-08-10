@@ -11,7 +11,7 @@
   "lifecycle": "active",
   "priority": "high",
   "portfolio_primary": true,
-  "authorization_gate": "service-schema compatibility correction authorized locally; model invocation and package transmission prohibited pending new exact-package approval",
+  "authorization_gate": "bootstrap blockers reconciled locally; transmission, model invocation, and receipt creation prohibited pending approval of the exact new package binding",
   "approval_evidence": [
     {
       "date": "2026-08-08",
@@ -37,6 +37,11 @@
       "date": "2026-08-09",
       "authority": "Maverick",
       "scope": "Authorized one bounded local service-schema compatibility correction, deterministic validation, one local correction commit, closeout-record reconciliation, and preparation but not transmission of a newly frozen bootstrap package; prohibited model invocation, package transmission, push, merge, publication, main modification, and mission completion."
+    },
+    {
+      "date": "2026-08-10",
+      "authority": "Maverick",
+      "scope": "Authorized one bounded bootstrap-governance correction: a package-bound authorization receipt control, preservation and reconciliation of the completed BLOCKED review, exactly two ordered local commits, deterministic validation, and preparation but not transmission of a new package; prohibited model invocation, fixture audit, push, merge, publication, main modification, and mission completion."
     }
   ],
   "baseline_commit": "b1910d0c69a52d73ddde93cb9722f12540c5d1e7",
@@ -44,7 +49,9 @@
     "82c5952e64eb8fe5638701fef1f9d289b7735d82",
     "3e4edff5cc5e9b9810827331ca1024fd14c8f875",
     "1cddd1d65156d69053b30564c00343b3843cbe66",
-    "0f7057896d2abfa9d04daa83e332f2015123c154"
+    "0f7057896d2abfa9d04daa83e332f2015123c154",
+    "2a868bac1088bd6523048623032af6d277143858",
+    "f34c7ad810a50b36be453493d17fee8ac4c3ea00"
   ],
   "pushed": false,
   "merged": false,
@@ -54,7 +61,7 @@
     "docs/decisions/governance/crew-chief-audit.md"
   ],
   "workstream": {
-    "owner_session": "Codex closeout session authorized by Maverick on 2026-08-09",
+    "owner_session": "Codex bootstrap-governance correction authorized by Maverick on 2026-08-10",
     "branch": "codex/crew-chief-v1-build-20260809",
     "worktree": "/Users/davidshimmon/.codex/worktrees/a83e/msaib-wingman",
     "writable_scope": [
@@ -77,10 +84,10 @@
       "tools/crew_chief/",
       "tools/governance/repository.py"
     ],
-    "state": "service_schema_compatibility_corrected_awaiting_new_bootstrap_transmission_approval",
-    "next_gate": "Obtain Maverick's explicit transmission approval for the newly frozen bootstrap package bound to the correction commit."
+    "state": "blocked_bootstrap_reconciled_receipt_control_locally_committed_awaiting_new_bootstrap_transmission_approval",
+    "next_gate": "Obtain Maverick's explicit approval of the exact freshly frozen package and deterministic receipt creation before any transmission or invocation."
   },
-  "next_gate": "Obtain Maverick's explicit approval for the exact newly frozen bootstrap package before any transmission or model invocation; controlled Crew Chief fixture acceptance remains contingent on a successful bootstrap review.",
+  "next_gate": "Obtain Maverick's explicit approval for the exact freshly frozen bootstrap package and deterministic creation of its package-bound receipt before any transmission or model invocation; controlled Crew Chief fixture acceptance remains contingent on a successful bootstrap review.",
   "supersedes": null,
   "superseded_by": null,
   "paused": false,
@@ -91,23 +98,25 @@
 
 Lifecycle: **active** and **portfolio-primary**. Call sign: **CREW-CHIEF**.
 
-Maverick authorized Crew Chief v1 implementation, a bounded enforcement
-correction, bounded closeout, and one service-schema compatibility correction
-on 2026-08-09. The four pre-compatibility commits are locally committed at the
-exact hashes recorded above. The current correction is limited to local
-implementation, deterministic validation, one local commit, record
-reconciliation, and preparation of a new frozen package. It does not authorize
-transmission or a model invocation.
+Maverick authorized Crew Chief v1 implementation, bounded enforcement and
+closeout corrections, service-schema compatibility, and the package-bound
+bootstrap-governance correction recorded above. The six code-bearing commits
+are locally committed at the exact hashes in `implementation_commits`; the
+last is the implementation head. This subsequent record reconciliation is an
+evidence-only snapshot, not an omitted implementation commit. Its final hash
+cannot be embedded in itself and must be bound externally as the next audit
+envelope's subject HEAD.
 
 Implemented, tested, locally committed, service-schema-corrected,
 bootstrap-reviewed, acceptance-validated, Maverick-approved, published,
-operational, and mission-complete are distinct states. The authenticated
-bootstrap attempt was rejected by the service's schema validation before model
-generation. It completed no bootstrap review, produced no verdict, and
-permitted no controlled Crew Chief acceptance audit. Zero bootstrap reviews
-and zero Crew Chief acceptance audits have completed. Crew Chief is not
-approved, published, operational, or mission-complete, and the lifecycle
-remains active.
+operational, and mission-complete are distinct states. One fresh ordinary Codex
+bootstrap review completed over `2a868bac1088bd6523048623032af6d277143858`
+and returned `BLOCKED` with `BOOTSTRAP-001` and `BOOTSTRAP-002`; it consumed
+219,467 tokens and was not a Crew Chief audit. The blocking result stopped both
+conditional fixture audits, so zero Crew Chief acceptance audits ran. The two
+findings now have evidence-backed correction dispositions pending a fresh
+bootstrap review. Crew Chief remains unapproved, unpublished, non-operational,
+and not mission-complete; lifecycle remains active.
 
 ## Approved responsibility
 
@@ -129,11 +138,14 @@ and credential-free tests. [GOV-004](../../../decisions/governance/crew-chief-au
 defines the enduring workflow and bootstrap boundary.
 
 The exact evidence and validation record belongs in [`evidence.md`](evidence.md),
-with chronological build notes in [`journal.md`](journal.md). The previous
-767,450-byte package and its consent are obsolete because the correction
-changes HEAD. The next gate is Maverick's explicit transmission approval for a
-newly frozen package after its exact size, SHA-256, sensitive-content scan, and
-binding evidence are reported. A later successful ordinary Codex bootstrap
-review must operate read-only and state, “This bootstrap audit is not a Crew
-Chief audit,” before the controlled fixture acceptance exercise can begin.
-Neither review transfers Maverick's final authority.
+with chronological build notes in [`journal.md`](journal.md). The completed
+blocked review and dispositions are frozen under
+[`artifacts/bootstrap-blocked-20260810/`](artifacts/bootstrap-blocked-20260810/).
+The package-bound authorization control records a later explicit Maverick
+approval without changing the already-approved package or service schema. No
+receipt exists for the next package because its final binding has not been
+approved. The next gate is Maverick's approval of that reported exact package
+and deterministic receipt creation. A later successful ordinary Codex review
+must remain read-only and state, “This bootstrap audit is not a Crew Chief
+audit,” before conditional fixture acceptance can begin. Neither review
+transfers Maverick's authority.

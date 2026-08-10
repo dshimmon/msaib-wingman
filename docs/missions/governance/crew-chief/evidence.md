@@ -211,3 +211,86 @@ correction commit, verified, scanned for sensitive and unrelated content, and
 reported with a new exact byte size and SHA-256 before Maverick can consider a
 new transmission approval. No independent audit of this correction is
 claimed.
+
+## 2026-08-10 completed blocked bootstrap review
+
+Maverick explicitly authorized one transmission of the 864,455-byte package
+with SHA-256
+`b34e22658096b48def0c576736b71d53f1a35af5de402d476c501ea51a00b3ea`
+and the 1,631-byte service schema with SHA-256
+`391637a4a121577b3f29805acdae0be68235f7b26980f45d14f4d27181129847`.
+One fresh ordinary Codex bootstrap invocation was attempted and completed. It
+returned schema-valid `BLOCKED`, with `BOOTSTRAP-001` and `BOOTSTRAP-002`, and
+used 219,467 tokens. Its required identity statement was “This bootstrap audit
+is not a Crew Chief audit.” It did not select Crew Chief, perform acceptance,
+or certify the implementation.
+
+The blocking verdict stopped the conditional acceptance sequence. Zero seeded
+fixture audits and zero corrected-fixture re-audits were attempted. Git-visible
+state hashes before and after the review were identical; the index and worktree
+remained clean; there was no repository mutation, push, merge, publication, or
+mission-completion declaration.
+
+Durable review evidence is preserved under
+[`artifacts/bootstrap-blocked-20260810/`](artifacts/bootstrap-blocked-20260810/):
+
+- `bootstrap-report.json` preserves the complete structured JSON report in
+  canonical newline-terminated repository form. The raw service artifact was
+  4,563 bytes with SHA-256
+  `b962b094acc8e03f68d309928332dbb64a8f06b2c6f0f05df050f1a6fc99f204`;
+  the canonical repository form is 4,564 bytes with SHA-256
+  `009e4165e9d89ee37a214271a01bc0a95c702a148d1787d25abd2a802eafde21`.
+- `bootstrap-run-record.json` is the exact 3,297-byte run record with SHA-256
+  `d631ec0c18fb04f65f8aa0f3d24e8378a4e646d3d525c2fb473edc3e8d070703`.
+- `bootstrap-invocation.json` is the exact 4,250-byte prepared invocation with
+  SHA-256
+  `5eda5d04ded33a2536c507e6ed075df2fb369497bc1e130b26bdb0698a1a4b9a`.
+- `bootstrap-cli-stdout.log` is the exact 4,564-byte stdout with SHA-256
+  `009e4165e9d89ee37a214271a01bc0a95c702a148d1787d25abd2a802eafde21`.
+- The large raw stderr is not committed. Its external review location is
+  `/private/tmp/wingman-crew-chief-bootstrap-schema-20260809-3huM5F/review/output/bootstrap-cli-stderr.log`;
+  it is 869,518 bytes with SHA-256
+  `44b5031650cb35ffb3e4b5a705acc9e847862b2cbb5227bd8baad8b8a56909ee`.
+
+## 2026-08-10 bootstrap-governance correction and dispositions
+
+`BOOTSTRAP-001` exposed a circular evidence rule: inserting a later approval
+into an already-built package would change the approved bytes. Maverick
+authorized a separate receipt control, implemented at
+`f34c7ad810a50b36be453493d17fee8ac4c3ea00`. The versioned receipt schema and
+deterministic code bind Maverick identity, the complete authorization-text
+hash, Canary, exact HEAD, package and schema bindings, audit and envelope IDs,
+expiry, exact invocation counts, and the no-retry rule. Preparation preserves
+the approved source bytes and visibly presents the validated receipt as a
+separate frozen control in one immutable composite. Missing, malformed,
+expired, altered, unauthorized, mismatched, or already consumed receipts fail
+before the injected process runner wherever deterministically detectable.
+This disposition is resolved in implementation and awaits fresh independent
+bootstrap verification. No receipt was created for the next unknown package.
+
+`BOOTSTRAP-002` is resolved in this evidence snapshot by adding both the
+previously omitted compatibility implementation
+`2a868bac1088bd6523048623032af6d277143858` and receipt-control implementation
+`f34c7ad810a50b36be453493d17fee8ac4c3ea00` to the canonical
+`implementation_commits` inventory. The machine-readable
+[`reconciliation.json`](artifacts/bootstrap-blocked-20260810/reconciliation.json)
+distinguishes that implementation head from this evidence-only reconciliation
+snapshot. This snapshot is not implementation and is not falsely omitted from
+the implementation inventory. Its final Git hash cannot be stored inside
+itself; the next frozen audit envelope must bind it externally as
+`subject.head`. This disposition also awaits fresh independent bootstrap
+verification.
+
+The receipt-correction validation loaded six canonical schemas and both exact
+service projections; passed 82 focused Crew Chief tests in 59.814 seconds, 110
+combined Crew Chief/repository-governance tests in 64.327 seconds, 158 complete
+governance tests in 69.966 seconds, and 387 complete repository tests in 75.346
+seconds, all with zero failures, errors, or skips. Ruff and repository
+governance passed. Expected negative-path Flightline and Atlas diagnostics and
+bare Streamlit warnings appeared during the green broader suites. No real
+model or network service was invoked by correction tests.
+
+These dispositions do not retroactively convert the `BLOCKED` report to a
+passing verdict. A new package and a later package-bound receipt require new
+Maverick approval. Crew Chief remains unaccepted, uncertified, unpublished,
+non-operational, and not mission-complete.

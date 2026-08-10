@@ -118,3 +118,39 @@ Closeout remains incomplete. No bootstrap review or Crew Chief acceptance audit
 has completed, no independent audit of this correction is claimed, and no
 push, merge, publication, main modification, operational status, or
 mission-complete declaration is authorized.
+
+## 2026-08-10 — Completed blocked bootstrap and bounded reconciliation
+
+- Verified the exact authorized package, schema, IDs, expiration, clean
+  five-ahead Git state, sensitive-content checks, and ordinary-reviewer
+  identity before one authenticated invocation.
+- Completed one ordinary Codex bootstrap review over
+  `2a868bac1088bd6523048623032af6d277143858`. It returned `BLOCKED` with
+  `BOOTSTRAP-001` and `BOOTSTRAP-002` and used 219,467 tokens. The review was
+  explicitly not a Crew Chief audit.
+- Stopped before both conditional fixture audits as required. No repository
+  mutation, retry, push, merge, publication, acceptance, certification, or
+  completion claim occurred.
+- Preserved the structured report, run record, invocation, stdout, and the
+  external stderr binding under the canonical mission evidence. The raw
+  869,518-byte stderr log remains external and uncommitted.
+- Repeated the `CANOPY-7C2F-ATLAS` check and verified the clean expected branch
+  at `2a868bac1088bd6523048623032af6d277143858`, five commits ahead and zero
+  behind unchanged `origin/main`.
+- Implemented the separate package-bound authorization receipt control and
+  credential-free tests without invoking a real model or network service.
+  Focused and complete validation passed, then the code-bearing correction was
+  committed as `f34c7ad810a50b36be453493d17fee8ac4c3ea00` with subject
+  `Add bootstrap authorization receipt control`.
+- Reconciled the canonical inventory to include both
+  `2a868bac1088bd6523048623032af6d277143858` and
+  `f34c7ad810a50b36be453493d17fee8ac4c3ea00`. Recorded this subsequent commit
+  as an evidence-only snapshot whose final hash is externally bound by the
+  next audit envelope rather than impossibly embedded in itself.
+- Disposed `BOOTSTRAP-001` and `BOOTSTRAP-002` as corrected pending a fresh
+  independent bootstrap review. The original `BLOCKED` verdict remains
+  unchanged and neither disposition grants acceptance.
+
+No authorization receipt exists for the new package. The next gate is to
+report its exact binding and obtain Maverick's explicit package-bound approval
+before receipt creation, transmission, or any invocation.

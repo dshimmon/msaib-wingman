@@ -7,7 +7,11 @@
     "correction_parent": "82c5952e64eb8fe5638701fef1f9d289b7735d82",
     "acceptance_readiness_parent": "3e4edff5cc5e9b9810827331ca1024fd14c8f875",
     "acceptance_readiness_commit": "1cddd1d65156d69053b30564c00343b3843cbe66",
-    "schema_compatibility_parent": "0f7057896d2abfa9d04daa83e332f2015123c154"
+    "schema_compatibility_parent": "0f7057896d2abfa9d04daa83e332f2015123c154",
+    "schema_compatibility_commit": "2a868bac1088bd6523048623032af6d277143858",
+    "authorization_receipt_commit": "f34c7ad810a50b36be453493d17fee8ac4c3ea00",
+    "implementation_head": "f34c7ad810a50b36be453493d17fee8ac4c3ea00",
+    "evidence_snapshot_head_binding": "next_audit_envelope.subject.head"
   },
   "acceptance_readiness": {
     "objective": "Reconcile closeout authority and make the fail-closed CLI policy compatible with the complete enabled inventory of the installed Codex CLI.",
@@ -44,6 +48,127 @@
     "canonical_post_generation_validation_preserved": true,
     "model_or_network_invocation_during_correction": false
   },
+  "completed_bootstrap_review": {
+    "reviewed_commit": "2a868bac1088bd6523048623032af6d277143858",
+    "audit_id": "64fa7cacb00b4f10093a4818294c602ad09b9ceadff24f945941c481e9010bc0",
+    "envelope_id": "a38390291832828725e349c933d60347cdb497316d06bab2a7d76bb41452e72e",
+    "ordinary_bootstrap_invocations_attempted": 1,
+    "ordinary_bootstrap_invocations_completed": 1,
+    "verdict": "BLOCKED",
+    "blocking_issue_ids": [
+      "BOOTSTRAP-001",
+      "BOOTSTRAP-002"
+    ],
+    "tokens_used": 219467,
+    "fixture_audits_attempted": 0,
+    "fixture_audits_completed": 0,
+    "repository_mutation": false,
+    "bootstrap_accepted": false,
+    "crew_chief_certified": false
+  },
+  "bootstrap_governance_correction": {
+    "objective": "Add a separately frozen package-bound Maverick authorization receipt and reconcile the blocked-review implementation inventory without commit self-reference.",
+    "authorization_receipt_schema_versioned": true,
+    "receipt_created_for_next_package": false,
+    "exact_package_and_schema_unchanged_by_receipt": true,
+    "receipt_checked_before_process_runner": true,
+    "receipt_bound_in_invocation_and_run_record": true,
+    "receipt_visibly_supplied_as_frozen_evidence": true,
+    "one_use_and_no_automatic_retry_enforced": true,
+    "implementation_head": "f34c7ad810a50b36be453493d17fee8ac4c3ea00",
+    "evidence_snapshot_commit_class": "evidence_only_reconciliation",
+    "evidence_snapshot_head_binding": "next_audit_envelope.subject.head",
+    "evidence_snapshot_in_implementation_inventory": false,
+    "bootstrap_001_disposition": "resolved_in_implementation_pending_fresh_bootstrap_review",
+    "bootstrap_002_disposition": "resolved_in_evidence_snapshot_pending_fresh_bootstrap_review",
+    "model_or_network_invocation_during_correction": false
+  },
+  "bootstrap_governance_correction_results": [
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 python -c 'from tools.crew_chief.validation import load_schemas; schemas=load_schemas(); print(\"Validated canonical JSON for %d Crew Chief schemas: %s\" % (len(schemas), \", \".join(sorted(schemas))))'",
+      "schemas": 6,
+      "failures": 0,
+      "errors": 0,
+      "duration_seconds": 0.156,
+      "result": "PASS"
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 python -c 'from pathlib import Path; from tools.crew_chief.core import read_json; from tools.crew_chief.service_schema import bind_bootstrap_service_schema, bundle_report_schema, project_service_schema, validate_service_schema; root=Path(\"tools/crew_chief/schemas\"); bootstrap=bind_bootstrap_service_schema(read_json(root / \"bootstrap-report-v1.schema.json\"), audit_id=\"a\"*64, envelope_id=\"b\"*64, reviewed_commit=\"2a868bac1088bd6523048623032af6d277143858\"); crew=project_service_schema(bundle_report_schema(root)); validate_service_schema(bootstrap); validate_service_schema(crew)'",
+      "schemas": 2,
+      "failures": 0,
+      "errors": 0,
+      "duration_seconds": 0.172,
+      "result": "PASS"
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 python -m unittest tests.governance.test_crew_chief",
+      "tests": 82,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "duration_seconds": 59.814,
+      "result": "PASS"
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src OPENAI_API_KEY=repository-governance-offline-placeholder PYTHON_DOTENV_DISABLED=1 python -m unittest tests.governance.test_crew_chief tests.governance.test_repository_governance",
+      "tests": 110,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "duration_seconds": 64.327,
+      "result": "PASS"
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src OPENAI_API_KEY=repository-governance-offline-placeholder PYTHON_DOTENV_DISABLED=1 python -m unittest discover -s tests/governance -t . -p 'test_*.py'",
+      "tests": 158,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "duration_seconds": 69.966,
+      "result": "PASS"
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src OPENAI_API_KEY=repository-governance-offline-placeholder PYTHON_DOTENV_DISABLED=1 python -m unittest discover -s tests -t . -p 'test_*.py'",
+      "tests": 387,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "duration_seconds": 75.346,
+      "result": "PASS",
+      "note": "Expected negative-path Flightline and Atlas diagnostics and bare-Streamlit warnings were emitted; the suite remained green."
+    },
+    {
+      "command": "python -m ruff check tools/crew_chief tests/governance/test_crew_chief.py tools/governance/repository.py",
+      "result": "PASS",
+      "output": "All checks passed!"
+    },
+    {
+      "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 python -m tools.governance validate",
+      "result": "PASS",
+      "output": "Repository governance validation passed."
+    },
+    {
+      "command": "deterministic reconciliation assertion over canonical mission metadata and artifacts/bootstrap-blocked-20260810/reconciliation.json",
+      "assertions": [
+        "canonical implementation head is f34c7ad810a50b36be453493d17fee8ac4c3ea00",
+        "evidence snapshot is classified evidence_only_reconciliation and bound by next_audit_envelope.subject.head",
+        "evidence snapshot is not classified as an omitted implementation commit",
+        "BOOTSTRAP-001 and BOOTSTRAP-002 each have one evidence-backed disposition"
+      ],
+      "result": "PASS",
+      "output": "Validated implementation/evidence head separation and two evidence-backed dispositions."
+    },
+    {
+      "command": "deterministic size, SHA-256, and JSON-equivalence assertions for preserved bootstrap artifacts and the external raw report/stderr",
+      "result": "PASS",
+      "output": "Validated durable bootstrap artifacts and external raw bindings."
+    },
+    {
+      "command": "validate_instance('bootstrap-report-v1.schema.json', preserved_blocked_report)",
+      "result": "PASS",
+      "output": "Validated preserved BLOCKED bootstrap report."
+    }
+  ],
   "schema_compatibility_results": [
     {
       "command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 python -c 'from tools.crew_chief.validation import load_schemas; schemas = load_schemas(); print(\"Validated canonical JSON for %d Crew Chief schemas: %s\" % (len(schemas), \", \".join(sorted(schemas))))'",

@@ -7,9 +7,9 @@
 
 - Mission: **governance/crew-chief — Crew Chief Independent Audit**
 - Lifecycle: **active**
-- Authorization gate: `service-schema compatibility correction authorized locally; model invocation and package transmission prohibited pending new exact-package approval`
+- Authorization gate: `bootstrap blockers reconciled locally; transmission, model invocation, and receipt creation prohibited pending approval of the exact new package binding`
 - Official record: [docs/missions/governance/crew-chief/mission.md](docs/missions/governance/crew-chief/mission.md)
-- Next gate: Obtain Maverick's explicit approval for the exact newly frozen bootstrap package before any transmission or model invocation; controlled Crew Chief fixture acceptance remains contingent on a successful bootstrap review.
+- Next gate: Obtain Maverick's explicit approval for the exact freshly frozen bootstrap package and deterministic creation of its package-bound receipt before any transmission or model invocation; controlled Crew Chief fixture acceptance remains contingent on a successful bootstrap review.
 
 ## Last completed work
 
@@ -21,7 +21,7 @@
 
 | Mission | Role | Branch | Worktree | State | Next gate |
 |---|---|---|---|---|---|
-| `governance/crew-chief` | primary | `codex/crew-chief-v1-build-20260809` | `/Users/davidshimmon/.codex/worktrees/a83e/msaib-wingman` | service_schema_compatibility_corrected_awaiting_new_bootstrap_transmission_approval | Obtain Maverick's explicit transmission approval for the newly frozen bootstrap package bound to the correction commit. |
+| `governance/crew-chief` | primary | `codex/crew-chief-v1-build-20260809` | `/Users/davidshimmon/.codex/worktrees/a83e/msaib-wingman` | blocked_bootstrap_reconciled_receipt_control_locally_committed_awaiting_new_bootstrap_transmission_approval | Obtain Maverick's explicit approval of the exact freshly frozen package and deterministic receipt creation before any transmission or invocation. |
 
 ## Canonical homes
 

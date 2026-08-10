@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "canary": "CANOPY-7C2F-ATLAS",
+  "record_type": "blocked_bootstrap_reconciliation",
+  "review_subject": {
+    "reviewed_head": "2a868bac1088bd6523048623032af6d277143858",
+    "implementation_head": "f34c7ad810a50b36be453493d17fee8ac4c3ea00",
+    "evidence_snapshot_head": {
+      "value": null,
+      "commit_class": "evidence_only_reconciliation",
+      "binding_source": "next_audit_envelope.subject.head",
+      "self_hash_embedded": false,
+      "included_in_implementation_commits": false,
+      "reason": "A Git commit cannot contain its own final hash; the next frozen envelope binds this evidence snapshot externally."
+    }
+  },
+  "implementation_commits": [
+    "82c5952e64eb8fe5638701fef1f9d289b7735d82",
+    "3e4edff5cc5e9b9810827331ca1024fd14c8f875",
+    "1cddd1d65156d69053b30564c00343b3843cbe66",
+    "0f7057896d2abfa9d04daa83e332f2015123c154",
+    "2a868bac1088bd6523048623032af6d277143858",
+    "f34c7ad810a50b36be453493d17fee8ac4c3ea00"
+  ],
+  "review": {
+    "audit_id": "64fa7cacb00b4f10093a4818294c602ad09b9ceadff24f945941c481e9010bc0",
+    "envelope_id": "a38390291832828725e349c933d60347cdb497316d06bab2a7d76bb41452e72e",
+    "ordinary_bootstrap_invocations_attempted": 1,
+    "ordinary_bootstrap_invocations_completed": 1,
+    "verdict": "BLOCKED",
+    "tokens_used": 219467,
+    "fixture_audits_attempted": 0,
+    "fixture_audits_completed": 0,
+    "repository_mutation": false,
+    "bootstrap_accepted": false,
+    "crew_chief_certified": false
+  },
+  "dispositions": [
+    {
+      "issue_id": "BOOTSTRAP-001",
+      "disposition": "resolved_in_implementation_pending_fresh_bootstrap_review",
+      "implementation_commit": "f34c7ad810a50b36be453493d17fee8ac4c3ea00",
+      "evidence": [
+        "tools/crew_chief/bootstrap_authorization.py",
+        "tools/crew_chief/schemas/authorization-receipt-v1.schema.json",
+        "tests/governance/test_crew_chief.py",
+        "docs/runbooks/crew-chief.md"
+      ],
+      "validation": "A package-bound receipt is separately frozen, exact-subject validated, visibly composed, bound into invocation and run records, and atomically consumed before any injected process runner can start."
+    },
+    {
+      "issue_id": "BOOTSTRAP-002",
+      "disposition": "resolved_in_evidence_snapshot_pending_fresh_bootstrap_review",
+      "evidence": [
+        "docs/missions/governance/crew-chief/mission.md",
+        "docs/missions/governance/crew-chief/artifacts/bootstrap-blocked-20260810/reconciliation.json"
+      ],
+      "validation": "The canonical implementation inventory includes 2a868bac1088bd6523048623032af6d277143858 and f34c7ad810a50b36be453493d17fee8ac4c3ea00; this evidence-only commit is externally bound and is not classified as omitted implementation."
+    }
+  ],
+  "artifact_bindings": {
+    "structured_report": {
+      "path": "bootstrap-report.json",
+      "canonical_repository_size": 4564,
+      "canonical_repository_sha256": "009e4165e9d89ee37a214271a01bc0a95c702a148d1787d25abd2a802eafde21",
+      "raw_service_size": 4563,
+      "raw_service_sha256": "b962b094acc8e03f68d309928332dbb64a8f06b2c6f0f05df050f1a6fc99f204"
+    },
+    "invocation": {
+      "path": "bootstrap-invocation.json",
+      "size": 4250,
+      "sha256": "5eda5d04ded33a2536c507e6ed075df2fb369497bc1e130b26bdb0698a1a4b9a"
+    },
+    "cli_stdout": {
+      "path": "bootstrap-cli-stdout.log",
+      "size": 4564,
+      "sha256": "009e4165e9d89ee37a214271a01bc0a95c702a148d1787d25abd2a802eafde21"
+    },
+    "run_record": {
+      "path": "bootstrap-run-record.json",
+      "size": 3297,
+      "sha256": "d631ec0c18fb04f65f8aa0f3d24e8378a4e646d3d525c2fb473edc3e8d070703"
+    },
+    "external_cli_stderr": {
+      "path": "/private/tmp/wingman-crew-chief-bootstrap-schema-20260809-3huM5F/review/output/bootstrap-cli-stderr.log",
+      "committed": false,
+      "size": 869518,
+      "sha256": "44b5031650cb35ffb3e4b5a705acc9e847862b2cbb5227bd8baad8b8a56909ee"
+    }
+  },
+  "authority_statement": "Maverick retains final authority; this reconciliation does not authorize transmission, invocation, fixture acceptance, push, merge, publication, or mission completion."
+}

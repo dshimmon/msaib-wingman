@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.0",
+  "canary": "CANOPY-7C2F-ATLAS",
+  "recorded_at": "2026-08-10T11:28:06Z",
+  "authorization": {
+    "bootstrap_invocations_authorized": 1,
+    "conditional_fixture_audits_authorized": 2,
+    "automatic_retry_authorized": false
+  },
+  "bootstrap": {
+    "invocations_attempted": 1,
+    "invocations_completed": 1,
+    "cli_exit_code": 0,
+    "service_or_schema_failure": false,
+    "model_output_completed": true,
+    "tokens_used": 219467,
+    "verdict": "BLOCKED",
+    "blocking_issue_ids": [
+      "BOOTSTRAP-001",
+      "BOOTSTRAP-002"
+    ],
+    "advisory_count": 0,
+    "service_schema_validation": "PASS",
+    "canonical_schema_validation": "PASS",
+    "identity_statement_validation": "PASS",
+    "ordinary_reviewer_role_validation": "PASS",
+    "audit_id_binding_validation": "PASS",
+    "envelope_id_binding_validation": "PASS",
+    "reviewed_commit_binding_validation": "PASS"
+  },
+  "fixture_acceptance": {
+    "invocations_attempted": 0,
+    "invocations_completed": 0,
+    "stop_reason": "Bootstrap verdict was BLOCKED with blocking issues.",
+    "seeded_defect_audit": {
+      "expected": "Crew Chief detects the deliberate blocking defect with bound evidence.",
+      "observed": "NOT RUN — bootstrap gate did not pass.",
+      "verdict": null
+    },
+    "corrected_reaudit": {
+      "expected": "Fresh Crew Chief re-audit returns PASS or non-blocking PASS_WITH_ADVISORIES after fixture correction.",
+      "observed": "NOT RUN — bootstrap gate did not pass.",
+      "verdict": null
+    }
+  },
+  "bindings": {
+    "reviewed_commit": "2a868bac1088bd6523048623032af6d277143858",
+    "origin_main": "b1910d0c69a52d73ddde93cb9722f12540c5d1e7",
+    "audit_id": "64fa7cacb00b4f10093a4818294c602ad09b9ceadff24f945941c481e9010bc0",
+    "envelope_id": "a38390291832828725e349c933d60347cdb497316d06bab2a7d76bb41452e72e",
+    "package_size": 864455,
+    "package_sha256": "b34e22658096b48def0c576736b71d53f1a35af5de402d476c501ea51a00b3ea",
+    "service_schema_size": 1631,
+    "service_schema_sha256": "391637a4a121577b3f29805acdae0be68235f7b26980f45d14f4d27181129847"
+  },
+  "artifacts": {
+    "invocation": {
+      "path": "../bootstrap-invocation.json",
+      "size": 4250,
+      "sha256": "5eda5d04ded33a2536c507e6ed075df2fb369497bc1e130b26bdb0698a1a4b9a"
+    },
+    "structured_report": {
+      "path": "bootstrap-report.json",
+      "size": 4563,
+      "sha256": "b962b094acc8e03f68d309928332dbb64a8f06b2c6f0f05df050f1a6fc99f204"
+    },
+    "cli_stdout": {
+      "path": "bootstrap-cli-stdout.log",
+      "size": 4564,
+      "sha256": "009e4165e9d89ee37a214271a01bc0a95c702a148d1787d25abd2a802eafde21"
+    },
+    "cli_stderr": {
+      "path": "bootstrap-cli-stderr.log",
+      "size": 869518,
+      "sha256": "44b5031650cb35ffb3e4b5a705acc9e847862b2cbb5227bd8baad8b8a56909ee"
+    }
+  },
+  "repository_state": {
+    "before_state_hash": "afae2c7990d1de165b96f12d1eb93815ece9e759a7b17b8ba08c85c678515870",
+    "after_state_hash": "afae2c7990d1de165b96f12d1eb93815ece9e759a7b17b8ba08c85c678515870",
+    "identical": true,
+    "branch": "codex/crew-chief-v1-build-20260809",
+    "ahead": 5,
+    "behind": 0,
+    "index_and_worktree_clean": true
+  },
+  "repository_mutation": false,
+  "push_or_merge_performed": false,
+  "mission_completion_declared": false
+}
