@@ -14,6 +14,13 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
+from tools.crew_chief.bootstrap_authorization import (
+    AuthorizationExpectation,
+    create_authorization_receipt,
+    execute_authorized_bootstrap,
+    prepare_authorized_bootstrap_invocation,
+    validate_authorization_receipt,
+)
 from tools.crew_chief.controller import (
     prepare_audit,
     reconcile_report,
@@ -241,6 +248,227 @@ def finding(
     if rationale is not None:
         value["blocking_rationale"] = rationale
     return value
+
+
+class BootstrapAuthorizationTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.repository = self.root / "repository"
+        self.repository.mkdir()
+        self.package = self.root / "bootstrap-package.md"
+        self.schema = self.root / "bootstrap-report.schema.json"
+        self.receipt_path = self.root / "authorization-receipt.json"
+        self.package.write_text("frozen implementation evidence\n", encoding="utf-8")
+        self.schema.write_text(
+            '{"additionalProperties":false,"properties":{},"required":[],"type":"object"}\n',
+            encoding="utf-8",
+        )
+        self.authorization_text = "Maverick authorizes this exact package."
+        self.expectation = AuthorizationExpectation(
+            subject_head="1" * 40,
+            package_size=self.package.stat().st_size,
+            package_sha256=sha256_file(self.package),
+            service_schema_size=self.schema.stat().st_size,
+            service_schema_sha256=sha256_file(self.schema),
+            audit_id="a" * 64,
+            envelope_id="b" * 64,
+            package_expires_at="2026-08-09T14:00:00Z",
+            authorization_text_sha256=sha256_bytes(
+                self.authorization_text.encode("utf-8")
+            ),
+            ordinary_bootstrap_invocations=1,
+            conditional_crew_chief_fixture_audits=2,
+            automatic_retries_permitted=False,
+        )
+        self.receipt = create_authorization_receipt(
+            self.expectation,
+            authorization_text=self.authorization_text,
+            authorized_at=FIXED_TIME,
+            expires_at=FIXED_TIME + timedelta(hours=1),
+        )
+        write_canonical_json(self.receipt_path, self.receipt)
+
+    def prepare(self, name="review"):
+        return prepare_authorized_bootstrap_invocation(
+            self.repository,
+            self.package,
+            self.schema,
+            self.receipt_path,
+            self.root / name,
+            argv=["codex", "exec", "-"],
+            expectation=self.expectation,
+            clock=lambda: FIXED_TIME,
+        )
+
+    def test_valid_receipt_binds_exact_authorized_subject(self):
+        validated = validate_authorization_receipt(
+            self.receipt,
+            self.expectation,
+            clock=lambda: FIXED_TIME,
+        )
+        self.assertEqual(validated["canary"], CANARY)
+        self.assertEqual(validated["authority"]["identity"], "Maverick")
+        self.assertEqual(
+            validated["subject"],
+            {
+                "head_commit": self.expectation.subject_head,
+                "package": {
+                    "size": self.expectation.package_size,
+                    "sha256": self.expectation.package_sha256,
+                },
+                "service_schema": {
+                    "size": self.expectation.service_schema_size,
+                    "sha256": self.expectation.service_schema_sha256,
+                },
+                "audit_id": self.expectation.audit_id,
+                "envelope_id": self.expectation.envelope_id,
+                "package_expires_at": self.expectation.package_expires_at,
+            },
+        )
+
+    def test_missing_malformed_expired_altered_and_mismatched_receipts_fail(self):
+        self.receipt_path.unlink()
+        with self.assertRaisesRegex(CrewChiefError, "invalid JSON artifact"):
+            self.prepare("missing")
+
+        with self.assertRaisesRegex(CrewChiefError, "JSON object"):
+            validate_authorization_receipt(
+                [], self.expectation, clock=lambda: FIXED_TIME
+            )
+
+        with self.assertRaisesRegex(CrewChiefError, "expired"):
+            validate_authorization_receipt(
+                self.receipt,
+                self.expectation,
+                clock=lambda: FIXED_TIME + timedelta(hours=2),
+            )
+
+        altered = json.loads(json.dumps(self.receipt))
+        altered["subject"]["package"]["size"] += 1
+        with self.assertRaisesRegex(CrewChiefError, "ID does not match"):
+            validate_authorization_receipt(
+                altered, self.expectation, clock=lambda: FIXED_TIME
+            )
+
+        mismatched = json.loads(json.dumps(self.receipt))
+        mismatched["subject"]["head_commit"] = "2" * 40
+        unsigned = dict(mismatched)
+        unsigned.pop("receipt_id")
+        mismatched["receipt_id"] = sha256_bytes(canonical_json_bytes(unsigned))
+        with self.assertRaisesRegex(CrewChiefError, "subject is mismatched"):
+            validate_authorization_receipt(
+                mismatched, self.expectation, clock=lambda: FIXED_TIME
+            )
+
+    def test_receipt_cannot_authorize_extra_invocations_or_retries(self):
+        extra = AuthorizationExpectation(
+            **{**self.expectation.__dict__, "ordinary_bootstrap_invocations": 2}
+        )
+        with self.assertRaisesRegex(CrewChiefError, "exactly one"):
+            create_authorization_receipt(
+                extra,
+                authorization_text=self.authorization_text,
+                authorized_at=FIXED_TIME,
+                expires_at=FIXED_TIME + timedelta(hours=1),
+            )
+        retry = AuthorizationExpectation(
+            **{**self.expectation.__dict__, "automatic_retries_permitted": True}
+        )
+        with self.assertRaisesRegex(CrewChiefError, "automatic retries"):
+            create_authorization_receipt(
+                retry,
+                authorization_text=self.authorization_text,
+                authorized_at=FIXED_TIME,
+                expires_at=FIXED_TIME + timedelta(hours=1),
+            )
+
+    def test_receipt_is_consumed_once_across_prepared_workspaces(self):
+        first = self.prepare("first")
+        second = self.prepare("second")
+        runner = mock.Mock(
+            return_value=subprocess.CompletedProcess(
+                ["codex", "exec", "-"], 0, stdout="{}\n", stderr=""
+            )
+        )
+        execute_authorized_bootstrap(
+            Path(first["workspace"]) / "invocation.json",
+            runner=runner,
+            clock=lambda: FIXED_TIME,
+        )
+        with self.assertRaisesRegex(CrewChiefError, "already consumed"):
+            execute_authorized_bootstrap(
+                Path(second["workspace"]) / "invocation.json",
+                runner=runner,
+                clock=lambda: FIXED_TIME,
+            )
+        self.assertEqual(runner.call_count, 1)
+
+    def test_receipt_creation_and_preparation_do_not_change_subject_files(self):
+        package_before = (self.package.stat().st_size, sha256_file(self.package))
+        schema_before = (self.schema.stat().st_size, sha256_file(self.schema))
+        self.prepare()
+        self.assertEqual(
+            package_before, (self.package.stat().st_size, sha256_file(self.package))
+        )
+        self.assertEqual(
+            schema_before, (self.schema.stat().st_size, sha256_file(self.schema))
+        )
+
+    def test_exact_receipt_is_bound_into_invocation_and_run_record(self):
+        invocation = self.prepare()
+        binding = invocation["source_bindings"]["authorization_receipt"]
+        self.assertEqual(binding["path"], str(self.receipt_path.resolve()))
+        self.assertEqual(binding["size"], self.receipt_path.stat().st_size)
+        self.assertEqual(binding["sha256"], sha256_file(self.receipt_path))
+        runner = mock.Mock(
+            return_value=subprocess.CompletedProcess(
+                ["codex", "exec", "-"], 0, stdout="{}\n", stderr=""
+            )
+        )
+        record = execute_authorized_bootstrap(
+            Path(invocation["workspace"]) / "invocation.json",
+            runner=runner,
+            clock=lambda: FIXED_TIME,
+        )
+        self.assertEqual(record["authorization_receipt"], binding)
+        self.assertEqual(
+            record["frozen_authorization_receipt"]["sha256"], binding["sha256"]
+        )
+        self.assertEqual(record["automatic_retry_attempts"], 0)
+        persisted = read_json(Path(invocation["run_record_path"]))
+        self.assertEqual(persisted, record)
+
+    def test_invalid_receipt_prevents_process_runner_call(self):
+        invocation = self.prepare()
+        self.receipt_path.write_bytes(self.receipt_path.read_bytes() + b" ")
+        runner = mock.Mock()
+        with self.assertRaisesRegex(CrewChiefError, "binding (size|hash) changed"):
+            execute_authorized_bootstrap(
+                Path(invocation["workspace"]) / "invocation.json",
+                runner=runner,
+                clock=lambda: FIXED_TIME,
+            )
+        runner.assert_not_called()
+
+    def test_ordinary_reviewer_receives_validated_receipt_as_frozen_evidence(self):
+        invocation = self.prepare()
+        runner = mock.Mock(
+            return_value=subprocess.CompletedProcess(
+                ["codex", "exec", "-"], 0, stdout="{}\n", stderr=""
+            )
+        )
+        execute_authorized_bootstrap(
+            Path(invocation["workspace"]) / "invocation.json",
+            runner=runner,
+            clock=lambda: FIXED_TIME,
+        )
+        prompt = runner.call_args.kwargs["input"]
+        self.assertIn("BEGIN FROZEN authorization-receipt.json", prompt)
+        self.assertIn(self.receipt["receipt_id"], prompt)
+        self.assertIn("Return BLOCKED", prompt)
+        self.assertIn("not a Crew Chief audit", prompt)
 
 
 class CrewChiefAgentTests(unittest.TestCase):

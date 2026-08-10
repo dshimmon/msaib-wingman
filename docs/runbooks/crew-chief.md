@@ -279,6 +279,54 @@ Bind its audit ID, envelope ID, and reviewed commit to the exact frozen subject,
 project it with the same service-schema compatibility code, validate the exact
 final payload offline, and pass only that checked payload to `--output-schema`.
 
+### Package-bound bootstrap authorization
+
+Build and scan the implementation-review package before asking Maverick to
+approve it. Approval of those exact bytes is then recorded in a separate
+[`authorization-receipt-v1.schema.json`](../../tools/crew_chief/schemas/authorization-receipt-v1.schema.json)
+artifact. Never insert the receipt into the already-approved package or schema.
+Receipt creation records Maverick's explicit instruction; it does not create,
+infer, or transfer authority. Live conversation text is not an invocation
+control until its complete UTF-8 content hash is bound in a validated receipt.
+
+The receipt binds the Canary, Maverick identity, subject HEAD, package and
+service-schema byte sizes and SHA-256 values, audit and envelope IDs, package
+expiry, exact invocation counts, the no-automatic-retry rule, and the complete
+authorization-text hash. Its content-derived receipt ID, schema, subject,
+scope, and expiration must validate before a model process can start. Missing,
+malformed, expired, already consumed, unauthorized, altered, or mismatched
+receipt evidence fails closed. One receipt authorizes exactly one ordinary
+bootstrap invocation and no automatic retry; conditional fixture-audit counts
+are recorded but remain gated on a successful bootstrap verdict.
+
+Use `tools.crew_chief.bootstrap_authorization` to record a later explicit
+approval, prepare a fresh external invocation workspace, and execute only when
+that later authorization includes invocation. Preparation copies the exact
+package, schema, and receipt into frozen paths, verifies the original bindings
+again, and constructs one immutable composite standard-input payload. The
+payload presents the receipt first as a clearly delimited frozen invocation
+control and then presents the unchanged approved package. The invocation and
+run record bind the absolute source-receipt path, exact size and SHA-256, its
+frozen copy, and the composite payload. Immediately before process launch, an
+atomic receipt-ID consumption marker prevents reuse from another workspace.
+
+A valid receipt supersedes only the older package snapshot's statement that
+exact-package approval was still pending when the package was built. It does
+not supersede the package's implementation evidence, expand review scope, or
+authorize fixture audits, retries, repository changes, publication, or mission
+completion. A new or changed package requires a new reported binding, new
+Maverick approval, and a new receipt. Do not create a receipt while the future
+package size or hash is unknown.
+
+Bootstrap evidence uses a non-self-referential commit policy. The canonical
+`implementation_commits` inventory lists code-bearing implementation commits,
+including the implementation head. A later evidence-only reconciliation
+snapshot is not an omitted implementation commit: its exact final hash cannot
+be stored inside itself and is instead bound as the audit envelope's subject
+HEAD. Bootstrap instructions and mission metadata must identify both roles so
+the ordinary reviewer checks the implementation inventory and the external
+evidence-snapshot binding without demanding impossible commit self-reference.
+
 CI runs only deterministic schema, controller, safety, reconciliation, and
 governance tests with fake model-process runners. It never supplies
 `--execute`, contacts a model, or incurs a paid audit. This prevents CI from
