@@ -355,7 +355,7 @@ def vocabulary_occurrences(module, source):
 
 LEGACY_CONSUMERS = (
     "functions:_legacy_source_values_from_metadata,"
-    "_source_metadata_from_version_3_row"
+    "_source_metadata_from_version_3_row,source_schema_version"
 )
 ALLOWED_PRODUCT_VOCABULARY = Counter({
     (
@@ -364,6 +364,36 @@ ALLOWED_PRODUCT_VOCABULARY = Counter({
         "string",
         ("columns", LEGACY_COLUMNS),
     ): 1,
+    (
+        "wingman.core.ledger.migrations",
+        "function:_promote_version_3_source_metadata",
+        "string",
+        ("columns", LEGACY_COLUMNS),
+    ): 1,
+    (
+        "wingman.core.ledger.migrations",
+        "function:_promote_version_3_source_metadata",
+        "string",
+        ("columns", ("program",)),
+    ): 4,
+    (
+        "wingman.core.ledger.migrations",
+        "function:_promote_version_3_source_metadata",
+        "string",
+        ("columns", ("academic_year",)),
+    ): 4,
+    **{
+        (
+            "wingman.core.ledger.source_repository",
+            f"function:{function}",
+            "string",
+            ("columns", LEGACY_COLUMNS),
+        ): 1
+        for function in (
+            "create_source",
+            "update_source",
+        )
+    },
     (
         "wingman.core.ledger.source_repository",
         LEGACY_CONSUMERS,
@@ -376,20 +406,63 @@ ALLOWED_PRODUCT_VOCABULARY = Counter({
         "string",
         ("columns", ("academic_year",)),
     ): 1,
-    **{
+    (
+        "wingman.core.ledger.source_repository",
+        "function:_legacy_source_projection",
+        "string",
+        ("vocabulary", ("academic", "program")),
+    ): 2,
+    (
+        "wingman.core.ledger.preservation",
+        "function:capture_preservation_state",
+        "string",
+        ("columns", LEGACY_COLUMNS),
+    ): 1,
+    (
+        "wingman.core.ledger.preservation",
+        "function:capture_preservation_state",
+        "string",
+        ("columns", ("program",)),
+    ): 1,
+    (
+        "wingman.core.ledger.preservation",
+        "function:capture_preservation_state",
+        "string",
+        ("columns", ("academic_year",)),
+    ): 1,
+    (
+        "wingman.core.ledger.preservation",
+        "function:_source_metadata_expectations",
+        "string",
+        ("columns", ("program",)),
+    ): 1,
+    (
+        "wingman.core.ledger.preservation",
+        "function:_source_metadata_expectations",
+        "string",
+        ("columns", ("academic_year",)),
+    ): 1,
+    (
+        "wingman.core.ledger.preservation",
+        "function:compare_migration_preservation",
+        "string",
+        ("columns", ("program",)),
+    ): 2,
+    (
+        "wingman.core.ledger.preservation",
+        "function:compare_migration_preservation",
+        "string",
+        ("columns", ("academic_year",)),
+    ): 2,
+    (
+        "wingman.core.ledger.authorization",
         (
-            "wingman.core.ledger.source_repository",
-            f"function:{function}",
-            "string",
-            ("columns", LEGACY_COLUMNS),
-        ): 1
-        for function in (
-            "create_source",
-            "get_source",
-            "list_sources",
-            "update_source",
-        )
-    },
+            "functions:create_authorization_receipt,"
+            "create_transition_manifest,validate_authorization"
+        ),
+        "string",
+        ("vocabulary", ("atlas",)),
+    ): 1,
 })
 
 

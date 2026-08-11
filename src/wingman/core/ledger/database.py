@@ -8,6 +8,13 @@ from contextlib import contextmanager
 from functools import wraps
 from pathlib import Path
 
+from wingman.core.ledger.locking import (
+    DEFAULT_LOCK_TIMEOUT_SECONDS,
+    LedgerFileLock,
+    assert_no_active_recovery,
+    canonical_database_path,
+)
+
 
 DEFAULT_LEDGER_PATH = Path(
     "data/ledger/wingman-ledger.sqlite3"
@@ -31,36 +38,113 @@ def get_database_path():
     return DEFAULT_LEDGER_PATH
 
 
-def connect_database(database_path=None):
+class LedgerConnection(sqlite3.Connection):
+    """A SQLite connection that owns its cooperative lifetime lock."""
+
+    _ledger_lock = None
+    _ledger_path = None
+
+    def close(self):
+        ledger_lock = self._ledger_lock
+        self._ledger_lock = None
+        try:
+            super().close()
+        finally:
+            if ledger_lock is not None:
+                ledger_lock.release()
+
+
+def connect_database(
+    database_path=None,
+    *,
+    lock_mode="shared",
+    lock_timeout=DEFAULT_LOCK_TIMEOUT_SECONDS,
+    allow_recovery=False,
+):
     """
     Open a configured Ledger SQLite connection.
     """
-    path = Path(
+    configured_path = Path(
         database_path
         if database_path is not None
         else get_database_path()
     )
-    path.parent.mkdir(
-        parents=True,
-        exist_ok=True,
+    path = canonical_database_path(
+        configured_path,
+        create_parent=True,
     )
+    if not allow_recovery:
+        assert_no_active_recovery(path)
 
-    connection = sqlite3.connect(
+    ledger_lock = LedgerFileLock(
         path,
-        isolation_level=None,
-    )
-    connection.row_factory = sqlite3.Row
-    connection.execute(
-        "PRAGMA foreign_keys = ON"
-    )
-    connection.execute(
-        "PRAGMA journal_mode = WAL"
-    )
-    connection.execute(
-        "PRAGMA busy_timeout = 5000"
-    )
+        lock_mode,
+        timeout=lock_timeout,
+    ).acquire()
+
+    try:
+        # Recovery can begin while an ordinary opener is waiting for its
+        # shared lock. Recheck only after the lock is held to close that race.
+        if not allow_recovery:
+            assert_no_active_recovery(path)
+        connection = sqlite3.connect(
+            path,
+            isolation_level=None,
+            factory=LedgerConnection,
+        )
+    except Exception:
+        ledger_lock.release()
+        raise
+    connection._ledger_lock = ledger_lock
+    connection._ledger_path = path
+    try:
+        connection.row_factory = sqlite3.Row
+        connection.execute(
+            "PRAGMA foreign_keys = ON"
+        )
+        connection.execute(
+            "PRAGMA busy_timeout = 5000"
+        )
+        connection.execute(
+            "PRAGMA journal_mode = WAL"
+        )
+    except Exception:
+        connection.close()
+        raise
 
     return connection
+
+
+@contextmanager
+def exclusive_connection(
+    database_path,
+    *,
+    lock_timeout=DEFAULT_LOCK_TIMEOUT_SECONDS,
+    allow_recovery=False,
+):
+    """Open a connection while holding the exclusive application lock."""
+    connection = connect_database(
+        database_path,
+        lock_mode="exclusive",
+        lock_timeout=lock_timeout,
+        allow_recovery=allow_recovery,
+    )
+    try:
+        yield connection
+    finally:
+        connection.close()
+
+
+@contextmanager
+def exclusive_connection_lock(connection):
+    """Require maintenance to start with a managed exclusive lock."""
+    ledger_lock = getattr(connection, "_ledger_lock", None)
+    if ledger_lock is None or ledger_lock.mode != "exclusive":
+        raise RuntimeError(
+            "Ledger maintenance requires a connection opened with an "
+            "exclusive lock from the outset."
+        )
+    yield connection
 
 
 def require_transaction(connection):

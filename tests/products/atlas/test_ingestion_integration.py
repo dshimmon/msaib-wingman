@@ -95,10 +95,14 @@ class RealIngestionCompatibilityTests(unittest.TestCase):
             )
         )
         connection = connect_database(
-            self.database_path
+            self.database_path,
+            lock_mode="exclusive",
         )
         self.assertEqual(
-            apply_migrations(connection),
+            apply_migrations(
+                connection,
+                target_version=3,
+            ),
             {1, 2, 3},
         )
         connection.close()

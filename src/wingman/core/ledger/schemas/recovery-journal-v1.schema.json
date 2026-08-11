@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "wingman://ledger/recovery-journal-v1",
+  "title": "Ledger Recovery Journal v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "operation",
+    "run_id",
+    "target",
+    "backup",
+    "backup_sha256",
+    "phase",
+    "events"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "record_type": {"const": "ledger_recovery_journal"},
+    "operation": {"enum": ["migrate", "restore", "rollback", "migration_recovery"]},
+    "run_id": {"type": "string"},
+    "target": {"type": "string"},
+    "backup": {"type": "string"},
+    "backup_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "phase": {"type": "string"},
+    "events": {"type": "array"}
+  }
+}

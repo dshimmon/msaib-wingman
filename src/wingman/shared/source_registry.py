@@ -5,13 +5,20 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from wingman.core.ledger.database import connect_database, transaction
+from wingman.core.ledger.database import (
+    connect_database,
+    exclusive_connection,
+    get_database_path,
+    transaction,
+)
 from wingman.core.ledger.legacy_import_repository import (
     get_legacy_import,
     record_legacy_import,
 )
 from wingman.core.ledger.migrations import apply_migrations
 from wingman.core.ledger.models import serialize_json
+from wingman.core.ledger.readiness import validate_readiness
+from wingman.core.ledger.locking import canonical_database_path
 from wingman.core.ledger.source_repository import (
     create_source,
     create_source_version,
@@ -285,10 +292,44 @@ def import_legacy_registry_if_needed(connection):
 
 
 def open_registry_database():
-    connection = connect_database()
+    database_path = canonical_database_path(
+        get_database_path(),
+        create_parent=True,
+    )
+    if not database_path.exists() or database_path.stat().st_size == 0:
+        with exclusive_connection(database_path) as initialization_connection:
+            apply_migrations(initialization_connection)
+            validate_readiness(initialization_connection)
+            import_legacy_registry_if_needed(initialization_connection)
+        connection = connect_database(database_path)
+        try:
+            validate_readiness(connection)
+        except Exception:
+            connection.close()
+            raise
+        return connection
+
+    connection = connect_database(database_path)
     try:
-        apply_migrations(connection)
-        import_legacy_registry_if_needed(connection)
+        validate_readiness(connection)
+        marker = get_legacy_import(connection, LEGACY_IMPORT_KEY)
+        if marker is not None or not SOURCE_REGISTRY_PATH.exists():
+            return connection
+    except Exception:
+        connection.close()
+    else:
+        connection.close()
+
+    # Initialization is double-checked only after the bounded exclusive lock
+    # is held. Existing version-3 Ledgers never auto-advance to version 4.
+    with exclusive_connection(database_path) as initialization_connection:
+        apply_migrations(initialization_connection)
+        validate_readiness(initialization_connection)
+        import_legacy_registry_if_needed(initialization_connection)
+
+    connection = connect_database(database_path)
+    try:
+        validate_readiness(connection)
     except Exception:
         connection.close()
         raise
