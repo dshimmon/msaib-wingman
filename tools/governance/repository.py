@@ -74,6 +74,7 @@ REPOSITORY_MAP_LOCATIONS = (
     ("tests/governance/", "directory"),
     ("tools/", "directory"),
     ("tools/crew_chief/", "directory"),
+    ("tools/lso/", "directory"),
     ("tools/flightline/", "directory"),
     ("tools/governance/", "directory"),
     ("data/", "directory"),

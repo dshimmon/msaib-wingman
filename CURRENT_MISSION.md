@@ -5,10 +5,11 @@
 
 ## Portfolio primary
 
-- Mission: **none**
-- Repository state: **between missions**
-- Implementation authority: **none**
-- Next gate: Maverick selects and authorizes a mission.
+- Mission: **governance/lso — Landing Signal Officer v1**
+- Lifecycle: **active**
+- Authorization gate: `implementation and deterministic validation authorized; audit invocation, commit, push, merge, publication, and completion remain pending`
+- Official record: [docs/missions/governance/lso/mission.md](docs/missions/governance/lso/mission.md)
+- Next gate: Complete deterministic validation, freeze the exact LSO Crew Chief package, and request separate package-bound audit authorization.
 
 ## Last completed work
 
@@ -18,7 +19,9 @@
 
 ## Active workstreams
 
-None. The repository is between missions.
+| Mission | Role | Branch | Worktree | State | Next gate |
+|---|---|---|---|---|---|
+| `governance/lso` | primary | `codex/lso-v1-20260811` | `/private/tmp/wingman-lso-v1-20260811-9c68ca8` | implementation_validated_pending_audit_package | Complete deterministic validation, freeze the exact LSO Crew Chief package, and request separate package-bound audit authorization. |
 
 ## Canonical homes
 

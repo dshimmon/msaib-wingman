@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wingman.local/schemas/lso/closeout-plan-v1.schema.json",
+  "title": "LSO exact conditional closeout plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "canary", "role", "plan_id", "repository", "mission",
+    "audit", "subject", "validation", "delivery", "generated_paths",
+    "created_at", "expires_at", "authority_statement", "approval"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "canary": {"const": "CANOPY-7C2F-ATLAS"},
+    "role": {"const": "lso"},
+    "plan_id": {"$ref": "#/$defs/sha256"},
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository_id", "root", "branch", "remote", "target_branch", "remote_target_commit", "remote_url_sha256"],
+      "properties": {
+        "repository_id": {"$ref": "#/$defs/sha256"},
+        "root": {"type": "string", "minLength": 1},
+        "branch": {"type": "string", "pattern": "^codex/[A-Za-z0-9._/-]+$"},
+        "remote": {"const": "origin"},
+        "target_branch": {"const": "main"},
+        "remote_target_commit": {"$ref": "#/$defs/commit"},
+        "remote_url_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "mission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository_path", "mission_id", "frozen_sha256", "lifecycle_before"],
+      "properties": {
+        "repository_path": {"type": "string", "pattern": "^docs/missions/.+/mission\\.md$"},
+        "mission_id": {"type": "string", "pattern": "^[a-z0-9-]+(?:/[a-z0-9-]+)+$"},
+        "frozen_sha256": {"$ref": "#/$defs/sha256"},
+        "lifecycle_before": {"enum": ["draft", "active"]}
+      }
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["envelope", "audit_id", "envelope_id", "report", "verdict", "reconciliation", "reconciliation_package_hash"],
+      "properties": {
+        "envelope": {"$ref": "#/$defs/binding"},
+        "audit_id": {"$ref": "#/$defs/sha256"},
+        "envelope_id": {"$ref": "#/$defs/sha256"},
+        "report": {"$ref": "#/$defs/binding"},
+        "verdict": {"const": "PASS"},
+        "reconciliation": {"$ref": "#/$defs/binding"},
+        "reconciliation_package_hash": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "base_commit", "head_commit", "git_state_hash", "authorized_paths", "expected_tree", "candidate_commits"],
+      "properties": {
+        "mode": {"const": "working-tree"},
+        "base_commit": {"$ref": "#/$defs/commit"},
+        "head_commit": {"$ref": "#/$defs/commit"},
+        "git_state_hash": {"$ref": "#/$defs/sha256"},
+        "authorized_paths": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "expected_tree": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "candidate_commits": {"type": "array", "items": {"$ref": "#/$defs/commit"}, "uniqueItems": true}
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["test_claims", "required_checks_complete", "limitations"],
+      "properties": {
+        "test_claims": {"$ref": "#/$defs/binding"},
+        "required_checks_complete": {"const": true},
+        "limitations": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      }
+    },
+    "delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["implementation_commit_message", "closeout_commit_message", "final_authorization_gate", "next_gate", "final_approval_scope", "actions"],
+      "properties": {
+        "implementation_commit_message": {"type": "string", "minLength": 1, "maxLength": 120},
+        "closeout_commit_message": {"type": "string", "minLength": 1, "maxLength": 120},
+        "final_authorization_gate": {"type": "string", "minLength": 1},
+        "next_gate": {"type": "string", "minLength": 1},
+        "final_approval_scope": {"type": "string", "minLength": 1},
+        "actions": {
+          "type": "array",
+          "prefixItems": [
+            {"const": "stage_exact_audited_paths"}, {"const": "commit_implementation"},
+            {"const": "publish_implementation_branch"}, {"const": "fast_forward_main"},
+            {"const": "publish_completion_records"}, {"const": "commit_completion_records"},
+            {"const": "publish_closeout"}, {"const": "verify_remote"},
+            {"const": "declare_complete"}
+          ],
+          "items": false,
+          "minItems": 9,
+          "maxItems": 9
+        }
+      }
+    },
+    "generated_paths": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "created_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "authority_statement": {"const": "LSO verifies and executes only an exact Maverick-authorized closeout; it does not approve work or live operations."},
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_authorization_text"],
+      "properties": {"required_authorization_text": {"type": "string", "minLength": 1}}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "size"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

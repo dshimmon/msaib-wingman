@@ -67,6 +67,7 @@ tests/                                    # `tests/` — tests mirror production
 
 tools/                                    # `tools/` — repository operations and governance tooling
   crew_chief/                             # `tools/crew_chief/` — deterministic independent-audit controller and schemas
+  lso/                                    # `tools/lso/` — deterministic exact closeout controller and schemas
   flightline/                             # `tools/flightline/` — Development Flightline tooling
   governance/                             # `tools/governance/` — canonical-record and filing-policy enforcement
 
@@ -89,7 +90,8 @@ only; no new implementation belongs there.
 9. Superseded historical material → `docs/archive/`.
 10. Project-scoped custom-agent definitions → `.codex/agents/`.
 11. Crew Chief controller logic and schemas → `tools/crew_chief/`.
-12. New logic must never be added to compatibility façades.
+12. LSO closeout controller logic and schemas → `tools/lso/`.
+13. New logic must never be added to compatibility façades.
 
 ## Canonical homes
 
@@ -107,6 +109,9 @@ only; no new implementation belongs there.
 `.codex/agents/crew-chief.toml` is the single canonical model-facing home for
 Crew Chief instructions. `docs/runbooks/crew-chief.md` owns its operator
 procedure; neither location owns current mission lifecycle.
+
+`tools/lso/` is the canonical deterministic closeout controller. Its operator
+procedure is `docs/runbooks/lso.md`; the current mission record owns lifecycle.
 
 `WINGMAN_VAULT.md` preserves approved future capabilities, strategic ideas,
 deferred obligations, and the approval scope recorded by its entries.

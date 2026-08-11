@@ -327,6 +327,23 @@ queues, agent assignment, pause, cancellation, retry, crash recovery, and
 resource budgets. The current Goose role must not be misrepresented as proof
 that every future runtime feature already exists.
 
+### Landing Signal Officer — LSO
+
+**Status:** Implemented and deterministically validated. Authoritative audit,
+lifecycle, and publication state remain in the canonical mission and closeout
+records.
+**Canonical mission record:**
+[`governance/lso`](docs/missions/governance/lso/mission.md)
+
+LSO is the deterministic closeout controller between independent review and a
+final repository landing. It verifies a zero-finding Crew Chief `PASS`,
+approval-ready reconciliation, unchanged audited bytes, passing validation,
+and an unchanged fast-forward target; then it prepares one exact conditional
+approval card. Only a later package-bound Maverick receipt may authorize the
+named commit, publication, record-generation, remote-verification, and
+completion sequence. LSO cannot audit itself, infer approval, force-push,
+retry automatically, or authorize a live operation.
+
 ### Canary System
 
 **Status:** Active Mission Control safeguard  
@@ -369,6 +386,7 @@ approval scope associated with each promoted entry controls.
 | Capability | Destination | State |
 |---|---|---|
 | Crew Chief | `governance/crew-chief` | Completed by Maverick with accepted limitations; not independently certified |
+| Landing Signal Officer | `governance/lso` | Implementation deterministically validated; audit, lifecycle, and publication state follow the canonical mission and closeout records |
 | Wingman Assurance v1 | Mission 029 — Rangefinder | Planned direction |
 | Retrieval Test Range | Mission 029 — Rangefinder | Planned component |
 | Flight Recorder | Mission 029 — Rangefinder | Planned component |
@@ -495,5 +513,9 @@ obligations, and the approval scope recorded in its entries. Use
 implemented, deterministically tested, locally committed, and completed by
 Maverick with accepted limitations. The full bootstrap failed; the focused
 re-audit and fixture audits did not complete; no independent certification is
-claimed. The repository is between missions, and Maverick selects and
-authorizes the next mission.
+claimed. Landing Signal Officer v1 has a deterministically validated
+implementation. Its authoritative audit, lifecycle, publication status, and
+next gate live in
+[`governance/lso`](docs/missions/governance/lso/mission.md) and the generated
+[`CURRENT_MISSION.md`](CURRENT_MISSION.md); this Vault does not duplicate those
+volatile fields.

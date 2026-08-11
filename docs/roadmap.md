@@ -12,6 +12,7 @@ deferred obligations.
 | Repository Architecture | Completed and published at `cff8222f` | Later changes require a separately approved mission. |
 | Crew Chief Independent Audit | Completed by Maverick with accepted limitations; locally committed | Deterministic tests passed; full bootstrap failed; focused re-audit and fixtures did not complete; no independent certification. |
 | Ledger Transition engineering | Completed, independently audited, merged, and published at `51fb750` | The default/live Ledger remains version 3; any physical transition remains separately gated by Assurance v1, DATA-001, an exact package and receipt, fresh Crew Chief review, and Maverick authorization. |
+| Landing Signal Officer v1 | Active implementation authorized | Must pass deterministic validation and exact Crew Chief review before any commit, publication, or operational claim. |
 | Rangefinder / Wingman Assurance v1 | Established direction; not active | Maverick must select and authorize a mission. |
 | Retrieval Scalability | Intended evidence-gated direction | Scope must be selected from Rangefinder evidence. |
 | Storage Port | Provisional working sequence | Requires a separate approved brief; no migration is implied. |
@@ -22,10 +23,11 @@ deferred obligations.
 | Persistent Cockpit | Provisional working sequence | Follows temporal and supersession meaning. |
 | Secure Hangar | Provisional formal trust boundary | Required before sensitive third-party material or governed product expansion. |
 
-Crew Chief is not the Development Flightline Independent Auditor. On
+Crew Chief is not the Development Flightline Independent Auditor or LSO. On
 2026-08-10 Maverick completed the mission while accepting the documented
 same-account authorization risk and frozen-workspace launcher limitation. The
-repository is now between missions; Rangefinder and every successor remain
+repository later returned between missions. Maverick selected and authorized
+LSO v1 on August 11, 2026; Rangefinder and every later successor remain
 inactive. Portfolio Wingman/Radar, governed agents, and Chief of Staff remain
 future directions. Current lifecycle authority is
-[`governance/crew-chief/mission.md`](missions/governance/crew-chief/mission.md).
+[`governance/lso/mission.md`](missions/governance/lso/mission.md).

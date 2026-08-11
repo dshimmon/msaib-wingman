@@ -123,6 +123,7 @@ class RepositoryGovernanceTests(unittest.TestCase):
         mapped = dict(repository.REPOSITORY_MAP_LOCATIONS)
         self.assertEqual(mapped[".codex/agents/"], "directory")
         self.assertEqual(mapped["tools/crew_chief/"], "directory")
+        self.assertEqual(mapped["tools/lso/"], "directory")
 
     def test_repository_map_rejects_missing_canonical_location(self):
         text = repository.REPOSITORY_MAP.read_text(encoding="utf-8").replace(
@@ -445,16 +446,22 @@ _expose(__name__, "knowledge")
         self.assertEqual(repository.validate_schemas_and_first_reads(), [])
 
     def test_idle_state_is_generated_without_an_active_primary(self):
+        idle_missions = [
+            self._with_metadata(item, lifecycle="draft", portfolio_primary=False)
+            if item.metadata["lifecycle"] == "active"
+            else item
+            for item in self.missions
+        ]
         current = repository.generated_content(
-            self.missions, self.decisions
+            idle_missions, self.decisions
         )[repository.ROOT / "CURRENT_MISSION.md"]
-        context = repository.render_context(self.missions)
-        index = repository.render_mission_index(self.missions)
+        context = repository.render_context(idle_missions)
+        index = repository.render_mission_index(idle_missions)
         self.assertIn("Mission: **none**", current)
         self.assertIn("Repository state: **between missions**", current)
         self.assertIn("Implementation authority: **none**", current)
         self.assertIn("Portfolio-primary: `none`", context)
-        latest_completed = repository._latest_completed(self.missions)
+        latest_completed = repository._latest_completed(idle_missions)
         self.assertIn(latest_completed.metadata["id"], current)
         delivery = (
             "committed=yes; "
@@ -462,6 +469,13 @@ _expose(__name__, "knowledge")
             f"merged={'yes' if latest_completed.metadata['merged'] else 'no'}"
         )
         self.assertIn(delivery, index)
+
+    def test_lso_is_the_active_portfolio_primary(self):
+        current = repository.render_current_mission(self.missions)
+        self.assertIn(
+            "Mission: **governance/lso — Landing Signal Officer v1**", current
+        )
+        self.assertIn("Lifecycle: **active**", current)
 
 
 if __name__ == "__main__":
