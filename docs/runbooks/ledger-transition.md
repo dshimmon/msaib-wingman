@@ -1,8 +1,10 @@
 # Ledger Transition Runbook
 
 This runbook defines the reviewed procedure. It does not authorize using the
-default or live Ledger. During the current engineering mission, use temporary
-synthetic databases only and stop before creation of any live receipt.
+default or live Ledger. The mechanism is published, but until every live gate
+is independently satisfied and Maverick approves one exact operation, use
+temporary synthetic databases only and stop before creation of any live
+receipt.
 
 ## 1. Preconditions
 

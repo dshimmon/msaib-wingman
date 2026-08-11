@@ -55,10 +55,20 @@ product contract and must not introduce product branches into Core or Shared.
 
 ## Ledger boundary
 
-Ledger migrations remain exactly versions 1–3. The private source-repository
-adapter translates the historical physical `program` and `academic_year`
-columns to opaque metadata without changing precedence or mutating reads.
-[DATA-001](../decisions/security/ledger-and-data-safety.md) controls every later
+Ledger Core defines released schema versions 3 and 4. Version 3 retains the
+historical physical `program` and `academic_year` columns behind the private
+source-repository adapter. Version 4 removes those columns and keeps
+product-owned source fields only in opaque metadata. Fresh empty databases
+initialize at version 4; existing version-3 databases never advance
+automatically.
+
+The published transition boundary includes exact-target authorization,
+lifetime cooperative locking, concurrent initialization, WAL/SHM-safe
+quiescence, immutable backup, crash-safe restoration, preservation checks,
+disposable rehearsal, rollback, and postflight verification. Availability of
+that mechanism is not live-execution authority.
+[DATA-001](../decisions/security/ledger-and-data-safety.md) and the
+[Ledger Transition runbook](../runbooks/ledger-transition.md) control every
 physical transition.
 
 ## Compatibility

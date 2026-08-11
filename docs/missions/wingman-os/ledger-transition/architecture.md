@@ -1,7 +1,7 @@
 # Ledger Transition Architecture
 
-This record describes the isolated implementation candidate. It does not
-authorize a live transition.
+This record describes the published Wingman Core implementation. It does not
+authorize a live transition or claim that the default/live Ledger changed.
 
 ## Physical versions
 

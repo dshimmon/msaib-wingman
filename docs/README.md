@@ -110,3 +110,9 @@ procedure; neither location owns current mission lifecycle.
 
 `WINGMAN_VAULT.md` preserves approved future capabilities, strategic ideas,
 deferred obligations, and the approval scope recorded by its entries.
+
+The published [Ledger Transition mission](missions/wingman-os/ledger-transition/mission.md)
+owns its implementation and audit record. The
+[Ledger Transition runbook](runbooks/ledger-transition.md) owns the guarded
+operator procedure; [DATA-001](decisions/security/ledger-and-data-safety.md)
+owns the live-data authorization boundary.

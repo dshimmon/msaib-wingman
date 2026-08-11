@@ -71,11 +71,16 @@ Authoritative missions live under [`docs/missions/`](docs/missions/), enduring
 decisions under [`docs/decisions/`](docs/decisions/), and approved sequence in
 [`docs/roadmap.md`](docs/roadmap.md).
 
-The Ledger remains physically at migrations 1–3. The temporary `program`
-and `academic_year` columns are translated privately by the source
-repository into generic metadata; metadata wins if both representations
-contain a key, and reads do not mutate storage.
+Wingman Core now supports Ledger schema versions 3 and 4. Fresh empty
+databases initialize at version 4; existing version-3 databases remain on
+version 3 unless an exact governed transition is separately authorized. The
+private source repository preserves version-3 compatibility while version 4
+stores product-owned source fields only in opaque metadata.
 
-Physical schema conversion, authorization, locking, backup, and restoration
-belong to the future Ledger Transition after Assurance v1. Mission 027
-contains no executable transition procedure.
+The governed transition, locking, backup, restoration, dry-run, rollback, and
+postflight mechanisms are implemented and published. They are not permission
+to operate on the default or a live Ledger. See the
+[Ledger Transition mission record](docs/missions/wingman-os/ledger-transition/mission.md),
+[runbook](docs/runbooks/ledger-transition.md), and
+[DATA-001](docs/decisions/security/ledger-and-data-safety.md) for the remaining
+Assurance v1, exact-package, receipt, review, and Maverick approval gates.

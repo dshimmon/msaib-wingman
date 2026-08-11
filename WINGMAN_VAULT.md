@@ -165,6 +165,11 @@ Concurrency hardening will coordinate simultaneous work through isolated
 workspaces, version checks, idempotency, conflict handling, queues, retry or
 rebase paths, and later transactional database commits.
 
+The published Ledger Transition implements the narrower Ledger connection,
+maintenance-lock, and multiprocess-initialization controls required for a
+safe schema operation. Broader workspace coordination, queues, idempotency,
+and shared-truth commit serialization remain future work under this entry.
+
 #### Fine-Grained Locking and Serialized Commits
 
 **Status:** Approved future concept  
@@ -377,11 +382,13 @@ persistent agents, or Radar.
 
 ---
 
-## 6. Deferred Architectural Obligations
+## 6. Ledger Transition and Deferred Architectural Obligations
 
-Mission 027 made these obligations canonical. They are mandatory prerequisites
-for a future physical Ledger transition, not authorization to perform that
-transition:
+Mission 027 made the following obligations canonical. The product-neutral
+engineering controls were implemented, independently audited, merged, and
+published by the
+[`wingman-os/ledger-transition`](docs/missions/wingman-os/ledger-transition/mission.md)
+mission at `51fb750d2364a4e137ba7e42963a11b10fe4cdc0`:
 
 - exact-target migration authorization;
 - cooperative and exclusive application locking;
@@ -393,8 +400,15 @@ transition:
 - semantic and byte-preservation validation;
 - disposable dry runs;
 - tested rollback procedures;
-- Assurance v1 and Crew Chief prerequisites; and
+- Crew Chief review and finding reconciliation; and
 - a separate Maverick approval gate for live execution.
+
+Implementation does not authorize operation. The default/live Ledger remains
+at version 3, and the published candidate's Crew Chief `PASS` does not transfer
+to a future target-specific package. Before any live transition, Assurance v1,
+every DATA-001 prerequisite, a fresh exact-target package, a single-use
+receipt, target-bound Crew Chief review, rollback/recovery readiness, and
+Maverick's explicit live-execution approval remain mandatory.
 
 Additional deferred Airframe obligations:
 
@@ -407,8 +421,8 @@ transition by the active
 mission at implementation commit `b2a6177`. The compatibility-facade retirement
 obligation remains deferred.
 
-Until these prerequisites and approvals are satisfied, the live Ledger may not
-be migrated beyond schema version 3.
+Until those operational prerequisites and approvals are satisfied, the live
+Ledger may not be migrated beyond schema version 3.
 
 ---
 

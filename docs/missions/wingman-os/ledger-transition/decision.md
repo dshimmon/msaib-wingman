@@ -1,13 +1,14 @@
 # Ledger Transition Implementation Decision
 
-This bounded decision does not claim current mission lifecycle. A future
-canonical `mission.md`, if approved and reconciled without worktree conflict,
-owns lifecycle status; Maverick's current explicit instruction owns this
-implementation authorization.
+This bounded decision does not claim mission completion. The adjacent
+canonical [`mission.md`](mission.md) owns lifecycle, publication, and next-gate
+status; Maverick's explicit approvals own every implementation and operational
+authorization.
 
 - **Date:** August 10, 2026
 - **Authority:** Maverick
-- **Status:** accepted for isolated implementation; live execution not authorized
+- **Status:** implemented, audited, merged, and published; live execution and
+  mission completion not authorized by this decision
 
 ## Decision
 
@@ -43,3 +44,7 @@ stronger identity proof requires separately authorized identity infrastructure.
   are non-overwriting preserved evidence.
 - Assurance v1, DATA-001, Crew Chief review, and a separate Maverick live gate
   remain mandatory before any live execution.
+- The implementation is published at
+  `51fb750d2364a4e137ba7e42963a11b10fe4cdc0`; this publication changes no
+  live/default Ledger and does not transfer its audit to a future exact-target
+  execution package.

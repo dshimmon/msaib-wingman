@@ -18,13 +18,25 @@
 
 ## Decision
 
-The Wingman Ledger remains at migration versions 1–3. No ordinary repository,
-product-contract, or packaging mission authorizes a physical schema migration
-or live-data mutation.
+The default/live Wingman Ledger remains at schema version 3 until an exact
+governed operation is separately approved. No ordinary repository,
+product-contract, packaging, or implementation mission authorizes a physical
+schema migration or live-data mutation.
 
-A later transition requires exact-target authorization, cooperative and
+Migration 4 and the supporting exact-target authorization, cooperative and
 exclusive locking, multiprocess initialization control, WAL/SHM-safe
-quiescence and backup identity, immutable backups and checksums, crash-safe
-restoration, readiness checks, semantic and byte-preservation validation,
-disposable dry runs, tested rollback, Assurance v1, Crew Chief prerequisites,
-and a separate Maverick live-execution gate.
+quiescence and backup identity, immutable backup, crash-safe restoration,
+readiness, preservation, dry-run, rollback, and postflight mechanisms were
+implemented and published at
+`51fb750d2364a4e137ba7e42963a11b10fe4cdc0`. Fresh empty databases may
+initialize at version 4; existing version-3 databases do not advance
+automatically. Shipping those controls does not satisfy or bypass this live
+safety boundary.
+
+A live transition still requires Assurance v1, every target-specific DATA-001
+check, a fresh exact target and code package, an immutable backup destination,
+a single-use no-retry receipt bound to Maverick's approval, disposable dry-run
+evidence, Crew Chief review and reconciliation of the exact package, explicit
+rollback and recovery readiness, and Maverick's separate live-execution
+authorization. Any changed target, code, schema, inventory, checksum, command,
+expiry, or operation invalidates the package.

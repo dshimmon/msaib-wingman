@@ -30,6 +30,7 @@
 | `wingman-os/knowledge-representation` | Mission 014 | completed | no | committed=yes; pushed=yes; merged=yes | [Wingman Chunks Knowledge](wingman-os/knowledge-representation/mission.md) |
 | `wingman-os/knowledge-retrieval` | Mission 008 | completed | no | committed=yes; pushed=yes; merged=yes | [Knowledge Retrieval](wingman-os/knowledge-retrieval/mission.md) |
 | `wingman-os/ledger` | Mission 026 | completed | no | committed=yes; pushed=yes; merged=yes | [Wingman Establishes the Registry](wingman-os/ledger/mission.md) |
+| `wingman-os/ledger-transition` | — | draft | no | committed=yes; pushed=yes; merged=yes | [Wingman Ledger Transition](wingman-os/ledger-transition/mission.md) |
 | `wingman-os/modular-wingman` | Mission 007 | completed | no | committed=yes; pushed=yes; merged=yes | [Modular Wingman](wingman-os/modular-wingman/mission.md) |
 | `wingman-os/priority` | Mission 017 | completed | no | committed=yes; pushed=yes; merged=yes | [Wingman Ranks Evidence](wingman-os/priority/mission.md) |
 | `wingman-os/prompt-optimizer` | — | completed | no | committed=yes; pushed=yes; merged=yes | [Wingman Optimizes Prompts](wingman-os/prompt-optimizer/mission.md) |
