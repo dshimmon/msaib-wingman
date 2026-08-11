@@ -8,21 +8,28 @@
   "title": "Landing Signal Officer v1",
   "call_sign": "LSO",
   "namespace": "governance",
-  "lifecycle": "active",
+  "lifecycle": "completed",
   "priority": "high",
   "portfolio_primary": true,
-  "authorization_gate": "implementation and deterministic validation authorized; audit invocation, commit, push, merge, publication, and completion remain pending",
+  "authorization_gate": "closed by Maverick after exact LSO conditional closeout",
   "approval_evidence": [
     {
       "date": "2026-08-11",
       "authority": "Maverick",
       "scope": "Authorized construction of LSO v1 in an isolated worktree. Commit, push, merge, Crew Chief invocation, live Ledger work, publication, and mission completion were not authorized."
+    },
+    {
+      "date": "2026-08-11",
+      "authority": "Maverick",
+      "scope": "Approved the exact LSO closeout plan, including implementation commit, branch and main publication, completion-record generation, closeout commit, remote verification, and completion declaration; no live operation authorized."
     }
   ],
   "baseline_commit": "9c68ca8ef10a270358c510d1a333daf001d7caa1",
-  "implementation_commits": [],
-  "pushed": false,
-  "merged": false,
+  "implementation_commits": [
+    "6c3d1e094a84d3615cd2ab542520bf7e11ca2c06"
+  ],
+  "pushed": true,
+  "merged": true,
   "official_decisions": [
     "docs/decisions/governance/crew-chief-audit.md",
     "docs/decisions/governance/lso-closeout.md",
@@ -49,10 +56,10 @@
       "tools/governance/repository.py",
       "tools/lso/"
     ],
-    "state": "implementation_validated_pending_audit_package",
-    "next_gate": "Complete deterministic validation, freeze the exact LSO Crew Chief package, and request separate package-bound audit authorization."
+    "state": "completed",
+    "next_gate": "Maverick selects and authorizes the next mission."
   },
-  "next_gate": "Complete deterministic validation, freeze the exact LSO Crew Chief package, and request separate package-bound audit authorization.",
+  "next_gate": "Maverick selects and authorizes the next mission.",
   "supersedes": null,
   "superseded_by": null,
   "paused": false,

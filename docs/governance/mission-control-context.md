@@ -6,8 +6,8 @@
 - Canary: `CANOPY-7C2F-ATLAS`
 - Authority: Maverick has final authority; Codex is the repository builder/operator.
 - First repository read: `AGENTS.md`
-- Portfolio-primary: `governance/lso` (active)
-- Authorization gate: `implementation and deterministic validation authorized; audit invocation, commit, push, merge, publication, and completion remain pending`
-- Official record: `docs/missions/governance/lso/mission.md`
-- Last completed: `atlas/website-course-cockpit` at `e1aa17fefe3e5843a1de705339499943a2df146e`
-- Next gate: Complete deterministic validation, freeze the exact LSO Crew Chief package, and request separate package-bound audit authorization.
+- Portfolio-primary: `none`
+- Repository state: `between missions`
+- Implementation authority: `none`
+- Last completed: `governance/lso` at `6c3d1e094a84d3615cd2ab542520bf7e11ca2c06`
+- Next gate: Maverick selects and authorizes a mission.

@@ -13,7 +13,7 @@
 | `atlas/traceback` | Mission 021 | completed | no | committed=yes; pushed=yes; merged=yes | [Atlas Opens Its Sources](atlas/traceback/mission.md) |
 | `atlas/website-course-cockpit` | — | completed | no | committed=yes; pushed=yes; merged=yes | [Atlas Website & Course Cockpit MVP](atlas/website-course-cockpit/mission.md) |
 | `governance/crew-chief` | — | completed | yes | committed=yes; pushed=yes; merged=yes | [Crew Chief Independent Audit](governance/crew-chief/mission.md) |
-| `governance/lso` | — | active | yes | committed=no; pushed=no; merged=no | [Landing Signal Officer v1](governance/lso/mission.md) |
+| `governance/lso` | — | completed | yes | committed=yes; pushed=yes; merged=yes | [Landing Signal Officer v1](governance/lso/mission.md) |
 | `governance/repository-architecture` | — | completed | no | committed=yes; pushed=yes; merged=yes | [Wingman Repository Architecture](governance/repository-architecture/mission.md) |
 | `operations/flightline/setup` | — | completed | no | committed=yes; pushed=yes; merged=yes | [Development Flightline Setup](operations/flightline/setup/mission.md) |
 | `wingman-os/airframe` | Mission 027 | completed | no | committed=yes; pushed=yes; merged=yes | [Wingman Defines the Boundary](wingman-os/airframe/mission.md) |
