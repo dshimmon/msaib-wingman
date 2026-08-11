@@ -18,6 +18,26 @@ _LEGACY_SOURCE_METADATA_COLUMNS = (
 )
 
 
+def source_schema_version(connection):
+    """Identify the supported physical source representation exactly."""
+    columns = {
+        row["name"]
+        for row in connection.execute("PRAGMA table_info(sources)")
+    }
+    legacy = set(_LEGACY_SOURCE_METADATA_COLUMNS)
+    if legacy.issubset(columns):
+        return 3
+    if legacy.isdisjoint(columns):
+        return 4
+    raise RuntimeError("Ledger sources schema is ambiguous or incomplete.")
+
+
+def _legacy_source_projection(connection):
+    if source_schema_version(connection) == 3:
+        return "s.program, s.academic_year,"
+    return "NULL AS program, NULL AS academic_year,"
+
+
 def utc_now():
     """
     Return a current UTC ISO timestamp.
@@ -203,37 +223,38 @@ def create_source(
             else {}
         ),
     )
-    connection.execute(
-        """
-        INSERT INTO sources (
-            entity_id,
-            source_kind,
-            display_name,
-            file_name,
-            file_type,
-            mime_type,
-            program,
-            academic_year,
-            source_url,
-            original_path,
-            current_source_version_id
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
-        """,
-        (
-            entity_id,
-            source_kind,
-            display_name,
-            file_name,
-            file_type,
-            mime_type,
-            *_legacy_source_values_from_metadata(
-                metadata
+    if source_schema_version(connection) == 3:
+        connection.execute(
+            """
+            INSERT INTO sources (
+                entity_id, source_kind, display_name, file_name,
+                file_type, mime_type, program, academic_year,
+                source_url, original_path, current_source_version_id
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+            """,
+            (
+                entity_id, source_kind, display_name, file_name,
+                file_type, mime_type,
+                *_legacy_source_values_from_metadata(metadata),
+                source_url, original_path,
             ),
-            source_url,
-            original_path,
-        ),
-    )
+        )
+    else:
+        connection.execute(
+            """
+            INSERT INTO sources (
+                entity_id, source_kind, display_name, file_name,
+                file_type, mime_type, source_url, original_path,
+                current_source_version_id
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)
+            """,
+            (
+                entity_id, source_kind, display_name, file_name,
+                file_type, mime_type, source_url, original_path,
+            ),
+        )
 
     return get_source(connection, entity_id)
 
@@ -243,7 +264,7 @@ def get_source(connection, entity_id):
     Return one source record by ID.
     """
     row = connection.execute(
-        """
+        f"""
         SELECT
             e.entity_id,
             e.entity_type,
@@ -259,8 +280,7 @@ def get_source(connection, entity_id):
             s.file_name,
             s.file_type,
             s.mime_type,
-            s.program,
-            s.academic_year,
+            {_legacy_source_projection(connection)}
             s.source_url,
             s.original_path,
             s.current_source_version_id
@@ -320,8 +340,7 @@ def list_sources(connection, *, status=None):
             s.file_name,
             s.file_type,
             s.mime_type,
-            s.program,
-            s.academic_year,
+            {_legacy_source_projection(connection)}
             s.source_url,
             s.original_path,
             s.current_source_version_id
@@ -388,28 +407,35 @@ def update_source(
             entity_id,
         ),
     )
-    connection.execute(
-        """
-        UPDATE sources
-        SET source_kind = ?, display_name = ?, file_name = ?,
-            file_type = ?, mime_type = ?, program = ?,
-            academic_year = ?, source_url = ?, original_path = ?
-        WHERE entity_id = ?
-        """,
-        (
-            source_kind,
-            display_name,
-            file_name,
-            file_type,
-            mime_type,
-            *_legacy_source_values_from_metadata(
-                metadata
+    if source_schema_version(connection) == 3:
+        connection.execute(
+            """
+            UPDATE sources
+            SET source_kind = ?, display_name = ?, file_name = ?,
+                file_type = ?, mime_type = ?, program = ?,
+                academic_year = ?, source_url = ?, original_path = ?
+            WHERE entity_id = ?
+            """,
+            (
+                source_kind, display_name, file_name, file_type, mime_type,
+                *_legacy_source_values_from_metadata(metadata),
+                source_url, original_path, entity_id,
             ),
-            source_url,
-            original_path,
-            entity_id,
-        ),
-    )
+        )
+    else:
+        connection.execute(
+            """
+            UPDATE sources
+            SET source_kind = ?, display_name = ?, file_name = ?,
+                file_type = ?, mime_type = ?, source_url = ?,
+                original_path = ?
+            WHERE entity_id = ?
+            """,
+            (
+                source_kind, display_name, file_name, file_type,
+                mime_type, source_url, original_path, entity_id,
+            ),
+        )
     return get_source(connection, entity_id)
 
 

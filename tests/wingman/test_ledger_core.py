@@ -73,7 +73,8 @@ class LedgerCoreTests(unittest.TestCase):
             / "test-ledger.sqlite3"
         )
         self.connection = connect_database(
-            self.database_path
+            self.database_path,
+            lock_mode="exclusive",
         )
         self.addCleanup(self.connection.close)
 

@@ -36,13 +36,22 @@ MODULE_OWNERS = {
     "wingman.core.knowledge_loader": CORE,
     "wingman.core.ledger": CORE,
     "wingman.core.ledger.action_repository": CORE,
+    "wingman.core.ledger.authorization": CORE,
+    "wingman.core.ledger.backup": CORE,
     "wingman.core.ledger.briefing_repository": CORE,
     "wingman.core.ledger.database": CORE,
     "wingman.core.ledger.diagnostic_repository": CORE,
+    "wingman.core.ledger.dry_run": CORE,
     "wingman.core.ledger.legacy_import_repository": CORE,
+    "wingman.core.ledger.locking": CORE,
     "wingman.core.ledger.migrations": CORE,
     "wingman.core.ledger.models": CORE,
+    "wingman.core.ledger.preservation": CORE,
+    "wingman.core.ledger.readiness": CORE,
+    "wingman.core.ledger.recovery": CORE,
     "wingman.core.ledger.source_repository": CORE,
+    "wingman.core.ledger.transition": CORE,
+    "wingman.core.ledger.transition_cli": CORE,
     "wingman.core.openai_client": CORE,
     "wingman.core.pdf_adapter": CORE,
     "wingman.core.powerpoint_adapter": CORE,
@@ -159,12 +168,12 @@ TRANSITIONAL_EXCEPTIONS = {
             "wingman.core.ledger.source_repository",
         ),
         "reason": (
-            "Applied migrations 1-3 are immutable history. Core exposes "
-            "the two product-specific columns only through generic "
-            "metadata while the physical version-3 schema remains in use."
+            "Applied migrations 1-3 are immutable history. Migration 4 "
+            "removes the physical columns, while the version-3 rollback "
+            "adapter remains supported for the governed rollback window."
         ),
         "removal_stage": (
-            "Ledger Transition, after Assurance v1."
+            "After the separately approved rollback window closes."
         ),
     },
 }

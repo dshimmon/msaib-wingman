@@ -94,7 +94,7 @@ class BriefingPersistenceTests(unittest.TestCase):
         }
 
     def seed_source(self):
-        connection = connect_database()
+        connection = connect_database(lock_mode="exclusive")
         apply_migrations(connection)
         with transaction(connection):
             create_source(

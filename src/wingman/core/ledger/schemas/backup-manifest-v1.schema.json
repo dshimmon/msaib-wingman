@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "wingman://ledger/backup-manifest-v1",
+  "title": "Immutable Ledger Backup Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "run_id",
+    "created_at",
+    "source",
+    "backup",
+    "non_overwrite",
+    "never_delete",
+    "manifest_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "record_type": {"const": "immutable_ledger_backup"},
+    "run_id": {"type": "string"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "source": {"type": "object"},
+    "backup": {"type": "object"},
+    "non_overwrite": {"const": true},
+    "never_delete": {"const": true},
+    "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

@@ -51,14 +51,20 @@ class LegacySourceAdapterTests(unittest.TestCase):
                 / "missing-registry.json",
             )
         )
-        self.connection = connect_database(
-            self.database_path
+        initialization_connection = connect_database(
+            self.database_path,
+            lock_mode="exclusive",
         )
-        self.addCleanup(self.connection.close)
         self.assertEqual(
-            apply_migrations(self.connection),
+            apply_migrations(
+                initialization_connection,
+                target_version=3,
+            ),
             {1, 2, 3},
         )
+        initialization_connection.close()
+        self.connection = connect_database(self.database_path)
+        self.addCleanup(self.connection.close)
 
     def test_version_3_schema_is_unchanged(self):
         columns = {

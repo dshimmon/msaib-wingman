@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "wingman://ledger/preservation-manifest-v1",
+  "title": "Ledger Preservation Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "result",
+    "allowed_differences",
+    "public_source_record_count",
+    "non_ledger_files",
+    "sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "result": {"const": "preserved"},
+    "allowed_differences": {"type": "object"},
+    "public_source_record_count": {"type": "integer", "minimum": 0},
+    "non_ledger_files": {"type": "object"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}
