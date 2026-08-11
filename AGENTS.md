@@ -110,6 +110,22 @@ do not infer any gate that the instruction does not name.
 - Use worktrees only when Maverick explicitly authorizes them or an approved
   parallel-work plan requires isolation.
 
+## Parallel work and shared-file coordination
+
+- Keep each concurrent task in its own isolated worktree.
+- A same-file overlap alone is not a blocking conflict and must not cause work
+  to stop. Compare the actual changed hunks, affected symbols or contracts, and
+  semantic intent instead of treating filenames as the conflict boundary.
+- When tasks change different sections without a semantic conflict, continue
+  within the authorized scope, preserve every task's work, and record the
+  overlap and later integration responsibility.
+- When changes overlap the same lines, one change would overwrite or remove
+  another, or the tasks require competing behavior or contracts, stop and ask
+  Maverick for a disposition.
+- Before merge, assemble all authorized work on a dedicated integration branch,
+  run the complete current eligible test suite, and audit the combined diff
+  against every contributing task's requirements.
+
 ## Implementation, testing, and documentation
 
 - Make the smallest coherent change that satisfies the approved objective and
