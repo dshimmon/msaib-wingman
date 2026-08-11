@@ -733,7 +733,13 @@ class BriefingPersistenceTests(unittest.TestCase):
 
     def test_streamlit_warning_and_full_evidence_expander_are_safe(self):
         source = (
-            PROJECT_ROOT / "src" / "products" / "atlas" / "streamlit_app.py"
+            PROJECT_ROOT
+            / "src"
+            / "products"
+            / "atlas"
+            / "ui"
+            / "pages"
+            / "briefing.py"
         ).read_text(encoding="utf-8")
         self.assertIn(
             "This briefing was generated but could not be saved.",
