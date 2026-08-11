@@ -8,10 +8,10 @@
   "title": "Atlas Website & Course Cockpit MVP",
   "call_sign": "ATLAS-WEB",
   "namespace": "atlas",
-  "lifecycle": "active",
+  "lifecycle": "completed",
   "priority": "high",
   "portfolio_primary": false,
-  "authorization_gate": "implementation, Crew Chief re-review, commit, push, and merge completed under Maverick authorization; mission completion remains a separate Maverick decision",
+  "authorization_gate": "closed by Maverick; deployment authorized but no repository deployment target or production configuration exists",
   "approval_evidence": [
     {
       "date": "2026-08-10",
@@ -37,6 +37,11 @@
       "date": "2026-08-11",
       "authority": "Maverick",
       "scope": "Authorized Codex to commit and push the Atlas Website mission implementation and merge it with main after required Crew Chief reconciliation."
+    },
+    {
+      "date": "2026-08-11",
+      "authority": "Maverick",
+      "scope": "Authorized deployment, declared the Atlas Website & Course Cockpit mission complete, and authorized completion of its journal plus any required commit, push, and merge. Repository inspection found no deployment target, hosting manifest, production URL, or credential contract, so no external deployment is claimed."
     }
   ],
   "baseline_commit": "b1910d0c69a52d73ddde93cb9722f12540c5d1e7",
@@ -62,10 +67,10 @@
       "tests/wingman/test_product_contract.py",
       "docs/missions/atlas/website-course-cockpit/"
     ],
-    "state": "merged_awaiting_mission_completion_decision",
-    "next_gate": "Maverick decides mission completion and any separately authorized deployment; Flight Cards live integration and full Practice Test acceptance remain dependency-limited."
+    "state": "completed_by_maverick_deployment_target_unconfigured",
+    "next_gate": "No mission execution gate; external deployment requires an identified target and production configuration, while Flight Cards live integration and full Practice Test acceptance require their owning dependencies."
   },
-  "next_gate": "Maverick decides mission completion and any separately authorized deployment; dependency-limited Flight Cards live integration and full Practice Test acceptance remain disclosed.",
+  "next_gate": "No mission execution gate; future external deployment requires an identified target and production configuration, and dependency-limited capabilities require separately approved owning services.",
   "supersedes": null,
   "superseded_by": null,
   "paused": false,
@@ -74,7 +79,8 @@
 }
 -->
 
-Lifecycle: **active**. Call sign: **ATLAS-WEB**.
+Lifecycle: **completed by Maverick with disclosed deployment and dependency
+limits**. Call sign: **ATLAS-WEB**.
 Target: **August 23, 2026 class start**.
 
 Maverick authorized a substantial improvement to the existing Atlas Streamlit
@@ -115,7 +121,7 @@ navigation/page seam and an honest unavailable state are authorized. Questions,
 scoring, attempts, persistence, or other assessment behavior are excluded, and
 full Practice Test acceptance remains blocked.
 
-## Current gate
+## Completion state
 
 Implementation and credential-free verification are complete for the
 authorized boundary. Maverick accepted the disclosed equivalent-viewport
@@ -124,5 +130,8 @@ verification is not claimed. Crew Chief re-reviewed the exact accepted subject
 and returned `PASS` with zero findings. Implementation commit
 `05645d42f32ba8f16ea12df4756d36754a881cf7` was pushed on
 `codex/atlas-website-course-cockpit` and fast-forwarded into `main` under
-Maverick's authorization. Deployment and mission completion remain separate
-Maverick decisions.
+Maverick's authorization. Maverick subsequently declared the mission complete
+and authorized deployment. The repository contains no deployment workflow,
+hosting manifest, production URL, or credential contract, so no external
+deployment is claimed. The completed historical journal is preserved at
+[`docs/archive/mission-history/atlas/website-course-cockpit/journal.md`](../../../archive/mission-history/atlas/website-course-cockpit/journal.md).

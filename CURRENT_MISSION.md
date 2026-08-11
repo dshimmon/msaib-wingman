@@ -12,15 +12,13 @@
 
 ## Last completed work
 
-- **governance/crew-chief — Crew Chief Independent Audit**
-- Commit: `370c38c0a5dac664a9359af54e0153a379a20e5f`
-- Official record: [docs/missions/governance/crew-chief/mission.md](docs/missions/governance/crew-chief/mission.md)
+- **atlas/website-course-cockpit — Atlas Website & Course Cockpit MVP**
+- Commit: `05645d42f32ba8f16ea12df4756d36754a881cf7`
+- Official record: [docs/missions/atlas/website-course-cockpit/mission.md](docs/missions/atlas/website-course-cockpit/mission.md)
 
 ## Active workstreams
 
-| Mission | Role | Branch | Worktree | State | Next gate |
-|---|---|---|---|---|---|
-| `atlas/website-course-cockpit` | secondary | `codex/atlas-website-course-cockpit` | `/private/tmp/atlas-crew-chief-corrected-audit-repo-20260811-01` | merged_awaiting_mission_completion_decision | Maverick decides mission completion and any separately authorized deployment; Flight Cards live integration and full Practice Test acceptance remain dependency-limited. |
+None. The repository is between missions.
 
 ## Canonical homes
 

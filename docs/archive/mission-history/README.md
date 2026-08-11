@@ -28,6 +28,7 @@ warning, and canonical replacement link.
 | `atlas/intake` | [journal](atlas/intake/journal.md) | [mission](../../missions/atlas/intake/mission.md) |
 | `atlas/library` | [journal](atlas/library/journal.md) | [mission](../../missions/atlas/library/mission.md) |
 | `atlas/traceback` | [journal](atlas/traceback/journal.md) | [mission](../../missions/atlas/traceback/mission.md) |
+| `atlas/website-course-cockpit` | [journal](atlas/website-course-cockpit/journal.md) | [mission](../../missions/atlas/website-course-cockpit/mission.md) |
 | `wingman-os/airframe` | [journal](wingman-os/airframe/journal.md) | [mission](../../missions/wingman-os/airframe/mission.md) |
 | `wingman-os/checkpoint` | [journal](wingman-os/checkpoint/journal.md) | [mission](../../missions/wingman-os/checkpoint/mission.md) |
 | `wingman-os/decision-maker` | [journal](wingman-os/decision-maker/journal.md) | [mission](../../missions/wingman-os/decision-maker/mission.md) |

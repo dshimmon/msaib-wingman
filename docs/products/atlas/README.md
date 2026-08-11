@@ -10,5 +10,6 @@ Streamlit composition, and user-facing academic vocabulary. It uses neutral
 Wingman Core and Shared mechanisms through Product Contract v1.
 
 Current completed work includes Cockpit, Traceback, Intake, Library,
-Continuity, Briefing, and [bulk ingestion](../../missions/atlas/bulk-ingestion/mission.md).
+Continuity, Briefing, [bulk ingestion](../../missions/atlas/bulk-ingestion/mission.md),
+and the [Website & Course Cockpit MVP](../../missions/atlas/website-course-cockpit/mission.md).
 Mission state remains authoritative under `docs/missions/atlas/`.

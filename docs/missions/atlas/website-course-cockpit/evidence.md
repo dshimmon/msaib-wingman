@@ -82,3 +82,30 @@ GitHub `main` from `09abc0ce50e4c86cd69da4608b6c86f1c744816e` to the
 implementation commit under Maverick's explicit authorization. This record
 does not declare deployment, migration, live-data mutation, or mission
 completion.
+
+## 2026-08-11 Maverick completion decision
+
+Maverick authorized deployment, declared the Atlas Website & Course Cockpit
+mission complete, and authorized completion of the mission journal plus any
+required commit, push, and merge.
+
+Repository inspection found no deployment workflow, hosting manifest,
+production URL, cloud target, or credential contract. The only documented
+runtime is the local Streamlit command. Codex therefore did not invent an
+external destination, transmit credentials, mutate live data, or represent a
+local process or Git publication as a production deployment.
+
+The mission is completed by Maverick with that deployment limitation and the
+already disclosed dependency limits intact. A future external deployment
+requires an identified target and production configuration. Live Flight Cards
+integration and full Practice Test acceptance require their owning services
+and remain outside this completed MVP boundary.
+
+Completion-record validation passed all 32 repository-governance tests,
+repository governance validation, the affected Ruff check, and Git whitespace
+validation. The first governance-test run exposed one stale hardcoded
+expectation that Crew Chief remained the latest completed mission; the
+assertion was generalized to use canonical completion order, and the exact
+rerun passed. The installed Black version would reformat unrelated pre-existing
+lines in that test module, so those lines were preserved and no clean
+whole-file Black claim is made for the completion-only test edit.
