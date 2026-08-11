@@ -53,3 +53,32 @@ The immutable 2026-08-11 Crew Chief report records `generated_at` as
 as `2026-08-11T03:31:41Z`. This is preserved as a model-authored timestamp
 metadata defect, not an Atlas implementation finding or an evidence-tampering
 indication. The report and its checksums were not rewritten.
+
+## 2026-08-11 final Crew Chief re-review and merge
+
+After Maverick accepted the equivalent-viewport limitation and the narrowed
+verification claim, Codex froze a new deep-risk Crew Chief envelope over the
+exact accepted subject. The genuine fresh read-only review returned `PASS`
+with zero findings:
+
+- audit ID:
+  `3ffedd2f90900436d20989836cc7cf6718fce9527308e78f92a4516faf8fc6bf`;
+- envelope ID:
+  `0cd8e184f42bc65ca6e9fcde65229f0e89f0ca6ee0bdac3c313d3540c99a002e`;
+- canonical report validation: passed;
+- reconciliation: complete and approval-ready; and
+- repository state before and after review: identical.
+
+The report records `generated_at` as `2026-08-11T12:00:00-03:00`, while the
+controller run record records `completed_at` as `2026-08-11T03:52:30Z`. This
+later model-authored value is another timestamp metadata defect. It is not an
+Atlas implementation finding or evidence-tampering indication, and the
+immutable report was not rewritten.
+
+Codex then created implementation commit
+`05645d42f32ba8f16ea12df4756d36754a881cf7` on
+`codex/atlas-website-course-cockpit`, pushed that branch, and fast-forwarded
+GitHub `main` from `09abc0ce50e4c86cd69da4608b6c86f1c744816e` to the
+implementation commit under Maverick's explicit authorization. This record
+does not declare deployment, migration, live-data mutation, or mission
+completion.

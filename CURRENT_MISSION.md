@@ -20,7 +20,7 @@
 
 | Mission | Role | Branch | Worktree | State | Next gate |
 |---|---|---|---|---|---|
-| `atlas/website-course-cockpit` | secondary | `codex/atlas-website-course-cockpit (planned from origin/main at 09abc0ce50e4c86cd69da4608b6c86f1c744816e)` | `/private/tmp/atlas-crew-chief-corrected-audit-repo-20260811-01` | implementation_complete_crew_chief_re_review_pending | Crew Chief re-reviews the exact accepted working-tree package; Codex reconciles every result; authorized commit, push, and merge may then proceed. |
+| `atlas/website-course-cockpit` | secondary | `codex/atlas-website-course-cockpit` | `/private/tmp/atlas-crew-chief-corrected-audit-repo-20260811-01` | merged_awaiting_mission_completion_decision | Maverick decides mission completion and any separately authorized deployment; Flight Cards live integration and full Practice Test acceptance remain dependency-limited. |
 
 ## Canonical homes
 

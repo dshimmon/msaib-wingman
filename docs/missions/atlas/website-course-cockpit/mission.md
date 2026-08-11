@@ -11,7 +11,7 @@
   "lifecycle": "active",
   "priority": "high",
   "portfolio_primary": false,
-  "authorization_gate": "implementation, Crew Chief re-review, commit, push, and merge authorized by Maverick; mission completion remains a separate Maverick decision",
+  "authorization_gate": "implementation, Crew Chief re-review, commit, push, and merge completed under Maverick authorization; mission completion remains a separate Maverick decision",
   "approval_evidence": [
     {
       "date": "2026-08-10",
@@ -40,9 +40,11 @@
     }
   ],
   "baseline_commit": "b1910d0c69a52d73ddde93cb9722f12540c5d1e7",
-  "implementation_commits": [],
-  "pushed": false,
-  "merged": false,
+  "implementation_commits": [
+    "05645d42f32ba8f16ea12df4756d36754a881cf7"
+  ],
+  "pushed": true,
+  "merged": true,
   "official_decisions": [
     "docs/decisions/architecture/product-separation.md",
     "docs/decisions/architecture/source-traceability.md",
@@ -50,7 +52,7 @@
   ],
   "workstream": {
     "owner_session": "Codex Atlas Website implementation authorized by Maverick on 2026-08-10",
-    "branch": "codex/atlas-website-course-cockpit (planned from origin/main at 09abc0ce50e4c86cd69da4608b6c86f1c744816e)",
+    "branch": "codex/atlas-website-course-cockpit",
     "worktree": "/private/tmp/atlas-crew-chief-corrected-audit-repo-20260811-01",
     "writable_scope": [
       "src/products/atlas/streamlit_app.py",
@@ -60,10 +62,10 @@
       "tests/wingman/test_product_contract.py",
       "docs/missions/atlas/website-course-cockpit/"
     ],
-    "state": "implementation_complete_crew_chief_re_review_pending",
-    "next_gate": "Crew Chief re-reviews the exact accepted working-tree package; Codex reconciles every result; authorized commit, push, and merge may then proceed."
+    "state": "merged_awaiting_mission_completion_decision",
+    "next_gate": "Maverick decides mission completion and any separately authorized deployment; Flight Cards live integration and full Practice Test acceptance remain dependency-limited."
   },
-  "next_gate": "Crew Chief re-review and reconciliation, followed by the authorized commit, push, and merge; mission completion remains a separate Maverick decision.",
+  "next_gate": "Maverick decides mission completion and any separately authorized deployment; dependency-limited Flight Cards live integration and full Practice Test acceptance remain disclosed.",
   "supersedes": null,
   "superseded_by": null,
   "paused": false,
@@ -115,10 +117,12 @@ full Practice Test acceptance remains blocked.
 
 ## Current gate
 
-Implementation and credential-free verification are reported complete for the
+Implementation and credential-free verification are complete for the
 authorized boundary. Maverick accepted the disclosed equivalent-viewport
 limitation for the 200% zoom criterion; direct actual-200%-browser-zoom
-verification is not claimed. Crew Chief must re-review the exact frozen
-working-tree subject, and Codex must resolve, dispute with evidence, or
-escalate every result. Maverick authorized commit, push, and merge after that
-gate. Deployment and mission completion remain separate Maverick decisions.
+verification is not claimed. Crew Chief re-reviewed the exact accepted subject
+and returned `PASS` with zero findings. Implementation commit
+`05645d42f32ba8f16ea12df4756d36754a881cf7` was pushed on
+`codex/atlas-website-course-cockpit` and fast-forwarded into `main` under
+Maverick's authorization. Deployment and mission completion remain separate
+Maverick decisions.
