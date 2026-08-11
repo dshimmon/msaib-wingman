@@ -115,16 +115,21 @@ class PromptOptimizerUITests(unittest.TestCase):
         self.assertEqual(
             app.radio[0].options,
             [
+                "Course Cockpit",
                 ATLAS_PRODUCT.chat_label,
-                ATLAS_PRODUCT.briefing_label,
+                "Briefings",
                 ATLAS_PRODUCT.library_label,
+                "Add Materials",
                 PROMPT_OPTIMIZER_LABEL,
             ],
         )
 
         app.radio[0].set_value(PROMPT_OPTIMIZER_LABEL).run()
         self.assert_no_app_exception(app)
-        self.assertEqual(app.title[0].value, PROMPT_OPTIMIZER_LABEL)
+        self.assertIn(
+            PROMPT_OPTIMIZER_LABEL,
+            "\n".join(element.value for element in app.markdown),
+        )
         return app
 
     def optimize(self, app, source_prompt):

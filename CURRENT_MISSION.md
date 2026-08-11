@@ -18,7 +18,9 @@
 
 ## Active workstreams
 
-None. The repository is between missions.
+| Mission | Role | Branch | Worktree | State | Next gate |
+|---|---|---|---|---|---|
+| `atlas/website-course-cockpit` | secondary | `codex/atlas-website-course-cockpit` | `/private/tmp/atlas-crew-chief-corrected-audit-repo-20260811-01` | merged_awaiting_mission_completion_decision | Maverick decides mission completion and any separately authorized deployment; Flight Cards live integration and full Practice Test acceptance remain dependency-limited. |
 
 ## Canonical homes
 

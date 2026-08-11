@@ -11,6 +11,7 @@
 | `atlas/intake` | Mission 022 | completed | no | committed=yes; pushed=yes; merged=yes | [Atlas Accepts New Documents](atlas/intake/mission.md) |
 | `atlas/library` | Mission 023 | completed | no | committed=yes; pushed=yes; merged=yes | [Atlas Manages Its Knowledge](atlas/library/mission.md) |
 | `atlas/traceback` | Mission 021 | completed | no | committed=yes; pushed=yes; merged=yes | [Atlas Opens Its Sources](atlas/traceback/mission.md) |
+| `atlas/website-course-cockpit` | — | active | no | committed=yes; pushed=yes; merged=yes | [Atlas Website & Course Cockpit MVP](atlas/website-course-cockpit/mission.md) |
 | `governance/crew-chief` | — | completed | yes | committed=yes; pushed=yes; merged=yes | [Crew Chief Independent Audit](governance/crew-chief/mission.md) |
 | `governance/repository-architecture` | — | completed | no | committed=yes; pushed=yes; merged=yes | [Wingman Repository Architecture](governance/repository-architecture/mission.md) |
 | `operations/flightline/setup` | — | completed | no | committed=yes; pushed=yes; merged=yes | [Development Flightline Setup](operations/flightline/setup/mission.md) |

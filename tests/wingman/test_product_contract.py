@@ -761,12 +761,18 @@ class ProductContractTests(unittest.TestCase):
             product_context=context,
         )
 
-    def test_streamlit_root_passes_context_to_product_paths(self):
-        tree = ast.parse(
-            (SRC_DIRECTORY / "products" / "atlas" / "streamlit_app.py").read_text(
-                encoding="utf-8"
+    def test_streamlit_pages_pass_context_to_product_paths(self):
+        page_directory = SRC_DIRECTORY / "products" / "atlas" / "ui" / "pages"
+        trees = [
+            ast.parse(path.read_text(encoding="utf-8"))
+            for path in (
+                page_directory / "chat.py",
+                page_directory / "briefing.py",
+                page_directory / "upload.py",
+                page_directory / "library.py",
+                page_directory / "document.py",
             )
-        )
+        ]
         required_calls = {
             "ask_wingman",
             "create_study_briefing",
@@ -777,24 +783,24 @@ class ProductContractTests(unittest.TestCase):
             "reprocess_library_source",
         }
         observed = {}
-        for node in ast.walk(tree):
-            if not (
-                isinstance(node, ast.Call)
-                and isinstance(node.func, ast.Name)
-                and node.func.id in required_calls
-            ):
-                continue
-            observed[node.func.id] = {
-                keyword.arg: keyword.value
-                for keyword in node.keywords
-            }
+        for tree in trees:
+            for node in ast.walk(tree):
+                if not (
+                    isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Name)
+                    and node.func.id in required_calls
+                ):
+                    continue
+                observed[node.func.id] = {
+                    keyword.arg: keyword.value for keyword in node.keywords
+                }
         self.assertEqual(set(observed), required_calls)
         for function_name, keywords in observed.items():
             with self.subTest(function_name=function_name):
                 self.assertIn("product_context", keywords)
                 self.assertEqual(
                     keywords["product_context"].id,
-                    "PRODUCT_CONTEXT",
+                    "product_context",
                 )
 
 

@@ -310,7 +310,7 @@ class AirframeCompositionTests(unittest.TestCase):
         self.assertIs(result, objects)
 
     def test_streamlit_routes_multi_selection_through_batch_preview(self):
-        source_text = (SRC_DIRECTORY / "products" / "atlas" / "streamlit_app.py").read_text(
+        source_text = (SRC_DIRECTORY / "products" / "atlas" / "ui" / "pages" / "upload.py").read_text(
             encoding="utf-8"
         )
         tree = ast.parse(source_text)
@@ -353,8 +353,19 @@ class AirframeCompositionTests(unittest.TestCase):
             for keyword in document_uploader.keywords
         }
         self.assertIs(keywords["accept_multiple_files"].value, True)
+        self.assertEqual(keywords["type"].id, "SUPPORTED_UPLOAD_TYPES")
+        supported_types = next(
+            node.value
+            for node in tree.body
+            if isinstance(node, ast.Assign)
+            and any(
+                isinstance(target, ast.Name)
+                and target.id == "SUPPORTED_UPLOAD_TYPES"
+                for target in node.targets
+            )
+        )
         self.assertEqual(
-            {element.value for element in keywords["type"].elts},
+            {element.value for element in supported_types.elts},
             {
                 "pptx",
                 "pdf",
