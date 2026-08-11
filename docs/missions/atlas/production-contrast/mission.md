@@ -8,21 +8,28 @@
   "title": "Atlas Production Contrast Correction",
   "call_sign": "ATLAS-CONTRAST",
   "namespace": "atlas",
-  "lifecycle": "active",
+  "lifecycle": "completed",
   "priority": "high",
   "portfolio_primary": true,
-  "authorization_gate": "implementation, validation, Crew Chief review, and LSO preparation authorized; commit and publication require the exact later LSO approval",
+  "authorization_gate": "closed by Maverick after exact LSO conditional closeout",
   "approval_evidence": [
     {
       "date": "2026-08-11",
       "authority": "Maverick",
       "scope": "Authorized a live corrective pass for Atlas production contrast using current origin/main and Streamlit 1.61.1, limited to Atlas-scoped presentation styles, focused regression coverage, credential-free light/dark browser evidence, Crew Chief review, and LSO preparation; no commit, push, main update, deployment operation, secret access, or live-data mutation authorized."
+    },
+    {
+      "date": "2026-08-11",
+      "authority": "Maverick",
+      "scope": "Atlas-scoped presentation contrast correction, focused regression coverage, corrective mission records, and deterministic generated governance views; no deployment or live operation."
     }
   ],
   "baseline_commit": "0d40ea86a47725dc6a1a47d7f9ce43e7c141ff93",
-  "implementation_commits": [],
-  "pushed": false,
-  "merged": false,
+  "implementation_commits": [
+    "080a7f2cacf57f31fe0f30bc61a89a2f750ddfd6"
+  ],
+  "pushed": true,
+  "merged": true,
   "official_decisions": [
     "docs/decisions/architecture/product-separation.md",
     "docs/decisions/governance/crew-chief-audit.md",
@@ -40,10 +47,10 @@
       "docs/missions/README.md",
       "docs/governance/mission-control-context.md"
     ],
-    "state": "implementation",
-    "next_gate": "Complete isolated light/dark validation, freeze the exact Crew Chief package, reconcile a zero-finding PASS, then prepare the exact LSO approval card."
+    "state": "completed",
+    "next_gate": "Maverick selects and authorizes a mission."
   },
-  "next_gate": "Crew Chief reviews the frozen corrective subject; after PASS and approval-ready reconciliation, LSO prepares the exact single-use closeout approval card.",
+  "next_gate": "Maverick selects and authorizes a mission.",
   "supersedes": null,
   "superseded_by": null,
   "paused": false,

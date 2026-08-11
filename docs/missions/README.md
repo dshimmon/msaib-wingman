@@ -10,7 +10,7 @@
 | `atlas/continuity` | Mission 024 | completed | no | committed=yes; pushed=yes; merged=yes | [Atlas Understands Conversations](atlas/continuity/mission.md) |
 | `atlas/intake` | Mission 022 | completed | no | committed=yes; pushed=yes; merged=yes | [Atlas Accepts New Documents](atlas/intake/mission.md) |
 | `atlas/library` | Mission 023 | completed | no | committed=yes; pushed=yes; merged=yes | [Atlas Manages Its Knowledge](atlas/library/mission.md) |
-| `atlas/production-contrast` | — | active | yes | committed=no; pushed=no; merged=no | [Atlas Production Contrast Correction](atlas/production-contrast/mission.md) |
+| `atlas/production-contrast` | — | completed | yes | committed=yes; pushed=yes; merged=yes | [Atlas Production Contrast Correction](atlas/production-contrast/mission.md) |
 | `atlas/traceback` | Mission 021 | completed | no | committed=yes; pushed=yes; merged=yes | [Atlas Opens Its Sources](atlas/traceback/mission.md) |
 | `atlas/website-course-cockpit` | — | completed | no | committed=yes; pushed=yes; merged=yes | [Atlas Website & Course Cockpit MVP](atlas/website-course-cockpit/mission.md) |
 | `governance/crew-chief` | — | completed | yes | committed=yes; pushed=yes; merged=yes | [Crew Chief Independent Audit](governance/crew-chief/mission.md) |

@@ -5,23 +5,20 @@
 
 ## Portfolio primary
 
-- Mission: **atlas/production-contrast — Atlas Production Contrast Correction**
-- Lifecycle: **active**
-- Authorization gate: `implementation, validation, Crew Chief review, and LSO preparation authorized; commit and publication require the exact later LSO approval`
-- Official record: [docs/missions/atlas/production-contrast/mission.md](docs/missions/atlas/production-contrast/mission.md)
-- Next gate: Crew Chief reviews the frozen corrective subject; after PASS and approval-ready reconciliation, LSO prepares the exact single-use closeout approval card.
+- Mission: **none**
+- Repository state: **between missions**
+- Implementation authority: **none**
+- Next gate: Maverick selects and authorizes a mission.
 
 ## Last completed work
 
-- **governance/lso — Landing Signal Officer v1**
-- Commit: `6c3d1e094a84d3615cd2ab542520bf7e11ca2c06`
-- Official record: [docs/missions/governance/lso/mission.md](docs/missions/governance/lso/mission.md)
+- **atlas/production-contrast — Atlas Production Contrast Correction**
+- Commit: `080a7f2cacf57f31fe0f30bc61a89a2f750ddfd6`
+- Official record: [docs/missions/atlas/production-contrast/mission.md](docs/missions/atlas/production-contrast/mission.md)
 
 ## Active workstreams
 
-| Mission | Role | Branch | Worktree | State | Next gate |
-|---|---|---|---|---|---|
-| `atlas/production-contrast` | primary | `codex/atlas-production-contrast-20260811` | `/private/tmp/wingman-atlas-contrast-20260811-MMF2V0/repository` | implementation | Complete isolated light/dark validation, freeze the exact Crew Chief package, reconcile a zero-finding PASS, then prepare the exact LSO approval card. |
+None. The repository is between missions.
 
 ## Canonical homes
 
