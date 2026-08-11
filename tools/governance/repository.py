@@ -545,23 +545,28 @@ def validate_publication_evidence(missions: list[Record]) -> list[str]:
 
 def _latest_completed(missions: list[Record]) -> Record:
     candidates = [
-        record for record in missions
+        record
+        for record in missions
         if record.metadata["lifecycle"] == "completed"
         and record.metadata["implementation_commits"]
     ]
-    order = subprocess.run(
-        ["git", "rev-list", "--topo-order", "HEAD"],
-        cwd=ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.splitlines()
-    positions = {commit: index for index, commit in enumerate(order)}
-    return min(
+
+    def completion_timestamp(record: Record) -> int:
+        commit = record.metadata["implementation_commits"][-1]
+        value = subprocess.run(
+            ["git", "show", "-s", "--format=%ct", commit],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        return int(value)
+
+    return max(
         candidates,
-        key=lambda record: min(
-            positions.get(commit, len(positions))
-            for commit in record.metadata["implementation_commits"]
+        key=lambda record: (
+            completion_timestamp(record),
+            record.metadata["id"],
         ),
     )
 

@@ -9,5 +9,5 @@
 - Portfolio-primary: `none`
 - Repository state: `between missions`
 - Implementation authority: `none`
-- Last completed: `atlas/website-course-cockpit` at `05645d42f32ba8f16ea12df4756d36754a881cf7`
+- Last completed: `atlas/website-course-cockpit` at `e1aa17fefe3e5843a1de705339499943a2df146e`
 - Next gate: Maverick selects and authorizes a mission.

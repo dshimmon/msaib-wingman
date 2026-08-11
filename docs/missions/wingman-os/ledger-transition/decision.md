@@ -1,14 +1,14 @@
 # Ledger Transition Implementation Decision
 
-This bounded decision does not claim mission completion. The adjacent
-canonical [`mission.md`](mission.md) owns lifecycle, publication, and next-gate
-status; Maverick's explicit approvals own every implementation and operational
-authorization.
+This bounded implementation decision does not itself own lifecycle. The
+adjacent canonical [`mission.md`](mission.md) records the completed engineering
+mission, publication, and next-gate status; Maverick's explicit approvals own
+every implementation and operational authorization.
 
 - **Date:** August 10, 2026
 - **Authority:** Maverick
-- **Status:** implemented, audited, merged, and published; live execution and
-  mission completion not authorized by this decision
+- **Status:** implemented, audited, merged, published, and closed as an
+  engineering mission; live execution is not authorized by this decision
 
 ## Decision
 

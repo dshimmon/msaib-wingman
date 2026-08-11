@@ -13,7 +13,7 @@
 ## Last completed work
 
 - **atlas/website-course-cockpit — Atlas Website & Course Cockpit MVP**
-- Commit: `05645d42f32ba8f16ea12df4756d36754a881cf7`
+- Commit: `e1aa17fefe3e5843a1de705339499943a2df146e`
 - Official record: [docs/missions/atlas/website-course-cockpit/mission.md](docs/missions/atlas/website-course-cockpit/mission.md)
 
 ## Active workstreams

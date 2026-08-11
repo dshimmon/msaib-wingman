@@ -11,7 +11,7 @@ deferred obligations.
 | Hardpoints / Product Contract v1 | Completed at `2b3b9a6` | Later contract changes require a separate mission. |
 | Repository Architecture | Completed and published at `cff8222f` | Later changes require a separately approved mission. |
 | Crew Chief Independent Audit | Completed by Maverick with accepted limitations; locally committed | Deterministic tests passed; full bootstrap failed; focused re-audit and fixtures did not complete; no independent certification. |
-| Ledger Transition engineering | Implemented, independently audited, merged, and published at `51fb750` | The default/live Ledger remains unchanged; mission completion and any live operation remain separately gated. |
+| Ledger Transition engineering | Completed, independently audited, merged, and published at `51fb750` | The default/live Ledger remains version 3; any physical transition remains separately gated by Assurance v1, DATA-001, an exact package and receipt, fresh Crew Chief review, and Maverick authorization. |
 | Rangefinder / Wingman Assurance v1 | Established direction; not active | Maverick must select and authorize a mission. |
 | Retrieval Scalability | Intended evidence-gated direction | Scope must be selected from Rangefinder evidence. |
 | Storage Port | Provisional working sequence | Requires a separate approved brief; no migration is implied. |

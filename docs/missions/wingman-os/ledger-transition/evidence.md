@@ -1,8 +1,9 @@
 # Ledger Transition Engineering Evidence
 
 This record preserves the original uncommitted engineering history and the
-later audit, integration, and publication evidence. It is not a
-live-transition receipt, live-execution approval, or mission-completion claim.
+later audit, integration, publication, and completed machinery-mission
+evidence. It is not a live-transition receipt or live-execution approval.
+Current lifecycle and next-gate authority belongs to [`mission.md`](mission.md).
 
 ## Starting state
 
@@ -141,6 +142,38 @@ envelope `09eb6eed68d95f32e530561cf8604f8c1e297e4ad7cb16d04ae0b7003e8df12a`,
 returned `PASS` with zero findings. Follow-up reconciliation is complete and
 `approval_ready: true`.
 
+Those earlier immutable report and reconciliation artifacts remain committed
+below as development history. Maverick subsequently superseded the original
+no-staging clause for the exact corrected candidate and approved one decisive
+read-only, no-retry follow-up invocation. It used audit
+`4b2951304f67667fdb654a707caa75292f78a4e429c4ad4a4f60db514fef4669`
+and envelope
+`33398f0c7c08aef8eed909ca7914f84f2efab05c2ed2eba19c5399d414dd1b33`.
+The result was `PASS` with zero findings, reconciliation complete, and
+`approval_ready=true`. The final report hash is
+`3b2a8320fa38d548495a09d9b563904f8fe99795ef39f08991e9a4b3c38606d3`,
+the reconciliation package hash is
+`01b49942772375aa93a285a5ce07adf895913c963f92c0bb72f1a97f57b67f58`,
+and the audited staged patch SHA-256 is
+`a4e0f0af65de8413c2e659dfe0167a047efe6bee3b182d01ddcd0df252b4a7c3`.
+
+The final immutable report records `generated_at` as
+`2026-08-11T12:00:00-03:00`, while its controller records `completed_at` as
+`2026-08-11T03:50:48Z` and reconciliation records `generated_at` as
+`2026-08-11T03:51:28Z`. This is a model-authored timestamp metadata
+inconsistency, not a Ledger implementation finding or an indication of
+artifact tampering; the immutable audit artifacts were not rewritten.
+
+The decisive final payload, complete envelope, controller report bundle,
+reconciliation, readable summary, checksum inventory, and sensitive-content
+scan are durably preserved at
+`/Users/davidshimmon/.codex/visualizations/2026/08/10/019fec4e-6d68-7910-ba7c-0a7a21472336/ledger-transition-crew-chief-final-4b295130`.
+Its `SHA256SUMS` file has SHA-256
+`049002db9f475aeec0bc4c407f5a15a8268dd64f9cf3ccf8f8f7cf040ecba0c9`
+and verifies all 81 other files. The sensitive-content scan covered 79 copied
+immutable artifacts and 2,402,315 bytes, returned `pass`, and found zero
+high-confidence secret matches without opening a secret or live-data path.
+
 The repository preserves the exact final-package copies and their SHA-256
 digests:
 
@@ -189,8 +222,7 @@ implementation or concealed a product failure.
 
 No default/live Ledger, `data/**`, credential, live transition package,
 receipt, backup, migration, restoration, recovery, or rollback was touched.
-Live execution and mission lifecycle completion remain separate Maverick
-gates.
+Live execution remains a separate exact-package Maverick gate.
 
 ## 2026-08-11 canonical-record reconciliation
 
@@ -226,3 +258,51 @@ output because `tomllib` was unavailable. The second used the bundled desktop
 Python and stopped before output because `jsonschema` was unavailable. The
 repository's validated Python 3.12 environment generated the views
 successfully. Neither failed attempt changed a file.
+
+## 2026-08-11 completed-mission gap closeout
+
+After `196a1804d51992259018281286f5571db2b4d556` became canonical main,
+Maverick approved only the remaining gaps. The closeout preserved all valid
+concurrent documentation and the four committed audit artifacts, changed the
+machinery mission lifecycle from `draft` to `completed`, added the decisive
+final audit and historical journal, corrected the runbook's stale
+`uncommitted diff` wording, recorded Atlas's final completion commit, and
+re-derived generated governance views. The only Python changes select the
+latest completed mission by the timestamp of each mission's final recorded
+commit and add its regression test; no Ledger runtime or product code changed.
+
+Final pre-publication validation on that gap-only subject:
+
+- Ledger Transition safety matrix: **25/25 passed** in 9.526 seconds;
+- repository governance tests: **33/33 passed** in 10.026 seconds;
+- standalone `python -m tools.governance validate`: **passed**;
+- complete credential-free offline repository suite: **474/474 passed** in
+  198.179 seconds;
+- all **20** JSON Schemas validated against Draft 2020-12;
+- all **226** Python sources under `src`, `tests`, and `tools` compiled in
+  memory;
+- changed-Python Ruff and exact-hunk Black checks: **passed**;
+- generated document/link hygiene, unstaged whitespace, and preservation of
+  all four committed audit artifacts: **passed**; and
+- the durable package's `SHA256SUMS` inventory reverified all 81 listed files.
+
+The first isolated-worktree creation attempt was denied before any Git change
+because repository metadata was outside the sandbox; the identical authorized
+rerun succeeded. The first Ruff and Black commands used the repository test
+environment, which does not install those tools; the exact reruns used the
+available `/opt/anaconda3/bin/ruff` and `/opt/anaconda3/bin/black` executables.
+The first Black repository range extended through line 580 and reported an
+adjacent pre-existing formatting difference in `render_current_mission`; the
+correct exact changed range, lines 545–571, passed, as did the changed test
+range. No formatter rewrote a file, and no failed attempt concealed a test or
+product failure.
+
+The first staged whitespace check found two Markdown hard-break spaces in the
+new journal header. Removing those presentation-only spaces and restaging the
+journal made the exact rerun pass. The first restage attempt was denied before
+an index change because the shared Git metadata lock was outside the sandbox;
+the identical authorized restage and both whitespace checks passed.
+
+No default/live Ledger, `data/**`, database, WAL/SHM, credential, receipt,
+backup, migration, restoration, recovery, rollback, or production system was
+read or operated on during closeout.

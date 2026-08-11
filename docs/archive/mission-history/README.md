@@ -44,6 +44,7 @@ warning, and canonical replacement link.
 | `wingman-os/knowledge-representation` | [journal](wingman-os/knowledge-representation/journal.md) | [mission](../../missions/wingman-os/knowledge-representation/mission.md) |
 | `wingman-os/knowledge-retrieval` | [journal](wingman-os/knowledge-retrieval/journal.md) | [mission](../../missions/wingman-os/knowledge-retrieval/mission.md) |
 | `wingman-os/ledger` | [journal](wingman-os/ledger/journal.md) | [mission](../../missions/wingman-os/ledger/mission.md) |
+| `wingman-os/ledger-transition` | [journal](wingman-os/ledger-transition/journal.md) | [mission](../../missions/wingman-os/ledger-transition/mission.md) |
 | `wingman-os/modular-wingman` | [journal](wingman-os/modular-wingman/journal.md) | [mission](../../missions/wingman-os/modular-wingman/mission.md) |
 | `wingman-os/priority` | [journal](wingman-os/priority/journal.md) | [mission](../../missions/wingman-os/priority/mission.md) |
 | `wingman-os/prompt-optimizer` | [journal](wingman-os/prompt-optimizer/journal.md) | [mission](../../missions/wingman-os/prompt-optimizer/mission.md) |

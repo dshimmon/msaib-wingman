@@ -8,10 +8,10 @@
   "title": "Wingman Ledger Transition",
   "call_sign": "LEDGER-TRANSITION",
   "namespace": "wingman-os",
-  "lifecycle": "draft",
+  "lifecycle": "completed",
   "priority": "high",
   "portfolio_primary": false,
-  "authorization_gate": "engineering implemented, independently audited, merged, and pushed; live execution and mission completion remain separately gated",
+  "authorization_gate": "closed for transition-machinery implementation and GitHub publication; physical Ledger transition remains separately gated",
   "approval_evidence": [
     {
       "date": "2026-08-10",
@@ -32,6 +32,11 @@
       "date": "2026-08-11",
       "authority": "Maverick",
       "scope": "Authorized one documentation/governance-only reconciliation commit covering the remaining Ledger Transition record gaps, explicitly excluding CURRENT_MISSION.md; no live Ledger operation or runtime change authorized."
+    },
+    {
+      "date": "2026-08-11",
+      "authority": "Maverick",
+      "scope": "Approved the completed Ledger Transition implementation mission record and authorized gap-only reconciliation onto canonical main 196a1804d51992259018281286f5571db2b4d556, generated-governance correction, commit, push, merge, and GitHub-main publication; explicitly prohibited any physical or live Ledger operation."
     }
   ],
   "baseline_commit": "b1910d0c69a52d73ddde93cb9722f12540c5d1e7",
@@ -45,7 +50,7 @@
     "docs/decisions/governance/crew-chief-audit.md",
     "docs/decisions/security/ledger-and-data-safety.md"
   ],
-  "next_gate": "Maverick may separately declare the engineering mission complete; any live transition still requires Assurance v1, every DATA-001 prerequisite, a fresh exact-target package and single-use receipt, Crew Chief review, and explicit live-execution approval.",
+  "next_gate": "Physical Migration 4 requires Assurance v1, every DATA-001 prerequisite, exact live-target identification, a disposable rehearsal, an immutable backup destination, frozen manifest and package bytes, fresh Crew Chief review, a single-use receipt, and Maverick approval of that exact package.",
   "supersedes": null,
   "superseded_by": null,
   "paused": false,
@@ -54,8 +59,8 @@
 }
 -->
 
-Lifecycle: **engineering implemented and published; lifecycle completion not
-declared**. Call sign: **LEDGER-TRANSITION**.
+Lifecycle: **completed for transition-machinery implementation and GitHub
+publication**. Call sign: **LEDGER-TRANSITION**.
 
 ## Delivered engineering boundary
 
@@ -80,6 +85,25 @@ ownership from creation, and added a two-process lifetime-lock regression.
 The exact follow-up review returned `PASS` with zero findings; reconciliation
 was complete and approval-ready.
 
+The earlier follow-up audit and its four committed artifacts remain preserved
+as development history. Maverick later authorized the decisive corrected-base
+follow-up: audit
+`4b2951304f67667fdb654a707caa75292f78a4e429c4ad4a4f60db514fef4669`,
+envelope
+`33398f0c7c08aef8eed909ca7914f84f2efab05c2ed2eba19c5399d414dd1b33`.
+It returned `PASS` with zero findings; reconciliation was complete and
+`approval_ready=true`. Its report hash is
+`3b2a8320fa38d548495a09d9b563904f8fe99795ef39f08991e9a4b3c38606d3`
+and package hash is
+`01b49942772375aa93a285a5ce07adf895913c963f92c0bb72f1a97f57b67f58`.
+
+The immutable report records `generated_at` as
+`2026-08-11T12:00:00-03:00`, while the controller records `completed_at` as
+`2026-08-11T03:50:48Z` and reconciliation records `generated_at` as
+`2026-08-11T03:51:28Z`. This is a model-authored timestamp metadata defect,
+not a Ledger finding or an indication of artifact tampering; the immutable
+source artifacts were not rewritten.
+
 The 31-file implementation was committed as
 `51fb750d2364a4e137ba7e42963a11b10fe4cdc0`, integrated through
 `f4dd327cad0be5da8bead4df633d7308a1ec80fb`, and published on `main`.
@@ -88,6 +112,8 @@ The audited staged patch identity was preserved at SHA-256
 The detailed build, validation, audit, and publication record is in
 [`evidence.md`](evidence.md); the operator procedure is the
 [Ledger Transition runbook](../../../runbooks/ledger-transition.md).
+The historical, noncanonical implementation journal is archived at
+[`docs/archive/mission-history/wingman-os/ledger-transition/journal.md`](../../../archive/mission-history/wingman-os/ledger-transition/journal.md).
 
 ## Operational boundary
 
@@ -96,4 +122,3 @@ migration, restoration, recovery, or rollback was touched. Shipping the
 mechanism does not authorize running it. Live execution remains fail-closed
 behind Assurance v1, DATA-001, an exact reviewed target package, a single-use
 receipt, fresh Crew Chief review, and Maverick's explicit authorization.
-Mission lifecycle completion also remains Maverick's separate decision.

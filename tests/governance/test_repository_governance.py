@@ -280,6 +280,15 @@ _expose(__name__, "knowledge")
             errors,
         )
 
+    def test_latest_completed_uses_final_recorded_commit_time(self):
+        latest = repository._latest_completed(self.missions)
+
+        self.assertEqual(latest.metadata["id"], "atlas/website-course-cockpit")
+        self.assertEqual(
+            latest.metadata["implementation_commits"][-1],
+            "e1aa17fefe3e5843a1de705339499943a2df146e",
+        )
+
     def test_gov_003_does_not_claim_later_completed_missions(self):
         later = self._with_metadata(
             self._mission("governance/repository-architecture"),
