@@ -81,8 +81,8 @@
     "03984e04f2f6f45ce7316071a0c95ce3d880f2e9",
     "370c38c0a5dac664a9359af54e0153a379a20e5f"
   ],
-  "pushed": false,
-  "merged": false,
+  "pushed": true,
+  "merged": true,
   "official_decisions": [
     "docs/decisions/governance/roadmap-sequencing.md",
     "docs/decisions/governance/repository-records.md",
@@ -115,7 +115,7 @@
       "tools/governance/repository.py"
     ],
     "state": "operationally_accepted_with_synthetic_pool_evidence",
-    "next_gate": "Maverick decides whether to publish the two local operational commits; no successor mission is active."
+    "next_gate": "Maverick selects and authorizes the next mission; no successor mission is active."
   },
   "next_gate": "Maverick selects and authorizes a mission.",
   "supersedes": null,
