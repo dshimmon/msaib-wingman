@@ -327,6 +327,16 @@ queues, agent assignment, pause, cancellation, retry, crash recovery, and
 resource budgets. The current Goose role must not be misrepresented as proof
 that every future runtime feature already exists.
 
+Maverick remains the sole authorizing principal whether an external instruction
+reaches Codex directly or is dispatched through Mission Control. Current local
+receipt writers trust their caller's attestation that Maverick made that
+external decision; they do not independently authenticate its origin. Valid
+version-2 records can represent Mission Control only as an execution or
+orchestration route, never as the authorizing principal. Their exact hashes are
+tamper-evident after creation, but a same-account process can create an
+internally consistent false attestation until stronger identity controls are
+separately authorized and implemented.
+
 ### Landing Signal Officer — LSO
 
 **Status:** Implemented and deterministically validated. Authoritative audit,

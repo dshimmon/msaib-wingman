@@ -41,21 +41,47 @@ than a global audit database. Model audits require authorization and suitable
 controls, but they are not restricted exclusively to formal handoffs or
 categorically excluded from CI.
 
-## Authorization trust boundary
+## Authorization provenance boundary
 
-Crew Chief v1 trusts Maverick's authenticated Mission Control interaction and
-the local operating-system account as the external authorization boundary.
-The package-bound receipt is created only after that external decision and is
-a tamper-evident record of the exact package, schema, subject, scope, and
-expiry. Its content-derived identifier does not independently authenticate
-Maverick, prove human identity, or reject a forged receipt created by a
-malicious process already operating as the trusted local account.
+Maverick is the sole authorizing principal. Mission Control and direct Codex
+invocation are execution routes and never independent sources of authority.
+Every new package-bound receipt captures a trusted-local caller attestation
+that Maverick made an external authorization decision, the asserted Maverick
+principal identifier, the exact authorization-text binding, the bounded
+invocation scope, the execution route, and the Codex executor. The same
+asserted Maverick principal is recorded whether Codex was invoked directly or
+dispatched through Mission Control.
+
+The authorization-text binding comprises both SHA-256 and UTF-8 byte size.
+For version 2, the trusted-local expectation supplies both values independently
+of the receipt, and validation rejects a receipt if either differs even when
+its content-derived receipt ID has been recomputed. Version-1 validation does
+not retrofit that new field into historical artifacts.
+
+Receipt creation requires action-specific explicit approval evidence and an
+exact evidence reference; authentication alone is not approval. The writer
+checks that the caller-attested principal is exactly Maverick, the attestation
+classification is known, the action text and scope match, and Mission Control
+appears only as dispatcher for that route. Missing, unknown, non-Maverick,
+internally inconsistent, or insufficient context fails before receipt
+creation. These checks do not prove who supplied the inputs. Human-readable
+wording is derived from the structured attestation rather than used as the
+durable authority record.
+
+New receipts use the version-2 contract. Version-1 receipts and their exact
+historical wording remain readable and are never migrated, normalized, or
+re-rendered. A receipt is a tamper-evident binding of the asserted external
+decision to the exact package, schema, subject, scope, route, executor, and
+expiry; its content-derived identifier does not independently authenticate
+Maverick, prove human identity, or prevent a false but internally consistent
+attestation created by a process already operating as the trusted local
+account.
 
 That same-account impersonation risk is explicit residual risk for Maverick's
-acceptance or rejection. V1 does not introduce signing keys, Keychain
-integration, remote identity services, or other cryptographic identity
-infrastructure. A future stronger identity boundary requires separate
-architecture and authorization.
+acceptance or rejection. This correction does not introduce signing keys,
+Keychain integration, remote identity services, or other cryptographic
+identity infrastructure. A future stronger identity boundary requires
+separate architecture and authorization.
 
 ## Bootstrap tooling
 

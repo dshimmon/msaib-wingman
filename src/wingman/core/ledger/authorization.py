@@ -7,6 +7,7 @@ import json
 import os
 import subprocess
 import sys
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -28,22 +29,234 @@ from wingman.core.ledger.readiness import (
 
 CANARY = "CANOPY-7C2F-ATLAS"
 MANIFEST_SCHEMA_VERSION = 1
-RECEIPT_SCHEMA_VERSION = 1
+LEGACY_RECEIPT_SCHEMA_VERSION = 1
+RECEIPT_SCHEMA_VERSION = 2
 PERMITTED_OPERATIONS = {"migrate", "restore", "rollback"}
 MANIFEST_FIELDS = {
-    "schema_version", "record_type", "canary", "authority", "run_id",
-    "expires_at", "permitted_operation", "target", "backup_destination",
-    "code_identity", "migration_plan_sha256", "command", "receipt_path",
-    "caller_supplied_sql", "caller_supplied_migration_selection",
-    "automatic_retry_permitted", "manifest_id",
+    "schema_version",
+    "record_type",
+    "canary",
+    "authority",
+    "run_id",
+    "expires_at",
+    "permitted_operation",
+    "target",
+    "backup_destination",
+    "code_identity",
+    "migration_plan_sha256",
+    "command",
+    "receipt_path",
+    "caller_supplied_sql",
+    "caller_supplied_migration_selection",
+    "automatic_retry_permitted",
+    "manifest_id",
+}
+LEGACY_RECEIPT_FIELDS = {
+    "schema_version",
+    "record_type",
+    "canary",
+    "asserted_authority",
+    "manifest",
+    "run_id",
+    "expires_at",
+    "permitted_operation",
+    "target",
+    "backup_destination",
+    "code_identity",
+    "migration_plan_sha256",
+    "command",
+    "authorization_text_sha256",
+    "single_use",
+    "automatic_retry_permitted",
+    "state",
+    "trust_boundary",
+    "receipt_id",
 }
 RECEIPT_FIELDS = {
-    "schema_version", "record_type", "canary", "asserted_authority",
-    "manifest", "run_id", "expires_at", "permitted_operation", "target",
-    "backup_destination", "code_identity", "migration_plan_sha256",
-    "command", "authorization_text_sha256", "single_use",
-    "automatic_retry_permitted", "state", "trust_boundary", "receipt_id",
+    "schema_version",
+    "record_type",
+    "canary",
+    "authority",
+    "authorized_scope",
+    "manifest",
+    "run_id",
+    "expires_at",
+    "permitted_operation",
+    "target",
+    "backup_destination",
+    "code_identity",
+    "migration_plan_sha256",
+    "command",
+    "single_use",
+    "automatic_retry_permitted",
+    "state",
+    "receipt_id",
 }
+AUTHORIZATION_EVIDENCE_TYPES = {
+    "caller_attested_task_interaction",
+    "caller_attested_explicit_approval",
+    "caller_attested_standing_delegation",
+}
+EXECUTION_ROUTES = {"direct_codex", "mission_control"}
+ACTION_SPECIFIC_APPROVAL = "action_specific_explicit"
+
+
+@dataclass(frozen=True)
+class AuthorizationContext:
+    """Authority facts asserted by the trusted local Ledger receipt caller."""
+
+    authorizing_principal_id: str
+    evidence_type: str
+    evidence_reference: str
+    approval_type: str
+    execution_route: str
+    executor_id: str
+
+
+def _validate_authorization_context(context):
+    if not isinstance(context, AuthorizationContext):
+        raise RuntimeError("Explicit authorization context is required.")
+    if context.authorizing_principal_id != "Maverick":
+        raise RuntimeError("Authorizing principal is unknown.")
+    if (
+        not isinstance(context.evidence_type, str)
+        or context.evidence_type not in AUTHORIZATION_EVIDENCE_TYPES
+    ):
+        raise RuntimeError("Authorization evidence type is unknown.")
+    if (
+        not isinstance(context.evidence_reference, str)
+        or not context.evidence_reference.strip()
+        or len(context.evidence_reference) > 512
+    ):
+        raise RuntimeError("Authorization evidence reference is required.")
+    if context.approval_type != ACTION_SPECIFIC_APPROVAL:
+        raise RuntimeError("Action-specific explicit approval evidence is required.")
+    if (
+        not isinstance(context.execution_route, str)
+        or context.execution_route not in EXECUTION_ROUTES
+    ):
+        raise RuntimeError("Execution route is unknown.")
+    if context.executor_id != "Codex":
+        raise RuntimeError("Receipt executor is unknown.")
+    return context
+
+
+def _authority_statement(context):
+    context = _validate_authorization_context(context)
+    evidence = {
+        "caller_attested_task_interaction": "a task interaction",
+        "caller_attested_explicit_approval": "explicit approval evidence",
+        "caller_attested_standing_delegation": "a recorded standing delegation",
+    }[context.evidence_type]
+    prefix = (
+        "Trusted local caller attests that Maverick authorized this scope through "
+        f"{evidence}; "
+    )
+    if context.execution_route == "mission_control":
+        return prefix + "dispatched through Mission Control; executed by Codex."
+    return prefix + "executed directly by Codex."
+
+
+def _authority_record(context, authorization_text):
+    context = _validate_authorization_context(context)
+    payload = authorization_text.encode("utf-8")
+    return {
+        "provenance_attestation": {
+            "model": "trusted_local_caller",
+            "independent_origin_verification": False,
+        },
+        "authorizing_principal": {"principal_id": "Maverick"},
+        "authorization_evidence": {
+            "type": context.evidence_type,
+            "reference": context.evidence_reference,
+            "approval_type": context.approval_type,
+            "asserted_authorizing_principal_id": "Maverick",
+            "authorization_text_sha256": hashlib.sha256(payload).hexdigest(),
+            "authorization_text_size": len(payload),
+        },
+        "execution_route": {
+            "type": context.execution_route,
+            "dispatcher": (
+                "Mission Control"
+                if context.execution_route == "mission_control"
+                else None
+            ),
+        },
+        "executor": {"component_id": "Codex"},
+        "statement": _authority_statement(context),
+    }
+
+
+def _validate_authority_record(record):
+    if not isinstance(record, dict):
+        raise RuntimeError("Ledger authorization provenance is malformed.")
+    try:
+        attestation = record["provenance_attestation"]
+        principal = record["authorizing_principal"]
+        evidence = record["authorization_evidence"]
+        route = record["execution_route"]
+        executor = record["executor"]
+        context = AuthorizationContext(
+            authorizing_principal_id=principal["principal_id"],
+            evidence_type=evidence["type"],
+            evidence_reference=evidence["reference"],
+            approval_type=evidence["approval_type"],
+            execution_route=route["type"],
+            executor_id=executor["component_id"],
+        )
+    except (KeyError, TypeError) as error:
+        raise RuntimeError("Ledger authorization provenance is malformed.") from error
+    _validate_authorization_context(context)
+    if set(record) != {
+        "provenance_attestation",
+        "authorizing_principal",
+        "authorization_evidence",
+        "execution_route",
+        "executor",
+        "statement",
+    }:
+        raise RuntimeError("Ledger authorization provenance is malformed.")
+    if attestation != {
+        "model": "trusted_local_caller",
+        "independent_origin_verification": False,
+    }:
+        raise RuntimeError("Ledger authorization provenance attestation is malformed.")
+    if principal != {"principal_id": "Maverick"}:
+        raise RuntimeError("Ledger authorizing principal is malformed.")
+    if set(evidence) != {
+        "type",
+        "reference",
+        "approval_type",
+        "asserted_authorizing_principal_id",
+        "authorization_text_sha256",
+        "authorization_text_size",
+    }:
+        raise RuntimeError("Ledger authorization evidence is malformed.")
+    if evidence["asserted_authorizing_principal_id"] != "Maverick":
+        raise RuntimeError("Ledger authorization evidence attestation is inconsistent.")
+    digest = evidence["authorization_text_sha256"]
+    if (
+        not isinstance(digest, str)
+        or len(digest) != 64
+        or any(character not in "0123456789abcdef" for character in digest)
+    ):
+        raise RuntimeError("Ledger authorization evidence hash is invalid.")
+    size = evidence["authorization_text_size"]
+    if not isinstance(size, int) or isinstance(size, bool) or size < 1:
+        raise RuntimeError("Ledger authorization evidence size is invalid.")
+    expected_dispatcher = (
+        "Mission Control" if context.execution_route == "mission_control" else None
+    )
+    if route != {
+        "type": context.execution_route,
+        "dispatcher": expected_dispatcher,
+    }:
+        raise RuntimeError("Ledger execution route is inconsistent.")
+    if executor != {"component_id": "Codex"}:
+        raise RuntimeError("Ledger receipt executor is malformed.")
+    if record["statement"] != _authority_statement(context):
+        raise RuntimeError("Ledger authorization statement is inconsistent.")
+    return context
 
 
 def _repository_root():
@@ -250,9 +463,7 @@ def create_transition_manifest(
         "caller_supplied_migration_selection": False,
         "automatic_retry_permitted": False,
     }
-    document["manifest_id"] = hashlib.sha256(
-        canonical_json_bytes(document)
-    ).hexdigest()
+    document["manifest_id"] = hashlib.sha256(canonical_json_bytes(document)).hexdigest()
     _write_exclusive_document(manifest_destination, document)
     return document
 
@@ -262,10 +473,18 @@ def create_authorization_receipt(
     receipt_path,
     *,
     authorization_text,
+    authority_context=None,
 ):
     """Record exact approval; this does not authenticate Maverick independently."""
     manifest = _load_json_no_duplicates(manifest_path)
     _assert_not_expired(manifest["expires_at"])
+    if not isinstance(authorization_text, str) or not authorization_text:
+        raise RuntimeError("Complete Ledger authorization text is required.")
+    required_text = authorization_text_for_manifest(manifest)
+    if authorization_text != required_text:
+        raise RuntimeError(
+            "Authorization text does not exactly approve this Ledger manifest."
+        )
     destination = canonical_database_path(
         receipt_path,
         create_parent=True,
@@ -278,7 +497,12 @@ def create_authorization_receipt(
         "schema_version": RECEIPT_SCHEMA_VERSION,
         "record_type": "ledger_transition_authorization_receipt",
         "canary": CANARY,
-        "asserted_authority": "Maverick",
+        "authority": _authority_record(authority_context, authorization_text),
+        "authorized_scope": {
+            "manifest_id": manifest["manifest_id"],
+            "run_id": manifest["run_id"],
+            "operation": manifest["permitted_operation"],
+        },
         "manifest": {
             "path": str(manifest_file),
             "size": manifest_file.stat().st_size,
@@ -293,22 +517,27 @@ def create_authorization_receipt(
         "code_identity": manifest["code_identity"],
         "migration_plan_sha256": manifest["migration_plan_sha256"],
         "command": manifest["command"],
-        "authorization_text_sha256": hashlib.sha256(
-            authorization_text.encode("utf-8")
-        ).hexdigest(),
         "single_use": True,
         "automatic_retry_permitted": False,
         "state": "unused",
-        "trust_boundary": (
-            "authenticated Mission Control interaction plus the trusted local "
-            "operating-system account; no independent human authentication"
-        ),
     }
-    document["receipt_id"] = hashlib.sha256(
-        canonical_json_bytes(document)
-    ).hexdigest()
+    document["receipt_id"] = hashlib.sha256(canonical_json_bytes(document)).hexdigest()
     _write_exclusive_document(destination, document)
     return document
+
+
+def authorization_text_for_manifest(manifest):
+    """Return the exact action-specific text required for one Ledger receipt."""
+    if not isinstance(manifest, dict):
+        manifest = _load_json_no_duplicates(manifest)
+    required = {"manifest_id", "permitted_operation"}
+    if not required.issubset(manifest):
+        raise RuntimeError("Ledger transition manifest is missing authorization scope.")
+    return (
+        "Maverick explicitly authorizes one no-retry Ledger "
+        f"{manifest['permitted_operation']} operation for manifest "
+        f"{manifest['manifest_id']}."
+    )
 
 
 def _validate_content_id(document, field):
@@ -322,7 +551,14 @@ def _validate_content_id(document, field):
 def _validate_document_shapes(manifest, receipt):
     if set(manifest) != MANIFEST_FIELDS:
         raise RuntimeError("Ledger transition manifest shape is invalid.")
-    if set(receipt) != RECEIPT_FIELDS:
+    receipt_version = receipt.get("schema_version")
+    if receipt_version == LEGACY_RECEIPT_SCHEMA_VERSION:
+        expected_receipt_fields = LEGACY_RECEIPT_FIELDS
+    elif receipt_version == RECEIPT_SCHEMA_VERSION:
+        expected_receipt_fields = RECEIPT_FIELDS
+    else:
+        raise RuntimeError("Ledger authorization receipt version is unsupported.")
+    if set(receipt) != expected_receipt_fields:
         raise RuntimeError("Ledger authorization receipt shape is invalid.")
     if (
         manifest["schema_version"] != MANIFEST_SCHEMA_VERSION
@@ -334,14 +570,29 @@ def _validate_document_shapes(manifest, receipt):
     ):
         raise RuntimeError("Ledger transition manifest controls are invalid.")
     if (
-        receipt["schema_version"] != RECEIPT_SCHEMA_VERSION
-        or receipt["record_type"] != "ledger_transition_authorization_receipt"
-        or receipt["asserted_authority"] != "Maverick"
+        receipt["record_type"] != "ledger_transition_authorization_receipt"
         or receipt["single_use"] is not True
         or receipt["automatic_retry_permitted"] is not False
         or receipt["state"] != "unused"
     ):
         raise RuntimeError("Ledger authorization receipt controls are invalid.")
+    if receipt_version == LEGACY_RECEIPT_SCHEMA_VERSION:
+        if receipt["asserted_authority"] != "Maverick":
+            raise RuntimeError("Ledger authorization receipt controls are invalid.")
+    else:
+        _validate_authority_record(receipt["authority"])
+        if receipt["authorized_scope"] != {
+            "manifest_id": manifest["manifest_id"],
+            "run_id": manifest["run_id"],
+            "operation": manifest["permitted_operation"],
+        }:
+            raise RuntimeError("Ledger authorization scope is mismatched.")
+        evidence = receipt["authority"]["authorization_evidence"]
+        required_text = authorization_text_for_manifest(manifest).encode("utf-8")
+        if evidence["authorization_text_sha256"] != hashlib.sha256(
+            required_text
+        ).hexdigest() or evidence["authorization_text_size"] != len(required_text):
+            raise RuntimeError("Ledger authorization evidence is mismatched.")
 
 
 def validate_authorization(manifest_path, receipt_path, *, operation):
@@ -391,10 +642,13 @@ def validate_authorization(manifest_path, receipt_path, *, operation):
     if manifest["migration_plan_sha256"] != migration_plan_digest():
         raise RuntimeError("Ledger migration plan changed after review.")
     code = manifest["code_identity"]
-    if repository_code_identity(
-        code["reviewed_base"],
-        code["reviewed_head"],
-    ) != code:
+    if (
+        repository_code_identity(
+            code["reviewed_base"],
+            code["reviewed_head"],
+        )
+        != code
+    ):
         raise RuntimeError("Ledger transition code changed after review.")
     return manifest, receipt
 

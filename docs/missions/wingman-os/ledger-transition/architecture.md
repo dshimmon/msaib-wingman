@@ -73,7 +73,12 @@ pre-transition backup rather than retrying a consumed authorization.
 
 The lock is cooperative among Wingman connections. An unrelated process that
 opens SQLite directly does not honor the sidecar lock; WAL checkpoint
-quiescence detects active durable writers and fails the operation. The
-authorization receipt is tamper-evident after Maverick's decision but does not
-independently authenticate a human against a malicious process already running
-as the same trusted operating-system account.
+quiescence detects active durable writers and fails the operation. New
+authorization receipts record a trusted-local caller attestation of Maverick's
+external decision, exact action-specific text, authorized scope, direct-Codex
+or Mission-Control route, and Codex executor separately. A valid version-2
+record can identify Mission Control only as dispatcher. The receipt is
+tamper-evident after creation but does not independently authenticate a human
+or prevent a same-account process from creating a false internally consistent
+attestation. Historical version-1 receipts remain readable without rewriting
+their fields or wording.

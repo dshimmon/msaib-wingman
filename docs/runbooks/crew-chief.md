@@ -320,6 +320,7 @@ canonical directory `tools/crew_chief/schemas/`:
 
 - `audit-envelope-v1.schema.json`
 - `authorization-receipt-v1.schema.json`
+- `authorization-receipt-v2.schema.json`
 - `bootstrap-report-v1.schema.json`
 - `finding-v1.schema.json`
 - `pool-manifest-v1.schema.json`
@@ -443,27 +444,45 @@ final payload offline, and pass only that checked payload to `--output-schema`.
 
 Build and scan the implementation-review package before asking Maverick to
 approve it. Approval of those exact bytes is then recorded in a separate
-[`authorization-receipt-v1.schema.json`](../../tools/crew_chief/schemas/authorization-receipt-v1.schema.json)
+[`authorization-receipt-v2.schema.json`](../../tools/crew_chief/schemas/authorization-receipt-v2.schema.json)
 artifact. Never insert the receipt into the already-approved package or schema.
 Receipt creation records Maverick's explicit instruction; it does not create,
-infer, authenticate, or transfer authority. The authenticated Mission Control
-interaction and local operating-system account are the v1 external trust
-boundary. Live conversation text is not an invocation control until its
-complete UTF-8 content hash is bound in a validated receipt.
+infer, authenticate, or transfer authority. The trusted local caller must
+supply an explicit `AuthorizationContext` attesting to Maverick's external
+decision, the asserted principal identifier, evidence type and reference, the
+action-specific explicit-approval classification, the direct-Codex or
+Mission-Control execution route, and the Codex executor. The writer validates
+these values for internal consistency but does not independently verify their
+human origin. No field defaults to Mission Control, and valid version-2 records
+can show Mission Control only as dispatcher. Live conversation text is not an
+invocation control until its complete UTF-8 content hash is bound in a
+validated receipt.
 
-The receipt binds the asserted Maverick identity, Canary, subject HEAD, package
-and service-schema byte sizes and SHA-256 values, audit and envelope IDs,
-package expiry, exact invocation counts, the no-automatic-retry rule, and the
-complete authorization-text hash. Its content-derived receipt ID, schema,
-subject, scope, and expiration must validate before a model process can start.
+The receipt binds the caller-attested Maverick principal and evidence,
+execution route, dispatcher when present, Codex executor, derived
+human-readable statement, Canary, subject HEAD, package and service-schema byte
+sizes and SHA-256 values, audit and envelope IDs, package expiry, exact
+invocation counts, the no-automatic-retry rule, and the complete
+authorization-text hash and UTF-8 byte size. For new version-2 receipts, both
+values must come from the trusted-boundary `AuthorizationExpectation`; the
+validator compares the receipt to those independently supplied values rather
+than deriving either expectation from the receipt. Its content-derived receipt
+ID, schema, subject, scope, provenance, and expiration must validate before a
+model process can start.
 Missing, malformed, expired, already consumed, altered, or mismatched receipt
 evidence fails closed. The receipt is tamper-evident after the external
-decision; it does not independently prove human identity or detect a forged
-receipt created by a malicious process already trusted as the same local
-account. That residual risk requires Maverick's explicit acceptance or
-rejection. One receipt records exactly one ordinary bootstrap invocation and
-no automatic retry; conditional fixture-audit counts are recorded but remain
-gated on a successful bootstrap verdict.
+decision; it does not independently prove human identity or prevent a false but
+internally consistent approval attestation created by a process already
+trusted as the same local account. That residual risk requires Maverick's
+explicit acceptance or rejection. One receipt records exactly one ordinary
+bootstrap invocation and no automatic retry; conditional fixture-audit counts
+are recorded but remain gated on a successful bootstrap verdict.
+
+Version-1 receipts remain readable with their exact historical fields and
+wording. Never rewrite, normalize, or re-render them as version 2. All newly
+created receipts use version 2. Legacy serialized authorization expectations
+without a text-size field remain readable only for version-1 validation; a
+version-2 receipt requires a positive independently supplied expected size.
 
 Use `tools.crew_chief.bootstrap_authorization` to record a later explicit
 approval, prepare a fresh external invocation workspace, and execute only when

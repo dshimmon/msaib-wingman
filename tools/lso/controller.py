@@ -7,6 +7,12 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
+from tools.authorization import (
+    AuthorityContextError,
+    AuthorizationContext,
+    authority_record,
+    validate_authority_record,
+)
 from tools.crew_chief.controller import verify_envelope
 from tools.crew_chief.core import parse_time as crew_parse_time
 from tools.crew_chief.validation import validate_reconciliation, validate_report
@@ -112,8 +118,10 @@ def _validate_audit_package(
     envelope_path: Path,
     report_path: Path,
     reconciliation_path: Path,
+    *,
+    clock: Callable[[], datetime],
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
-    envelope = _wrap_crew_chief(lambda: verify_envelope(envelope_path))
+    envelope = _wrap_crew_chief(lambda: verify_envelope(envelope_path, clock=clock))
     report = _object(report_path, "Crew Chief report")
     reconciliation = _object(reconciliation_path, "Crew Chief reconciliation")
     _wrap_crew_chief(lambda: validate_report(envelope, report))
@@ -176,7 +184,7 @@ def prepare_closeout(
     report_path = report_path.resolve()
     reconciliation_path = reconciliation_path.resolve()
     envelope, _, reconciliation, manifest = _validate_audit_package(
-        envelope_path, report_path, reconciliation_path
+        envelope_path, report_path, reconciliation_path, clock=clock
     )
     if Path(envelope["repository"]["repository_root"]).resolve() != repository:
         raise LSOError("Crew Chief envelope belongs to a different repository")
@@ -356,7 +364,7 @@ def verify_plan(
         plan["audit"]["reconciliation"], "Crew Chief reconciliation"
     )
     envelope, _, reconciliation, manifest = _validate_audit_package(
-        envelope_path, report_path, reconciliation_path
+        envelope_path, report_path, reconciliation_path, clock=clock
     )
     if envelope["audit_id"] != plan["audit"]["audit_id"]:
         raise LSOError("LSO plan audit binding changed")
@@ -389,6 +397,7 @@ def create_authorization_receipt(
     *,
     expires_in_seconds: int = 3600,
     clock: Callable[[], datetime] = utc_now,
+    authority_context: AuthorizationContext | None = None,
 ) -> dict[str, Any]:
     plan = verify_plan(plan_path, clock=clock)
     repository = Path(plan["repository"]["root"])
@@ -414,26 +423,23 @@ def create_authorization_receipt(
         expires = plan_expiry
     if expires <= created:
         raise LSOError("LSO authorization receipt would already be expired")
+    try:
+        authority = authority_record(authority_context, text.encode("utf-8"))
+    except AuthorityContextError as error:
+        raise LSOError(str(error)) from error
     receipt: dict[str, Any] = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": "2.0",
         "canary": CANARY,
         "plan_id": plan["plan_id"],
         "plan_sha256": artifact_binding(plan_path)["sha256"],
-        "authorization_text_sha256": sha256_bytes(payload),
-        "authorization_text_size": len(payload),
-        "asserted_authority": "Maverick",
-        "allowed_actions": list(CLOSEOUT_ACTIONS),
+        "authority": authority,
+        "authorized_scope": {"actions": list(CLOSEOUT_ACTIONS)},
         "single_use": True,
         "created_at": isoformat(created),
         "expires_at": isoformat(expires),
-        "authority_boundary": (
-            "The authenticated Mission Control interaction and trusted local "
-            "operating-system account are the v1 authorization boundary; this "
-            "receipt is tamper-evident, not independent identity proof."
-        ),
     }
     receipt["receipt_id"] = receipt_identifier(receipt)
-    validate_instance("authorization-receipt-v1.schema.json", receipt)
+    validate_instance("authorization-receipt-v2.schema.json", receipt)
     write_canonical_json(output_path, receipt)
     return {
         "receipt_id": receipt["receipt_id"],
@@ -449,14 +455,31 @@ def validate_authorization_receipt(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     plan = verify_plan(plan_path, clock=clock)
     receipt = _object(receipt_path, "LSO authorization receipt")
-    validate_instance("authorization-receipt-v1.schema.json", receipt)
+    schema_version = receipt.get("schema_version")
+    if schema_version == "1.0":
+        validate_instance("authorization-receipt-v1.schema.json", receipt)
+        allowed_actions = receipt["allowed_actions"]
+    elif schema_version == "2.0":
+        validate_instance("authorization-receipt-v2.schema.json", receipt)
+        required_text = plan["approval"]["required_authorization_text"].encode("utf-8")
+        try:
+            validate_authority_record(
+                receipt["authority"],
+                authorization_text_sha256=sha256_bytes(required_text),
+                authorization_text_size=len(required_text),
+            )
+        except AuthorityContextError as error:
+            raise LSOError(str(error)) from error
+        allowed_actions = receipt["authorized_scope"]["actions"]
+    else:
+        raise LSOError("LSO authorization receipt schema version is unsupported")
     if receipt_identifier(receipt) != receipt["receipt_id"]:
         raise LSOError("LSO receipt identifier is invalid")
     if receipt["plan_id"] != plan["plan_id"]:
         raise LSOError("LSO receipt approves a different plan")
     if receipt["plan_sha256"] != artifact_binding(plan_path)["sha256"]:
         raise LSOError("LSO plan bytes changed after authorization")
-    if receipt["allowed_actions"] != list(CLOSEOUT_ACTIONS):
+    if allowed_actions != list(CLOSEOUT_ACTIONS):
         raise LSOError("LSO receipt actions are incomplete or reordered")
     now = clock()
     if now.tzinfo is None or now > parse_time(receipt["expires_at"]):

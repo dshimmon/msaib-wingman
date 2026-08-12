@@ -5,10 +5,11 @@
 
 ## Portfolio primary
 
-- Mission: **none**
-- Repository state: **between missions**
-- Implementation authority: **none**
-- Next gate: Maverick selects and authorizes a mission.
+- Mission: **governance/cc-0001-authorization-provenance — CC-0001 Authorization Provenance Correction**
+- Lifecycle: **active**
+- Authorization gate: `open for deterministic validation, fresh Crew Chief review, reconciliation, and LSO preparation under Maverick's 2026-08-11 instruction; LSO execution remains separately gated`
+- Official record: [docs/missions/governance/cc-0001-authorization-provenance/mission.md](docs/missions/governance/cc-0001-authorization-provenance/mission.md)
+- Next gate: Exact LSO plan approval by Maverick after required validation and a fresh zero-finding Crew Chief PASS.
 
 ## Last completed work
 
@@ -18,7 +19,9 @@
 
 ## Active workstreams
 
-None. The repository is between missions.
+| Mission | Role | Branch | Worktree | State | Next gate |
+|---|---|---|---|---|---|
+| `governance/cc-0001-authorization-provenance` | primary | `codex/cc0001-landing-20260811` | `/Users/davidshimmon/.codex/worktrees/ebeb/msaib-wingman` | closeout preparation | Exact LSO plan approval by Maverick after required validation and a fresh zero-finding Crew Chief PASS. |
 
 ## Canonical homes
 

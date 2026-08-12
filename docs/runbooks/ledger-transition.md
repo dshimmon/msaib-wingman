@@ -48,10 +48,32 @@ inventory, checksum, backup destination, internally constructed command, run
 ID, expiry, operation, and no-retry state.
 
 Report the exact manifest/package bytes and SHA-256 to Maverick. Stop. Do not
-create a receipt until Maverick approves those exact bytes. Receipt creation
-records that decision but does not independently authenticate Maverick. Any
-changed byte, path, code state, schema state, inventory, command, expiry, or
-operation invalidates the package and requires a new review.
+create a receipt until Maverick approves those exact bytes with text in this
+exact form:
+
+```text
+Maverick explicitly authorizes one no-retry Ledger <operation> operation for manifest <manifest-id>.
+```
+
+Receipt creation accepts only that action-specific text and a trusted-local
+caller attestation containing the asserted Maverick principal ID, evidence type
+and reference, action-specific explicit approval classification, direct-Codex
+or Mission-Control route, and Codex executor. The writer validates these fields
+for internal consistency but does not independently verify their human origin.
+Authentication alone is insufficient. Missing, unknown,
+Mission-Control-as-authorizer, internally inconsistent, or out-of-scope context
+fails before the receipt is written.
+
+The version-2 receipt records Mission Control only as dispatcher when that
+route is used; direct invocation records no dispatcher. Receipt creation
+records the caller's attestation of the external decision but does not
+independently authenticate Maverick. Exact hashes make later alteration
+detectable; they do not prevent a same-account process from supplying a false
+attestation and reproducing the generated approval text. Any changed byte,
+path, code state, schema state, inventory, command, expiry, or operation
+invalidates the package and requires a new review. Historical version-1
+receipts remain readable with their exact fields and wording and must never be
+rewritten or re-rendered.
 
 ## 4. Authorized execution
 

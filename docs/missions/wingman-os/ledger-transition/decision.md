@@ -23,15 +23,29 @@ WAL-safe backup, single-use authorization, crash-safe restoration, semantic
 and byte preservation, disposable rehearsal, and tested rollback are required
 parts of the implementation.
 
-## Authorization trust boundary
+## Authorization provenance boundary
 
-The version-1 receipt records Maverick's exact manifest approval and binds its
-bytes, target, code, reviewed range, plan, command, expiry, operation, and
-no-retry state. Its external trust boundary is the authenticated Mission
-Control interaction plus the trusted local operating-system account. It does
-not claim independent human authentication. A hostile process already
-operating as that same account could impersonate the local approval wrapper;
-stronger identity proof requires separately authorized identity infrastructure.
+The version-2 receipt records a trusted-local caller attestation that Maverick,
+the sole authorizing principal, made the external decision. It binds the exact
+action-specific manifest approval, evidence reference, bytes, target, code,
+reviewed range, plan, command, expiry, operation, no-retry state, execution
+route, and Codex executor. Direct Codex invocation and Mission Control dispatch
+preserve the same asserted authorizing principal. A valid version-2 record can
+identify Mission Control only as dispatcher, not as authorizing principal.
+
+Receipt creation requires the exact generated approval text for the
+content-addressed manifest plus an explicit caller attestation. The writer
+checks internal consistency and scope, not the human origin of those inputs.
+Authentication alone, missing evidence, an unknown principal or route, or
+approval that does not cover the exact operation fails before a receipt is
+written. Version-1 receipts retain their exact historical structure and
+wording and remain readable; they are never migrated or re-rendered.
+
+The receipt does not claim independent human authentication. A hostile process
+already operating as the trusted local account could supply a false but
+internally consistent attestation and reproduce the generated approval text;
+stronger identity proof requires separately authorized identity
+infrastructure.
 
 ## Consequences
 

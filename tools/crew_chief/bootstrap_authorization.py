@@ -9,6 +9,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
+from tools.authorization import (
+    AuthorityContextError,
+    AuthorizationContext,
+    authority_record,
+    validate_authority_record,
+)
 from tools.crew_chief.core import (
     CANARY,
     CrewChiefError,
@@ -44,7 +50,7 @@ _COMMAND_CONTRACT_VERSION = "1.0"
 
 @dataclass(frozen=True)
 class AuthorizationExpectation:
-    """Exact subject and scope supplied by the trusted local authorization boundary."""
+    """Exact subject and scope supplied by the trusted local caller."""
 
     subject_head: str
     package_size: int
@@ -58,13 +64,21 @@ class AuthorizationExpectation:
     ordinary_bootstrap_invocations: int
     conditional_crew_chief_fixture_audits: int
     automatic_retries_permitted: bool
+    authorization_text_size: int | None = None
 
     @classmethod
     def from_dict(cls, value: dict[str, Any]) -> AuthorizationExpectation:
-        if not isinstance(value, dict) or set(value) != set(cls.__annotations__):
+        current_fields = set(cls.__annotations__)
+        legacy_fields = current_fields - {"authorization_text_size"}
+        if not isinstance(value, dict):
             raise CrewChiefError("bootstrap authorization expectation is malformed")
+        supplied_fields = set(value)
+        if supplied_fields != current_fields and supplied_fields != legacy_fields:
+            raise CrewChiefError("bootstrap authorization expectation is malformed")
+        normalized = dict(value)
+        normalized.setdefault("authorization_text_size", None)
         try:
-            expectation = cls(**value)
+            expectation = cls(**normalized)
         except TypeError as error:
             raise CrewChiefError(
                 "bootstrap authorization expectation is malformed"
@@ -77,7 +91,10 @@ def _validate_expectation(expectation: AuthorizationExpectation) -> None:
     if (
         not isinstance(expectation.subject_head, str)
         or len(expectation.subject_head) != 40
-        or any(character not in "0123456789abcdef" for character in expectation.subject_head)
+        or any(
+            character not in "0123456789abcdef"
+            for character in expectation.subject_head
+        )
     ):
         raise CrewChiefError("authorized subject HEAD must be a lowercase Git hash")
     for label, value in (
@@ -94,6 +111,14 @@ def _validate_expectation(expectation: AuthorizationExpectation) -> None:
     ):
         if not isinstance(value, int) or isinstance(value, bool) or value < 1:
             raise CrewChiefError(f"{label} must be a positive integer")
+    if expectation.authorization_text_size is not None and (
+        not isinstance(expectation.authorization_text_size, int)
+        or isinstance(expectation.authorization_text_size, bool)
+        or expectation.authorization_text_size < 1
+    ):
+        raise CrewChiefError(
+            "authorization text size must be a positive integer when supplied"
+        )
     parse_time(expectation.package_expires_at)
     if expectation.ordinary_bootstrap_invocations != 1:
         raise CrewChiefError("a receipt authorizes exactly one bootstrap invocation")
@@ -102,9 +127,22 @@ def _validate_expectation(expectation: AuthorizationExpectation) -> None:
         or isinstance(expectation.conditional_crew_chief_fixture_audits, bool)
         or not 0 <= expectation.conditional_crew_chief_fixture_audits <= 2
     ):
-        raise CrewChiefError("a receipt authorizes at most two conditional fixture audits")
+        raise CrewChiefError(
+            "a receipt authorizes at most two conditional fixture audits"
+        )
     if expectation.automatic_retries_permitted is not False:
         raise CrewChiefError("bootstrap authorization cannot permit automatic retries")
+
+
+def _required_authorization_text_size(
+    expectation: AuthorizationExpectation,
+) -> int:
+    size = expectation.authorization_text_size
+    if size is None:
+        raise CrewChiefError(
+            "version-2 authorization requires an expected authorization text size"
+        )
+    return size
 
 
 def _expected_subject(expectation: AuthorizationExpectation) -> dict[str, Any]:
@@ -128,9 +166,7 @@ def _expected_authorization(
     expectation: AuthorizationExpectation,
 ) -> dict[str, Any]:
     return {
-        "ordinary_bootstrap_invocations": (
-            expectation.ordinary_bootstrap_invocations
-        ),
+        "ordinary_bootstrap_invocations": (expectation.ordinary_bootstrap_invocations),
         "conditional_crew_chief_fixture_audits": (
             expectation.conditional_crew_chief_fixture_audits
         ),
@@ -144,14 +180,16 @@ def create_authorization_receipt(
     authorization_text: str,
     authorized_at: datetime,
     expires_at: datetime,
+    authority_context: AuthorizationContext | None = None,
 ) -> dict[str, Any]:
     """Record an explicit approval; calling this function does not grant it."""
     _validate_expectation(expectation)
     if not isinstance(authorization_text, str) or not authorization_text:
         raise CrewChiefError("complete Maverick authorization text is required")
-    if sha256_bytes(authorization_text.encode("utf-8")) != (
-        expectation.authorization_text_sha256
-    ):
+    authorization_bytes = authorization_text.encode("utf-8")
+    if len(authorization_bytes) != _required_authorization_text_size(expectation):
+        raise CrewChiefError("authorization text does not match its approved size")
+    if sha256_bytes(authorization_bytes) != (expectation.authorization_text_sha256):
         raise CrewChiefError("authorization text does not match its approved hash")
     authorized = clock_value(lambda: authorized_at)
     expiration = clock_value(lambda: expires_at)
@@ -160,16 +198,17 @@ def create_authorization_receipt(
         raise CrewChiefError("authorization receipt must expire after authorization")
     if expiration > package_expiration:
         raise CrewChiefError("authorization receipt cannot outlive the package")
+    try:
+        authority = authority_record(authority_context, authorization_bytes)
+    except AuthorityContextError as error:
+        raise CrewChiefError(str(error)) from error
     receipt: dict[str, Any] = {
-        "schema_version": "1.0",
+        "schema_version": "2.0",
         "receipt_type": "maverick_package_authorization",
         "canary": CANARY,
-        "authority": {
-            "identity": "Maverick",
-            "authorization_text_sha256": expectation.authorization_text_sha256,
-        },
+        "authority": authority,
         "subject": _expected_subject(expectation),
-        "authorization": _expected_authorization(expectation),
+        "authorized_scope": _expected_authorization(expectation),
         "authorized_at": authorized.isoformat().replace("+00:00", "Z"),
         "expires_at": expiration.isoformat().replace("+00:00", "Z"),
     }
@@ -192,19 +231,38 @@ def validate_authorization_receipt(
     _validate_expectation(expectation)
     if not isinstance(receipt, dict):
         raise CrewChiefError("authorization receipt must be a JSON object")
-    validate_instance("authorization-receipt-v1.schema.json", receipt)
+    schema_version = receipt.get("schema_version")
+    if schema_version == "1.0":
+        validate_instance("authorization-receipt-v1.schema.json", receipt)
+    elif schema_version == "2.0":
+        validate_instance("authorization-receipt-v2.schema.json", receipt)
+    else:
+        raise CrewChiefError("authorization receipt schema version is unsupported")
     unsigned = dict(receipt)
     receipt_id = unsigned.pop("receipt_id")
     if sha256_bytes(canonical_json_bytes(unsigned)) != receipt_id:
         raise CrewChiefError("authorization receipt ID does not match its content")
-    if receipt["authority"] != {
-        "identity": "Maverick",
-        "authorization_text_sha256": expectation.authorization_text_sha256,
-    }:
-        raise CrewChiefError("authorization receipt authority is mismatched")
+    if schema_version == "1.0":
+        if receipt["authority"] != {
+            "identity": "Maverick",
+            "authorization_text_sha256": expectation.authorization_text_sha256,
+        }:
+            raise CrewChiefError("authorization receipt authority is mismatched")
+        authorized_scope = receipt["authorization"]
+    else:
+        authorization_text_size = _required_authorization_text_size(expectation)
+        try:
+            validate_authority_record(
+                receipt["authority"],
+                authorization_text_sha256=expectation.authorization_text_sha256,
+                authorization_text_size=authorization_text_size,
+            )
+        except AuthorityContextError as error:
+            raise CrewChiefError(str(error)) from error
+        authorized_scope = receipt["authorized_scope"]
     if receipt["subject"] != _expected_subject(expectation):
         raise CrewChiefError("authorization receipt subject is mismatched")
-    if receipt["authorization"] != _expected_authorization(expectation):
+    if authorized_scope != _expected_authorization(expectation):
         raise CrewChiefError("authorization receipt invocation scope is mismatched")
     authorized_at = parse_time(receipt["authorized_at"])
     expires_at = parse_time(receipt["expires_at"])
@@ -371,7 +429,7 @@ def _composite_payload(package: bytes, receipt: bytes) -> bytes:
             "or mismatched. A valid receipt records the exact-package approval",
             "gate even when the older frozen mission snapshot says approval was",
             "pending. This is an ordinary Codex review, not a Crew Chief audit.",
-            "The trusted local wrapper supplies authorization provenance; the",
+            "The trusted local wrapper supplies a provenance attestation; the",
             "receipt is tamper-evident and does not independently prove identity.",
             "",
             (
@@ -522,9 +580,10 @@ def execute_authorized_bootstrap(
     expectation = AuthorizationExpectation.from_dict(
         invocation.get("authorization_expectation")
     )
-    if invocation.get("audit_id") != expectation.audit_id or invocation.get(
-        "envelope_id"
-    ) != expectation.envelope_id:
+    if (
+        invocation.get("audit_id") != expectation.audit_id
+        or invocation.get("envelope_id") != expectation.envelope_id
+    ):
         raise CrewChiefError("bootstrap invocation identifiers are mismatched")
     if invocation.get("subject_head") != expectation.subject_head:
         raise CrewChiefError("bootstrap invocation HEAD is mismatched")

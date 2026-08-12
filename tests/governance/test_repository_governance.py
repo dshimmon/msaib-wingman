@@ -3,6 +3,7 @@
 import copy
 import hashlib
 import json
+import subprocess
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -25,8 +26,7 @@ class RepositoryGovernanceTests(unittest.TestCase):
 
     def _mission(self, mission_id):
         return next(
-            record for record in self.missions
-            if record.metadata["id"] == mission_id
+            record for record in self.missions if record.metadata["id"] == mission_id
         )
 
     def _with_metadata(self, record, **changes):
@@ -60,9 +60,7 @@ class RepositoryGovernanceTests(unittest.TestCase):
         metadata["unexpected"] = "claim"
         record = repository.Record(self.decisions[0].path, metadata)
         errors = repository.validate_record_schemas(self.missions, [record])
-        self.assertTrue(
-            any("approval_evidence" in error for error in errors), errors
-        )
+        self.assertTrue(any("approval_evidence" in error for error in errors), errors)
         self.assertTrue(
             any("Additional properties" in error for error in errors), errors
         )
@@ -221,7 +219,8 @@ _expose(__name__, "knowledge")
         manifest = json.loads(path.read_text(encoding="utf-8"))
         wrong_target = "docs/archive/governance/pre-mission-message.txt"
         entry = next(
-            item for item in manifest["entries"]
+            item
+            for item in manifest["entries"]
             if item["path"] == "docs/Mission-brief.md"
         )
         entry["target_path"] = wrong_target
@@ -265,10 +264,7 @@ _expose(__name__, "knowledge")
             }
         )
         record = repository.Record(
-            repository.MISSION_ROOT
-            / "governance"
-            / "no-implementation"
-            / "mission.md",
+            repository.MISSION_ROOT / "governance" / "no-implementation" / "mission.md",
             metadata,
         )
         with patch.object(repository, "_commit_is_reachable", return_value=True):
@@ -284,10 +280,38 @@ _expose(__name__, "knowledge")
     def test_latest_completed_uses_final_recorded_commit_time(self):
         latest = repository._latest_completed(self.missions)
 
-        self.assertEqual(latest.metadata["id"], "atlas/website-course-cockpit")
+        completed = [
+            item
+            for item in self.missions
+            if item.metadata["lifecycle"] == "completed"
+            and item.metadata["implementation_commits"]
+        ]
+
+        def final_commit_time(item):
+            return int(
+                subprocess.run(
+                    [
+                        "git",
+                        "show",
+                        "-s",
+                        "--format=%ct",
+                        item.metadata["implementation_commits"][-1],
+                    ],
+                    cwd=repository.ROOT,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                ).stdout.strip()
+            )
+
+        expected = max(
+            completed,
+            key=lambda item: (final_commit_time(item), item.metadata["id"]),
+        )
+        self.assertEqual(latest.metadata["id"], expected.metadata["id"])
         self.assertEqual(
             latest.metadata["implementation_commits"][-1],
-            "e1aa17fefe3e5843a1de705339499943a2df146e",
+            expected.metadata["implementation_commits"][-1],
         )
 
     def test_gov_003_does_not_claim_later_completed_missions(self):
@@ -311,9 +335,7 @@ _expose(__name__, "knowledge")
             for item in self.missions
         ]
 
-        errors = repository.validate_historical_ratification(
-            missions, self.decisions
-        )
+        errors = repository.validate_historical_ratification(missions, self.decisions)
 
         self.assertIn(
             f"{mission_id}: GOV-003 ratified mission is not completed",
@@ -332,17 +354,17 @@ _expose(__name__, "knowledge")
             for item in self.decisions
         ]
 
-        errors = repository.validate_historical_ratification(
-            self.missions, decisions
-        )
+        errors = repository.validate_historical_ratification(self.missions, decisions)
 
         self.assertEqual(errors, [])
 
     def test_zero_active_portfolio_primary_is_valid(self):
         missions = [
-            self._with_metadata(item, portfolio_primary=False)
-            if item.metadata["lifecycle"] == "active"
-            else item
+            (
+                self._with_metadata(item, portfolio_primary=False)
+                if item.metadata["lifecycle"] == "active"
+                else item
+            )
             for item in self.missions
         ]
         with patch.object(repository, "_commit_is_reachable", return_value=True):
@@ -351,8 +373,7 @@ _expose(__name__, "knowledge")
 
     def test_more_than_one_active_portfolio_primary_is_rejected(self):
         primary = next(
-            item for item in self.missions
-            if item.metadata["portfolio_primary"]
+            item for item in self.missions if item.metadata["portfolio_primary"]
         )
         first = self._with_metadata(primary, lifecycle="active")
         metadata = copy.deepcopy(first.metadata)
@@ -363,10 +384,7 @@ _expose(__name__, "knowledge")
             }
         )
         record = repository.Record(
-            repository.MISSION_ROOT
-            / "governance"
-            / "second-primary"
-            / "mission.md",
+            repository.MISSION_ROOT / "governance" / "second-primary" / "mission.md",
             metadata,
         )
         with patch.object(repository, "_commit_is_reachable", return_value=True):
@@ -403,8 +421,7 @@ _expose(__name__, "knowledge")
 
     def test_active_workstreams_may_overlap(self):
         primary = next(
-            item for item in self.missions
-            if item.metadata["portfolio_primary"]
+            item for item in self.missions if item.metadata["portfolio_primary"]
         )
         first = self._with_metadata(primary, lifecycle="active")
         metadata = copy.deepcopy(first.metadata)
@@ -447,14 +464,16 @@ _expose(__name__, "knowledge")
 
     def test_idle_state_is_generated_without_an_active_primary(self):
         idle_missions = [
-            self._with_metadata(item, lifecycle="draft", portfolio_primary=False)
-            if item.metadata["lifecycle"] == "active"
-            else item
+            (
+                self._with_metadata(item, lifecycle="draft", portfolio_primary=False)
+                if item.metadata["lifecycle"] == "active"
+                else item
+            )
             for item in self.missions
         ]
-        current = repository.generated_content(
-            idle_missions, self.decisions
-        )[repository.ROOT / "CURRENT_MISSION.md"]
+        current = repository.generated_content(idle_missions, self.decisions)[
+            repository.ROOT / "CURRENT_MISSION.md"
+        ]
         context = repository.render_context(idle_missions)
         index = repository.render_mission_index(idle_missions)
         self.assertIn("Mission: **none**", current)
@@ -470,10 +489,18 @@ _expose(__name__, "knowledge")
         )
         self.assertIn(delivery, index)
 
-    def test_lso_is_the_active_portfolio_primary(self):
+    def test_active_portfolio_primary_is_rendered(self):
         current = repository.render_current_mission(self.missions)
+        active_primary = next(
+            item
+            for item in self.missions
+            if item.metadata["lifecycle"] == "active"
+            and item.metadata["portfolio_primary"]
+        )
         self.assertIn(
-            "Mission: **governance/lso — Landing Signal Officer v1**", current
+            f"Mission: **{active_primary.metadata['id']} — "
+            f"{active_primary.metadata['title']}**",
+            current,
         )
         self.assertIn("Lifecycle: **active**", current)
 

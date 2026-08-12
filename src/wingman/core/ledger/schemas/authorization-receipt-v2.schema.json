@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "wingman://ledger/authorization-receipt-v2",
+  "title": "Ledger Transition Authorization Receipt v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "canary",
+    "authority",
+    "authorized_scope",
+    "manifest",
+    "run_id",
+    "expires_at",
+    "permitted_operation",
+    "target",
+    "backup_destination",
+    "code_identity",
+    "migration_plan_sha256",
+    "command",
+    "single_use",
+    "automatic_retry_permitted",
+    "state",
+    "receipt_id"
+  ],
+  "properties": {
+    "schema_version": {"const": 2},
+    "record_type": {"const": "ledger_transition_authorization_receipt"},
+    "canary": {"const": "CANOPY-7C2F-ATLAS"},
+    "authority": {"$ref": "#/$defs/authority"},
+    "authorized_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest_id", "run_id", "operation"],
+      "properties": {
+        "manifest_id": {"$ref": "#/$defs/sha256"},
+        "run_id": {"type": "string", "minLength": 1},
+        "operation": {"enum": ["migrate", "restore", "rollback"]}
+      }
+    },
+    "manifest": {"type": "object"},
+    "run_id": {"type": "string", "minLength": 1},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "permitted_operation": {"enum": ["migrate", "restore", "rollback"]},
+    "target": {"type": "object"},
+    "backup_destination": {"type": "string"},
+    "code_identity": {"type": "object"},
+    "migration_plan_sha256": {"$ref": "#/$defs/sha256"},
+    "command": {"type": "object"},
+    "single_use": {"const": true},
+    "automatic_retry_permitted": {"const": false},
+    "state": {"const": "unused"},
+    "receipt_id": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provenance_attestation",
+        "authorizing_principal",
+        "authorization_evidence",
+        "execution_route",
+        "executor",
+        "statement"
+      ],
+      "properties": {
+        "provenance_attestation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["model", "independent_origin_verification"],
+          "properties": {
+            "model": {"const": "trusted_local_caller"},
+            "independent_origin_verification": {"const": false}
+          }
+        },
+        "authorizing_principal": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["principal_id"],
+          "properties": {"principal_id": {"const": "Maverick"}}
+        },
+        "authorization_evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "reference",
+            "approval_type",
+            "asserted_authorizing_principal_id",
+            "authorization_text_sha256",
+            "authorization_text_size"
+          ],
+          "properties": {
+            "type": {
+              "enum": [
+                "caller_attested_task_interaction",
+                "caller_attested_explicit_approval",
+                "caller_attested_standing_delegation"
+              ]
+            },
+            "reference": {"type": "string", "minLength": 1, "maxLength": 512},
+            "approval_type": {"const": "action_specific_explicit"},
+            "asserted_authorizing_principal_id": {"const": "Maverick"},
+            "authorization_text_sha256": {"$ref": "#/$defs/sha256"},
+            "authorization_text_size": {"type": "integer", "minimum": 1}
+          }
+        },
+        "execution_route": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "dispatcher"],
+          "properties": {
+            "type": {"enum": ["direct_codex", "mission_control"]},
+            "dispatcher": {"type": ["string", "null"]}
+          },
+          "allOf": [
+            {
+              "if": {"properties": {"type": {"const": "direct_codex"}}},
+              "then": {"properties": {"dispatcher": {"const": null}}},
+              "else": {
+                "properties": {"dispatcher": {"const": "Mission Control"}}
+              }
+            }
+          ]
+        },
+        "executor": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["component_id"],
+          "properties": {"component_id": {"const": "Codex"}}
+        },
+        "statement": {
+          "type": "string",
+          "pattern": "^Trusted local caller attests that Maverick authorized this scope through .+; (dispatched through Mission Control; )?executed (directly )?by Codex\\.$"
+        }
+      }
+    }
+  }
+}

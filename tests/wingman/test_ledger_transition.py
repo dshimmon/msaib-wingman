@@ -1,5 +1,6 @@
 """Synthetic safety and preservation tests for Ledger Transition."""
 
+import hashlib
 import json
 import multiprocessing
 import os
@@ -13,12 +14,16 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
+from jsonschema import Draft202012Validator
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SRC_DIRECTORY = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_DIRECTORY))
 
 from wingman.core.ledger.authorization import (
+    AuthorizationContext,
+    authorization_text_for_manifest,
     create_authorization_receipt,
     create_transition_manifest,
 )
@@ -45,7 +50,7 @@ from wingman.core.ledger.preservation import (
     capture_preservation_state,
     compare_migration_preservation,
 )
-from wingman.core.ledger.readiness import validate_readiness
+from wingman.core.ledger.readiness import canonical_json_bytes, validate_readiness
 from wingman.core.ledger.recovery import (
     recover_incomplete,
     restore_backup_locked,
@@ -60,6 +65,23 @@ from wingman.core.ledger.transition import execute_authorized_transition
 
 
 BASELINE = "b1910d0c69a52d73ddde93cb9722f12540c5d1e7"
+
+
+def authority_context(
+    *,
+    route="direct_codex",
+    principal="Maverick",
+    evidence_reference="task:ledger-transition-test",
+    approval_type="action_specific_explicit",
+):
+    return AuthorizationContext(
+        authorizing_principal_id=principal,
+        evidence_type="caller_attested_task_interaction",
+        evidence_reference=evidence_reference,
+        approval_type=approval_type,
+        execution_route=route,
+        executor_id="Codex",
+    )
 
 
 def _hold_cooperative_connection(database_path, ready, release, *, writer):
@@ -254,13 +276,13 @@ class LedgerTransitionTests(unittest.TestCase):
                 ('{ "z": 1, "a": 2 }',),
             )
 
-    def authorization_paths(self, operation="migrate", backup=None):
+    def authorization_paths(
+        self, operation="migrate", backup=None, *, route="direct_codex"
+    ):
         manifest_path = self.root / f"{operation}-manifest.json"
         receipt_path = self.root / f"{operation}-receipt.json"
         backup_path = backup or self.root / f"{operation}-backup.sqlite3"
-        expires_at = (
-            datetime.now(timezone.utc) + timedelta(hours=1)
-        ).isoformat()
+        expires_at = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
         create_transition_manifest(
             self.database_path,
             backup_path,
@@ -275,7 +297,8 @@ class LedgerTransitionTests(unittest.TestCase):
         create_authorization_receipt(
             manifest_path,
             receipt_path,
-            authorization_text=f"Synthetic approval for {operation}",
+            authorization_text=authorization_text_for_manifest(manifest_path),
+            authority_context=authority_context(route=route),
         )
         return manifest_path, receipt_path, backup_path
 
@@ -291,8 +314,7 @@ class LedgerTransitionTests(unittest.TestCase):
                 4,
             )
             columns = {
-                row["name"]
-                for row in connection.execute("PRAGMA table_info(sources)")
+                row["name"] for row in connection.execute("PRAGMA table_info(sources)")
             }
             self.assertNotIn("program", columns)
             self.assertNotIn("academic_year", columns)
@@ -482,9 +504,7 @@ class LedgerTransitionTests(unittest.TestCase):
             connection.close()
 
     def test_versioned_json_schemas_load_and_cli_rejects_arbitrary_args(self):
-        schema_directory = (
-            SRC_DIRECTORY / "wingman/core/ledger/schemas"
-        )
+        schema_directory = SRC_DIRECTORY / "wingman/core/ledger/schemas"
         schemas = sorted(schema_directory.glob("*-v1.schema.json"))
         self.assertEqual(len(schemas), 5)
         for schema in schemas:
@@ -502,18 +522,24 @@ class LedgerTransitionTests(unittest.TestCase):
                 parser().parse_args(
                     [
                         "execute",
-                        "--manifest", "manifest.json",
-                        "--receipt", "receipt.json",
-                        "--sql", "DROP TABLE sources",
+                        "--manifest",
+                        "manifest.json",
+                        "--receipt",
+                        "receipt.json",
+                        "--sql",
+                        "DROP TABLE sources",
                     ]
                 )
             with self.assertRaises(SystemExit):
                 parser().parse_args(
                     [
                         "execute",
-                        "--manifest", "manifest.json",
-                        "--receipt", "receipt.json",
-                        "--migration", "4",
+                        "--manifest",
+                        "manifest.json",
+                        "--receipt",
+                        "receipt.json",
+                        "--migration",
+                        "4",
                     ]
                 )
 
@@ -626,12 +652,173 @@ class LedgerTransitionTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "already consumed"):
             execute_authorized_transition(manifest, receipt)
 
+    def test_receipt_records_direct_and_mission_control_routes_separately(self):
+        connection = self.create_version_3()
+        connection.close()
+        _, direct_path, _ = self.authorization_paths()
+        direct = json.loads(direct_path.read_text(encoding="utf-8"))
+        schema = json.loads(
+            (
+                PROJECT_ROOT
+                / "src/wingman/core/ledger/schemas/authorization-receipt-v2.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        Draft202012Validator(schema).validate(direct)
+        self.assertEqual(direct["schema_version"], 2)
+        self.assertEqual(
+            direct["authority"]["authorizing_principal"],
+            {"principal_id": "Maverick"},
+        )
+        self.assertEqual(
+            direct["authority"]["execution_route"],
+            {"type": "direct_codex", "dispatcher": None},
+        )
+        self.assertEqual(
+            direct["authority"]["statement"],
+            "Trusted local caller attests that Maverick authorized this scope "
+            "through a task interaction; "
+            "executed directly by Codex.",
+        )
+        self.assertEqual(
+            direct["authority"]["provenance_attestation"],
+            {
+                "model": "trusted_local_caller",
+                "independent_origin_verification": False,
+            },
+        )
+
+        _, delegated_path, _ = self.authorization_paths(
+            operation="restore",
+            route="mission_control",
+        )
+        delegated = json.loads(delegated_path.read_text(encoding="utf-8"))
+        Draft202012Validator(schema).validate(delegated)
+        self.assertEqual(
+            delegated["authority"]["authorizing_principal"],
+            {"principal_id": "Maverick"},
+        )
+        self.assertEqual(
+            delegated["authority"]["execution_route"],
+            {"type": "mission_control", "dispatcher": "Mission Control"},
+        )
+        self.assertIn(
+            "dispatched through Mission Control",
+            delegated["authority"]["statement"],
+        )
+        self.assertNotIn(
+            "Authorized by Mission Control",
+            delegated["authority"]["statement"],
+        )
+
+    def test_missing_unknown_out_of_scope_or_inexact_evidence_fails_closed(self):
+        connection = self.create_version_3()
+        connection.close()
+        for index, (context, text_kind, message) in enumerate(
+            (
+                (None, "exact", "Explicit authorization context"),
+                (
+                    authority_context(principal="Mission Control"),
+                    "exact",
+                    "principal is unknown",
+                ),
+                (
+                    authority_context(evidence_reference=""),
+                    "exact",
+                    "reference is required",
+                ),
+                (
+                    authority_context(approval_type="authentication_only"),
+                    "exact",
+                    "Action-specific explicit approval",
+                ),
+                (
+                    authority_context(),
+                    "inexact",
+                    "does not exactly approve",
+                ),
+            )
+        ):
+            manifest = self.root / f"invalid-{index}-manifest.json"
+            receipt = self.root / f"invalid-{index}-receipt.json"
+            create_transition_manifest(
+                self.database_path,
+                self.root / f"invalid-{index}-backup.sqlite3",
+                manifest,
+                receipt,
+                operation="migrate",
+                run_id=f"invalid-{index}",
+                expires_at=(
+                    datetime.now(timezone.utc) + timedelta(hours=1)
+                ).isoformat(),
+                reviewed_base=BASELINE,
+                reviewed_head="HEAD",
+            )
+            authorization_text = authorization_text_for_manifest(manifest)
+            if text_kind == "inexact":
+                authorization_text = "Authenticated but not action-specific."
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(RuntimeError, message):
+                    create_authorization_receipt(
+                        manifest,
+                        receipt,
+                        authorization_text=authorization_text,
+                        authority_context=context,
+                    )
+                self.assertFalse(receipt.exists())
+
+    def test_legacy_v1_receipt_wording_remains_readable_and_executable(self):
+        connection = self.create_version_3()
+        connection.close()
+        manifest_path, receipt_path, _ = self.authorization_paths()
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        current = json.loads(receipt_path.read_text(encoding="utf-8"))
+        authorization_text = authorization_text_for_manifest(manifest)
+        legacy = {
+            "schema_version": 1,
+            "record_type": "ledger_transition_authorization_receipt",
+            "canary": "CANOPY-7C2F-ATLAS",
+            "asserted_authority": "Maverick",
+            "manifest": current["manifest"],
+            "run_id": current["run_id"],
+            "expires_at": current["expires_at"],
+            "permitted_operation": current["permitted_operation"],
+            "target": current["target"],
+            "backup_destination": current["backup_destination"],
+            "code_identity": current["code_identity"],
+            "migration_plan_sha256": current["migration_plan_sha256"],
+            "command": current["command"],
+            "authorization_text_sha256": hashlib.sha256(
+                authorization_text.encode("utf-8")
+            ).hexdigest(),
+            "single_use": True,
+            "automatic_retry_permitted": False,
+            "state": "unused",
+            "trust_boundary": (
+                "authenticated Mission Control interaction plus the trusted local "
+                "operating-system account; no independent human authentication"
+            ),
+        }
+        legacy["receipt_id"] = hashlib.sha256(canonical_json_bytes(legacy)).hexdigest()
+        os.chmod(receipt_path, 0o600)
+        receipt_path.write_bytes(canonical_json_bytes(legacy) + b"\n")
+        os.chmod(receipt_path, 0o444)
+
+        result = execute_authorized_transition(manifest_path, receipt_path)
+        self.assertEqual(result["status"], "migrated")
+        self.assertEqual(
+            legacy["trust_boundary"],
+            "authenticated Mission Control interaction plus the trusted local "
+            "operating-system account; no independent human authentication",
+        )
+
     def test_authorization_rejects_target_drift_before_consumption(self):
         connection = self.create_version_3()
         connection.close()
         manifest, receipt, _ = self.authorization_paths()
         raw = sqlite3.connect(self.database_path)
-        raw.execute("UPDATE schema_migrations SET applied_at = 'changed' WHERE version = 3")
+        raw.execute(
+            "UPDATE schema_migrations SET applied_at = 'changed' WHERE version = 3"
+        )
         raw.commit()
         raw.close()
         with self.assertRaisesRegex(RuntimeError, "identity changed|inventory changed"):
@@ -792,7 +979,9 @@ class LedgerTransitionTests(unittest.TestCase):
             rows = connection.execute(
                 "SELECT version, COUNT(*) FROM schema_migrations GROUP BY version"
             ).fetchall()
-            self.assertEqual([(row[0], row[1]) for row in rows], [(1, 1), (2, 1), (3, 1), (4, 1)])
+            self.assertEqual(
+                [(row[0], row[1]) for row in rows], [(1, 1), (2, 1), (3, 1), (4, 1)]
+            )
         finally:
             connection.close()
 
@@ -849,8 +1038,7 @@ class LedgerTransitionTests(unittest.TestCase):
                 ).fetchone()
             )
             columns = {
-                row["name"]
-                for row in connection.execute("PRAGMA table_info(sources)")
+                row["name"] for row in connection.execute("PRAGMA table_info(sources)")
             }
             self.assertIn("program", columns)
         finally:
@@ -903,10 +1091,14 @@ class LedgerTransitionTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "recovery is incomplete"):
                     connect_database(target)
                 result = recover_incomplete(target)
-                self.assertIn(result["status"], {"restored", "recovered_without_restore"})
+                self.assertIn(
+                    result["status"], {"restored", "recovered_without_restore"}
+                )
                 connection = connect_database(target)
                 try:
-                    self.assertEqual(validate_readiness(connection)["schema_version"], 3)
+                    self.assertEqual(
+                        validate_readiness(connection)["schema_version"], 3
+                    )
                 finally:
                     connection.close()
 

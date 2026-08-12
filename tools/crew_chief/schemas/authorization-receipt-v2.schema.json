@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wingman.local/schemas/crew-chief/authorization-receipt-v2.schema.json",
+  "title": "Wingman Package-Bound Bootstrap Authorization Receipt v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "receipt_type",
+    "canary",
+    "authority",
+    "subject",
+    "authorized_scope",
+    "authorized_at",
+    "expires_at",
+    "receipt_id"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "2.0"},
+    "receipt_type": {
+      "type": "string",
+      "const": "maverick_package_authorization"
+    },
+    "canary": {"type": "string", "const": "CANOPY-7C2F-ATLAS"},
+    "authority": {"$ref": "#/$defs/authority"},
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "head_commit",
+        "package",
+        "service_schema",
+        "audit_id",
+        "envelope_id",
+        "package_expires_at"
+      ],
+      "properties": {
+        "head_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "package": {"$ref": "#/$defs/binding"},
+        "service_schema": {"$ref": "#/$defs/binding"},
+        "audit_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "envelope_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "package_expires_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "authorized_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ordinary_bootstrap_invocations",
+        "conditional_crew_chief_fixture_audits",
+        "automatic_retries_permitted"
+      ],
+      "properties": {
+        "ordinary_bootstrap_invocations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "conditional_crew_chief_fixture_audits": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "automatic_retries_permitted": {"type": "boolean", "const": false}
+      }
+    },
+    "authorized_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "receipt_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provenance_attestation",
+        "authorizing_principal",
+        "authorization_evidence",
+        "execution_route",
+        "executor",
+        "statement"
+      ],
+      "properties": {
+        "provenance_attestation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["model", "independent_origin_verification"],
+          "properties": {
+            "model": {"const": "trusted_local_caller"},
+            "independent_origin_verification": {"const": false}
+          }
+        },
+        "authorizing_principal": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["principal_id"],
+          "properties": {"principal_id": {"const": "Maverick"}}
+        },
+        "authorization_evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "reference",
+            "approval_type",
+            "asserted_authorizing_principal_id",
+            "authorization_text_sha256",
+            "authorization_text_size"
+          ],
+          "properties": {
+            "type": {
+              "enum": [
+                "caller_attested_task_interaction",
+                "caller_attested_explicit_approval",
+                "caller_attested_standing_delegation"
+              ]
+            },
+            "reference": {"type": "string", "minLength": 1, "maxLength": 512},
+            "approval_type": {"const": "action_specific_explicit"},
+            "asserted_authorizing_principal_id": {"const": "Maverick"},
+            "authorization_text_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "authorization_text_size": {"type": "integer", "minimum": 1}
+          }
+        },
+        "execution_route": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "dispatcher"],
+          "properties": {
+            "type": {"enum": ["direct_codex", "mission_control"]},
+            "dispatcher": {"type": ["string", "null"]}
+          },
+          "allOf": [
+            {
+              "if": {"properties": {"type": {"const": "direct_codex"}}},
+              "then": {"properties": {"dispatcher": {"const": null}}},
+              "else": {
+                "properties": {"dispatcher": {"const": "Mission Control"}}
+              }
+            }
+          ]
+        },
+        "executor": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["component_id"],
+          "properties": {"component_id": {"const": "Codex"}}
+        },
+        "statement": {
+          "type": "string",
+          "pattern": "^Trusted local caller attests that Maverick authorized this scope through .+; (dispatched through Mission Control; )?executed (directly )?by Codex\\.$"
+        }
+      }
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["size", "sha256"],
+      "properties": {
+        "size": {"type": "integer", "minimum": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

@@ -364,3 +364,164 @@ retention lifecycle are operational for the validated synthetic acceptance
 scope. This is not independent certification of every future audit. No push,
 merge, publication, main mutation, successor activation, third invocation, or
 retry occurred. Maverick's publication decision is the next gate.
+
+## 2026-08-11 — CC-0001 authority-provenance correction candidate
+
+- Repeated `CANOPY-7C2F-ATLAS` and applied Maverick's bounded decision that
+  Maverick is the sole authorizing principal; direct Codex and Mission Control
+  are execution routes. Valid version-2 records can identify Mission Control
+  only as dispatcher, never as the authorizing principal.
+- Verified a clean detached worktree at
+  `899370b6e3e6796acc2c1b04e4bdc9b13c58575e`, matching `origin/main`, before
+  editing. The repository was between missions; the explicit CC-0001
+  instruction authorized this correction without launching Mission 028 or a
+  successor architecture mission.
+- Traced the root cause to the three receipt writers. Crew Chief bootstrap did
+  not transport a route, while LSO and Ledger hard-coded Mission Control into
+  downstream trust-boundary wording even when Codex was invoked directly.
+- Added version-2 structured provenance for every new Crew Chief bootstrap,
+  LSO closeout, and Ledger transition receipt: trusted-local caller attestation
+  of Maverick's external decision, asserted principal, action-specific text and
+  scope binding, direct or Mission Control route, dispatcher when applicable,
+  and Codex executor. Human-readable wording is derived from those fields.
+- Removed every implicit route/authority default. Missing, unknown,
+  authentication-only, Mission-Control-as-authorizer, and out-of-scope
+  context now fails before a receipt is written. LSO and Ledger retain exact
+  action-specific approval checks for their reserved actions. These checks
+  establish internal consistency, not the human origin of caller-supplied
+  provenance.
+- Preserved all version-1 schemas and readers. The committed Crew Chief receipt
+  fixture remains byte-identical at SHA-256
+  `da71546abd5a67d57a8bf1028f245d9ba532ccb3f205c0af6c9126e2a4a1217c`;
+  no historical receipt was migrated, normalized, rewritten, or re-rendered.
+- The first 58-test focused run exposed seven LSO errors because the v2 writer
+  still selected the v1 schema at its final write check. No receipt execution
+  or repository mutation occurred. Correcting that selector produced a green
+  rerun: **58 tests passed in 69.142 seconds**. The post-format rerun again
+  passed all **58 tests in 69.878 seconds**. Goose later demonstrated that this
+  result was not reproducible after the fixed one-hour LSO envelope expired:
+  the fixture and LSO audit-package path had not consistently transported the
+  injected fixture clock, producing 14 expiry errors against wall-clock time.
+- All six version-1/version-2 authorization receipt schemas passed Draft
+  2020-12 meta-schema checks. Python compilation, repository governance
+  validation, changed-scope Ruff with the established test-import `E402`
+  exception, Black, Git whitespace validation, and historical receipt hash
+  validation passed.
+- The complete credential-free offline suite ran **501 tests in 238.408
+  seconds**: **499 passed and 2 failed**. Both failures are unchanged stale
+  baseline assertions in `test_repository_governance.py`: one expects
+  `atlas/website-course-cockpit` to remain the latest completed mission and one
+  expects LSO to remain active. Committed `CURRENT_MISSION.md` already records
+  `atlas/production-contrast` and the between-missions state. Neither failing
+  test nor `CURRENT_MISSION.md` changed in CC-0001; repairing those unrelated
+  expectations is outside this correction.
+
+The version-2 trust model is intentionally a trusted-local assertion after
+Maverick's external decision. Exact hashes make the record tamper-evident after
+creation, but neither the principal string nor the generated Ledger approval
+text proves origin. A process already running as the same account can supply a
+false but internally consistent attestation. Authentication and stronger
+identity integration remain outside CC-0001.
+
+This remains an unstaged, uncommitted correction candidate awaiting independent
+re-audit, not a mission-completion claim. No live receipt, model invocation,
+credential use, commit, push, merge, publication, migration, or shared/live-data
+mutation occurred.
+
+## 2026-08-11 — CC-0001 audit correction pass
+
+- Maverick accepted Goose's reproducibility finding and selected the honest
+  trusted-local assertion model. This pass did not add an authenticated task
+  adapter, identity system, live integration, or new mission.
+- LSO now transports the caller-supplied clock through both preparation and
+  verification into Crew Chief envelope expiry validation. The fixture also
+  verifies its envelope with `FIXED_TIME`; production still defaults to the
+  real UTC clock and retains the same expiration failures. A regression asserts
+  that plan preparation passes the fixture clock into envelope verification.
+- New version-2 records now label their evidence classifications
+  `caller_attested_*`, store an `asserted_authorizing_principal_id`, and declare
+  `provenance_attestation.model = trusted_local_caller` with
+  `independent_origin_verification = false`. Their derived wording says the
+  trusted local caller attests to Maverick's authorization. This validates only
+  the allowed recorded principal, evidence classification/reference, exact
+  action text and scope, route/dispatcher, executor, hashes, and cross-field
+  consistency. It does not establish who supplied those inputs.
+- The ordinary focused command passed **59 tests in 73.346 seconds** before
+  final formatting and **59 tests in 73.423 seconds** afterward. The added
+  test is the explicit LSO clock-transport regression.
+- Eight targeted authority/clock tests passed in **15.271 seconds**. All six
+  version-1/version-2 receipt schemas passed Draft 2020-12 meta-schema
+  validation. Repository governance validation, compilation, changed-scope
+  Ruff with the established test-import `E402` exception, Black, and Git
+  whitespace validation passed.
+- The complete credential-free offline suite ran **502 tests in 244.205
+  seconds**: **500 passed and 2 failed**. The failures remain the unchanged
+  stale assertions in `test_repository_governance.py` described above;
+  `CURRENT_MISSION.md` and that test file have zero CC-0001 diff.
+- All three version-1 schemas have zero diff. The committed historical Crew
+  Chief receipt remains byte-identical at SHA-256
+  `da71546abd5a67d57a8bf1028f245d9ba532ccb3f205c0af6c9126e2a4a1217c`.
+
+Acceptance is therefore limited to a corrected, internally consistent,
+tamper-evident candidate. A same-account caller can still falsely attest that
+Maverick authorized an action, and Mission Control is not technically prevented
+from doing so if it can act through that boundary; the version-2 contract only
+prevents a valid record from naming Mission Control as the authorizing
+principal. No independent authentication, forged-origin prevention, approval,
+commit readiness, independent Crew Chief certification, or mission completion
+is claimed. The next gate is independent Goose/Maverick re-audit.
+
+## 2026-08-11 — CC-0001 authorization-text size finding correction
+
+- A fresh independent Crew Chief audit over canonical envelope
+  `bc8c176d12dcbd0dc96e27d1d6c08bc7bb586bac6d345e8acea6a7f9c4c69aae`
+  returned `FAIL` with one blocking medium finding. The Crew Chief v2 path
+  compared the receipt's authorization-text SHA-256 to an independent
+  expectation but did not supply an independently expected byte size. Changing
+  only the recorded size and recomputing the content-derived receipt ID was
+  therefore accepted. This was an evidence-integrity defect, not an authority
+  expansion.
+- Maverick authorized one bounded correction pass. `AuthorizationExpectation`
+  now carries the trusted-boundary UTF-8 authorization-text byte size for new
+  version-2 receipts. Creation checks both expected size and SHA-256, and v2
+  validation passes both independently supplied values to the shared authority
+  validator. The expected size is never derived from the receipt under review.
+- Legacy serialized expectations may omit the new field so historical
+  version-1 validation remains readable. Version-2 creation or validation fails
+  without a positive expected size. No version-1 schema or historical receipt
+  was changed or rewritten.
+- A real-path regression changes only `authorization_text_size`, recomputes
+  `receipt_id`, and proves rejection both before workspace creation and before
+  receipt consumption or runner invocation. It also verifies that neither the
+  original nor altered receipt creates a consumption marker.
+
+This correction strengthens receipt evidence integrity only. It does not add
+independent identity authentication, prevent a same-account false attestation,
+prove human origin, authorize a commit, or complete a mission. Validation
+results follow below, and a fresh independent Crew Chief re-audit remains the
+next gate after this self-review.
+
+- The first targeted run exposed a local compatibility-parser implementation
+  error (`TypeError: unhashable type: 'set'`; 1 test errored in 0.173 seconds).
+  After correcting that parser, the size-tamper regression plus v1 historical
+  and valid-v2 controls passed 3 tests in 0.540 seconds, then passed again after
+  formatting in 0.497 seconds. A final isolated run of the size-tamper
+  regression passed 1 test in 0.172 seconds.
+- The ordinary CC-0001 focused command passed **60 tests in 133.907 seconds**
+  without a runtime clock monkeypatch. The previous 59-test set became 60 with
+  the new size-tamper regression.
+- All six version-1/version-2 receipt schemas passed Draft 2020-12 meta-schema
+  validation. Repository governance validation, compilation of the ten
+  changed Python files, changed-scope Ruff with the established test-import
+  `E402` exception, Black, and Git whitespace validation passed.
+- The complete credential-free offline suite ran **503 tests in 250.650
+  seconds**: **501 passed and 2 failed**. The two failures are the same unchanged
+  stale expectations in `test_repository_governance.py` described above;
+  neither that file nor `CURRENT_MISSION.md` has a CC-0001 diff.
+- All three version-1 schemas have zero diff. The committed historical Crew
+  Chief receipt remains byte-identical at SHA-256
+  `da71546abd5a67d57a8bf1028f245d9ba532ccb3f205c0af6c9126e2a4a1217c`.
+
+The candidate remains unstaged and uncommitted. This was Codex self-review,
+not a new independent audit. The next gate is a fresh independent Crew Chief
+re-audit followed by Maverick review.

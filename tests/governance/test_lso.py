@@ -7,24 +7,55 @@ import shutil
 import subprocess
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
+from tools.authorization import AuthorizationContext
 from tools.crew_chief.controller import prepare_audit, reconcile_report, verify_envelope
-from tools.crew_chief.core import CANARY, PROFILE_FOCUS, write_canonical_json
+from tools.crew_chief.core import PROFILE_FOCUS
 from tools.lso.controller import (
     create_authorization_receipt,
     execute_closeout,
     prepare_closeout,
+    validate_authorization_receipt,
     verify_plan,
 )
-from tools.lso.core import GENERATED_GOVERNANCE_PATHS, LSOError, consume_once, read_json
+from tools.lso.core import (
+    CANARY,
+    CLOSEOUT_ACTIONS,
+    GENERATED_GOVERNANCE_PATHS,
+    LSOError,
+    artifact_binding,
+    consume_once,
+    isoformat,
+    read_json,
+    receipt_identifier,
+    sha256_bytes,
+    write_canonical_json,
+)
 from tools.lso.git_ops import receipt_consumption_directory
 
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXED_TIME = datetime(2026, 8, 11, 15, 0, tzinfo=timezone.utc)
+
+
+def authority_context(
+    *,
+    route="direct_codex",
+    principal="Maverick",
+    evidence_reference="task:lso-test",
+    approval_type="action_specific_explicit",
+):
+    return AuthorizationContext(
+        authorizing_principal_id=principal,
+        evidence_type="caller_attested_task_interaction",
+        evidence_reference=evidence_reference,
+        approval_type=approval_type,
+        execution_route=route,
+        executor_id="Codex",
+    )
 
 
 class LSOFixture:
@@ -204,7 +235,7 @@ class LSOFixture:
             clock=lambda: FIXED_TIME,
         )
         envelope_path = Path(envelope_result["envelope_path"])
-        envelope = verify_envelope(envelope_path)
+        envelope = verify_envelope(envelope_path, clock=lambda: FIXED_TIME)
         report = self.report(envelope, verdict=verdict)
         report_path = self.root / f"{name}-report.json"
         write_canonical_json(report_path, report)
@@ -239,7 +270,7 @@ class LSOFixture:
             clock=lambda: FIXED_TIME,
         )
 
-    def authorize(self, plan_result: dict, name: str) -> Path:
+    def authorize(self, plan_result: dict, name: str, *, route="direct_codex") -> Path:
         text = self.root / f"{name}-authorization.txt"
         text.write_text(
             plan_result["required_authorization_text"] + "\n", encoding="utf-8"
@@ -250,6 +281,7 @@ class LSOFixture:
             text,
             receipt,
             clock=lambda: FIXED_TIME,
+            authority_context=authority_context(route=route),
         )
         return receipt
 
@@ -286,6 +318,17 @@ class LandingSignalOfficerTests(unittest.TestCase):
         ).read_text()
         self.assertIn('"lifecycle": "completed"', mission)
         self.assertEqual(self.fixture.git("status", "--porcelain").stdout, "")
+
+    def test_prepare_plan_passes_fixture_clock_to_envelope_verification(self):
+        with patch(
+            "tools.lso.controller.verify_envelope",
+            wraps=verify_envelope,
+        ) as verifier:
+            self.fixture.prepare_plan("clock-bound")
+
+        verifier.assert_called_once()
+        verification_clock = verifier.call_args.kwargs["clock"]
+        self.assertEqual(verification_clock(), FIXED_TIME)
 
     def test_precommit_failure_restores_exact_real_index(self):
         prepared = self.fixture.prepare_plan("index-restore")
@@ -401,6 +444,120 @@ class LandingSignalOfficerTests(unittest.TestCase):
                 clock=lambda: FIXED_TIME,
             )
 
+    def test_direct_and_mission_control_receipts_preserve_one_authorizer(self):
+        direct_plan = self.fixture.prepare_plan("direct-authority")
+        direct = read_json(self.fixture.authorize(direct_plan, "direct-authority"))
+        self.assertEqual(direct["schema_version"], "2.0")
+        self.assertEqual(
+            direct["authority"]["authorizing_principal"],
+            {"principal_id": "Maverick"},
+        )
+        self.assertEqual(
+            direct["authority"]["execution_route"],
+            {"type": "direct_codex", "dispatcher": None},
+        )
+        self.assertEqual(
+            direct["authority"]["statement"],
+            "Trusted local caller attests that Maverick authorized this scope "
+            "through a task interaction; "
+            "executed directly by Codex.",
+        )
+        self.assertEqual(
+            direct["authority"]["provenance_attestation"],
+            {
+                "model": "trusted_local_caller",
+                "independent_origin_verification": False,
+            },
+        )
+
+        delegated_plan = self.fixture.prepare_plan("delegated-authority")
+        delegated = read_json(
+            self.fixture.authorize(
+                delegated_plan,
+                "delegated-authority",
+                route="mission_control",
+            )
+        )
+        self.assertEqual(
+            delegated["authority"]["authorizing_principal"],
+            {"principal_id": "Maverick"},
+        )
+        self.assertEqual(
+            delegated["authority"]["execution_route"],
+            {"type": "mission_control", "dispatcher": "Mission Control"},
+        )
+        self.assertIn(
+            "dispatched through Mission Control", delegated["authority"]["statement"]
+        )
+        self.assertNotIn(
+            "Authorized by Mission Control",
+            delegated["authority"]["statement"],
+        )
+
+    def test_missing_unknown_or_authentication_only_context_fails_closed(self):
+        prepared = self.fixture.prepare_plan("invalid-authority")
+        text = Path(self.temporary.name) / "invalid-authority.txt"
+        text.write_text(
+            prepared["required_authorization_text"] + "\n", encoding="utf-8"
+        )
+        cases = (
+            (None, "explicit authorization context"),
+            (authority_context(principal="Mission Control"), "principal is unknown"),
+            (authority_context(evidence_reference=""), "reference is required"),
+            (
+                authority_context(approval_type="authentication_only"),
+                "action-specific explicit approval",
+            ),
+        )
+        for index, (context, message) in enumerate(cases):
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(LSOError, message):
+                    create_authorization_receipt(
+                        Path(prepared["plan_path"]),
+                        text,
+                        Path(self.temporary.name) / f"invalid-receipt-{index}.json",
+                        clock=lambda: FIXED_TIME,
+                        authority_context=context,
+                    )
+
+    def test_legacy_v1_receipt_wording_remains_readable(self):
+        prepared = self.fixture.prepare_plan("legacy-receipt")
+        plan_path = Path(prepared["plan_path"])
+        plan = read_json(plan_path)
+        text = Path(self.temporary.name) / "legacy-authorization.txt"
+        text.write_text(
+            prepared["required_authorization_text"] + "\n", encoding="utf-8"
+        )
+        payload = text.read_bytes()
+        receipt = {
+            "schema_version": "1.0",
+            "canary": CANARY,
+            "plan_id": plan["plan_id"],
+            "plan_sha256": artifact_binding(plan_path)["sha256"],
+            "authorization_text_sha256": sha256_bytes(payload),
+            "authorization_text_size": len(payload),
+            "asserted_authority": "Maverick",
+            "allowed_actions": list(CLOSEOUT_ACTIONS),
+            "single_use": True,
+            "created_at": isoformat(FIXED_TIME),
+            "expires_at": isoformat(FIXED_TIME + timedelta(minutes=30)),
+            "authority_boundary": (
+                "The authenticated Mission Control interaction and trusted local "
+                "operating-system account are the v1 authorization boundary; this "
+                "receipt is tamper-evident, not independent identity proof."
+            ),
+        }
+        receipt["receipt_id"] = receipt_identifier(receipt)
+        receipt_path = Path(self.temporary.name) / "legacy-receipt-v1.json"
+        write_canonical_json(receipt_path, receipt)
+        _, validated = validate_authorization_receipt(
+            plan_path,
+            receipt_path,
+            clock=lambda: FIXED_TIME,
+        )
+        self.assertEqual(validated, receipt)
+        self.assertEqual(validated["authority_boundary"], receipt["authority_boundary"])
+
     def test_authorization_text_symlink_is_rejected(self):
         prepared = self.fixture.prepare_plan("symlink-text")
         target = Path(self.temporary.name) / "authorization-target.txt"
@@ -473,6 +630,7 @@ class LandingSignalOfficerTests(unittest.TestCase):
             authorization,
             receipt,
             clock=lambda: FIXED_TIME,
+            authority_context=authority_context(),
         )
         copied_package = Path(self.temporary.name) / "copied-plan-package"
         shutil.copytree(plan_path.parent, copied_package)

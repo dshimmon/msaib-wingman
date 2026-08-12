@@ -15,6 +15,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
+from tools.authorization import AuthorizationContext
 from tools.crew_chief.bootstrap_authorization import (
     AuthorizationExpectation,
     create_authorization_receipt,
@@ -68,6 +69,25 @@ from tools.governance import repository as governance
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXED_TIME = datetime(2026, 8, 9, 12, 0, tzinfo=timezone.utc)
+
+
+def authority_context(
+    *,
+    route="direct_codex",
+    principal="Maverick",
+    evidence_type="caller_attested_task_interaction",
+    evidence_reference="task:crew-chief-test",
+    approval_type="action_specific_explicit",
+    executor="Codex",
+):
+    return AuthorizationContext(
+        authorizing_principal_id=principal,
+        evidence_type=evidence_type,
+        evidence_reference=evidence_reference,
+        approval_type=approval_type,
+        execution_route=route,
+        executor_id=executor,
+    )
 
 
 def bundled_report_schema() -> dict:
@@ -210,9 +230,11 @@ def report_for(
         "verdict": verdict,
         "blocked_reasons": blocked or [],
         "findings": findings or [],
-        "audit_scope": scope
-        if scope is not None
-        else list(envelope["risk_profile"]["required_focus"]),
+        "audit_scope": (
+            scope
+            if scope is not None
+            else list(envelope["risk_profile"]["required_focus"])
+        ),
         "validation_evidence": ["frozen/validation.log"],
         "generated_at": "2026-08-09T12:30:00Z",
         "authority_statement": (
@@ -300,12 +322,14 @@ class BootstrapAuthorizationTests(unittest.TestCase):
             ordinary_bootstrap_invocations=1,
             conditional_crew_chief_fixture_audits=2,
             automatic_retries_permitted=False,
+            authorization_text_size=len(self.authorization_text.encode("utf-8")),
         )
         self.receipt = create_authorization_receipt(
             self.expectation,
             authorization_text=self.authorization_text,
             authorized_at=FIXED_TIME,
             expires_at=FIXED_TIME + timedelta(hours=1),
+            authority_context=authority_context(),
         )
         write_canonical_json(self.receipt_path, self.receipt)
 
@@ -352,7 +376,28 @@ class BootstrapAuthorizationTests(unittest.TestCase):
             clock=lambda: FIXED_TIME,
         )
         self.assertEqual(validated["canary"], CANARY)
-        self.assertEqual(validated["authority"]["identity"], "Maverick")
+        self.assertEqual(validated["schema_version"], "2.0")
+        self.assertEqual(
+            validated["authority"]["authorizing_principal"]["principal_id"],
+            "Maverick",
+        )
+        self.assertEqual(
+            validated["authority"]["execution_route"],
+            {"type": "direct_codex", "dispatcher": None},
+        )
+        self.assertEqual(
+            validated["authority"]["statement"],
+            "Trusted local caller attests that Maverick authorized this scope "
+            "through a task interaction; "
+            "executed directly by Codex.",
+        )
+        self.assertEqual(
+            validated["authority"]["provenance_attestation"],
+            {
+                "model": "trusted_local_caller",
+                "independent_origin_verification": False,
+            },
+        )
         self.assertEqual(
             validated["subject"],
             {
@@ -368,6 +413,179 @@ class BootstrapAuthorizationTests(unittest.TestCase):
                 "audit_id": self.expectation.audit_id,
                 "envelope_id": self.expectation.envelope_id,
                 "package_expires_at": self.expectation.package_expires_at,
+            },
+        )
+
+    def test_mission_control_is_only_the_dispatch_route(self):
+        delegated = create_authorization_receipt(
+            self.expectation,
+            authorization_text=self.authorization_text,
+            authorized_at=FIXED_TIME,
+            expires_at=FIXED_TIME + timedelta(hours=1),
+            authority_context=authority_context(
+                route="mission_control",
+                evidence_type="caller_attested_standing_delegation",
+                evidence_reference="delegation:maverick-to-codex-test",
+            ),
+        )
+        validated = validate_authorization_receipt(
+            delegated,
+            self.expectation,
+            clock=lambda: FIXED_TIME,
+        )
+        self.assertEqual(
+            validated["authority"]["authorizing_principal"],
+            {"principal_id": "Maverick"},
+        )
+        self.assertEqual(
+            validated["authority"]["authorization_evidence"][
+                "asserted_authorizing_principal_id"
+            ],
+            "Maverick",
+        )
+        self.assertEqual(
+            validated["authority"]["execution_route"],
+            {"type": "mission_control", "dispatcher": "Mission Control"},
+        )
+        self.assertEqual(
+            validated["authority"]["statement"],
+            "Trusted local caller attests that Maverick authorized this scope "
+            "through a recorded standing delegation; "
+            "dispatched through Mission Control; executed by Codex.",
+        )
+        self.assertNotIn(
+            "Authorized by Mission Control",
+            validated["authority"]["statement"],
+        )
+        inconsistent = copy.deepcopy(delegated)
+        inconsistent["authority"]["authorization_evidence"][
+            "asserted_authorizing_principal_id"
+        ] = "Mission Control"
+        unsigned = dict(inconsistent)
+        unsigned.pop("receipt_id")
+        inconsistent["receipt_id"] = sha256_bytes(canonical_json_bytes(unsigned))
+        with self.assertRaisesRegex(CrewChiefError, "schema validation failed"):
+            validate_authorization_receipt(
+                inconsistent,
+                self.expectation,
+                clock=lambda: FIXED_TIME,
+            )
+
+    def test_missing_unknown_or_non_approving_authority_fails_closed(self):
+        cases = (
+            (None, "explicit authorization context"),
+            (authority_context(principal="Mission Control"), "principal is unknown"),
+            (authority_context(evidence_type="unknown"), "evidence type is unknown"),
+            (authority_context(evidence_reference=""), "reference is required"),
+            (
+                authority_context(approval_type="authentication_only"),
+                "action-specific explicit approval",
+            ),
+            (authority_context(route="unknown"), "execution route is unknown"),
+        )
+        for context, message in cases:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(CrewChiefError, message):
+                    create_authorization_receipt(
+                        self.expectation,
+                        authorization_text=self.authorization_text,
+                        authorized_at=FIXED_TIME,
+                        expires_at=FIXED_TIME + timedelta(hours=1),
+                        authority_context=context,
+                    )
+
+    def test_changed_authorization_text_size_fails_before_preparation_or_use(self):
+        altered = copy.deepcopy(self.receipt)
+        altered["authority"]["authorization_evidence"]["authorization_text_size"] = 999
+        unsigned = dict(altered)
+        unsigned.pop("receipt_id")
+        altered["receipt_id"] = sha256_bytes(canonical_json_bytes(unsigned))
+        write_canonical_json(self.receipt_path, altered)
+
+        rejected_workspace = self.root / "size-rejected-before-preparation"
+        with self.assertRaisesRegex(CrewChiefError, "size is mismatched"):
+            self.prepare(rejected_workspace.name)
+        self.assertFalse(rejected_workspace.exists())
+
+        write_canonical_json(self.receipt_path, self.receipt)
+        invocation = self.prepare("size-rejected-before-use")
+        write_canonical_json(self.receipt_path, altered)
+        invocation_path = Path(invocation["workspace"]) / "invocation.json"
+        persisted = read_json(invocation_path)
+        persisted["source_bindings"]["authorization_receipt"] = {
+            "path": str(self.receipt_path.resolve()),
+            "size": self.receipt_path.stat().st_size,
+            "sha256": sha256_file(self.receipt_path),
+        }
+        write_canonical_json(invocation_path, persisted)
+
+        runner = mock.Mock()
+        with self.assertRaisesRegex(CrewChiefError, "size is mismatched"):
+            execute_authorized_bootstrap(
+                invocation_path,
+                runner=runner,
+                clock=lambda: FIXED_TIME,
+            )
+        runner.assert_not_called()
+        for receipt_id in (self.receipt["receipt_id"], altered["receipt_id"]):
+            marker = self.receipt_path.with_name(
+                f".{self.receipt_path.name}.{receipt_id}.consumed.json"
+            )
+            self.assertFalse(marker.exists())
+
+    def test_historical_v1_receipt_remains_exact_and_readable(self):
+        path = (
+            ROOT / "docs/missions/governance/crew-chief/artifacts/"
+            "focused-run-failed-20260810/authorization-receipt.json"
+        )
+        payload = path.read_bytes()
+        historical = json.loads(payload)
+        expectation = AuthorizationExpectation(
+            subject_head=historical["subject"]["head_commit"],
+            package_size=historical["subject"]["package"]["size"],
+            package_sha256=historical["subject"]["package"]["sha256"],
+            service_schema_size=historical["subject"]["service_schema"]["size"],
+            service_schema_sha256=historical["subject"]["service_schema"]["sha256"],
+            audit_id=historical["subject"]["audit_id"],
+            envelope_id=historical["subject"]["envelope_id"],
+            package_expires_at=historical["subject"]["package_expires_at"],
+            authorization_text_sha256=historical["authority"][
+                "authorization_text_sha256"
+            ],
+            ordinary_bootstrap_invocations=historical["authorization"][
+                "ordinary_bootstrap_invocations"
+            ],
+            conditional_crew_chief_fixture_audits=historical["authorization"][
+                "conditional_crew_chief_fixture_audits"
+            ],
+            automatic_retries_permitted=historical["authorization"][
+                "automatic_retries_permitted"
+            ],
+        )
+        validated = validate_authorization_receipt(
+            historical,
+            expectation,
+            clock=lambda: datetime(2026, 8, 10, 15, 0, tzinfo=timezone.utc),
+        )
+        legacy_serialized_expectation = dict(expectation.__dict__)
+        legacy_serialized_expectation.pop("authorization_text_size")
+        self.assertIsNone(
+            AuthorizationExpectation.from_dict(
+                legacy_serialized_expectation
+            ).authorization_text_size
+        )
+        self.assertIs(validated, historical)
+        self.assertEqual(
+            sha256_bytes(payload),
+            "da71546abd5a67d57a8bf1028f245d9ba532ccb3f205c0af6c9126e2a4a1217c",
+        )
+        self.assertEqual(
+            historical["authority"],
+            {
+                "authorization_text_sha256": (
+                    "74180a20820e92f027842d8f883d08281591b88d64afdd9e984de784de2e59b0"
+                ),
+                "identity": "Maverick",
             },
         )
 
@@ -415,6 +633,7 @@ class BootstrapAuthorizationTests(unittest.TestCase):
                 authorization_text=self.authorization_text,
                 authorized_at=FIXED_TIME,
                 expires_at=FIXED_TIME + timedelta(hours=1),
+                authority_context=authority_context(),
             )
         retry = AuthorizationExpectation(
             **{**self.expectation.__dict__, "automatic_retries_permitted": True}
@@ -425,6 +644,7 @@ class BootstrapAuthorizationTests(unittest.TestCase):
                 authorization_text=self.authorization_text,
                 authorized_at=FIXED_TIME,
                 expires_at=FIXED_TIME + timedelta(hours=1),
+                authority_context=authority_context(),
             )
 
     def test_receipt_is_consumed_once_across_prepared_workspaces(self):
@@ -624,7 +844,9 @@ class CrewChiefAgentTests(unittest.TestCase):
         self.assertEqual(agent["sandbox_mode"], "read-only")
         self.assertEqual(agent["model_reasoning_effort"], "high")
         self.assertNotIn("model", agent)
-        self.assertIn("File length alone is not a defect", agent["developer_instructions"])
+        self.assertIn(
+            "File length alone is not a defect", agent["developer_instructions"]
+        )
 
     def test_role_identity_is_distinct_from_goose_and_flightline(self):
         text = (ROOT / ".codex/agents/crew-chief.toml").read_text(encoding="utf-8")
@@ -660,7 +882,8 @@ class CrewChiefEnvelopeTests(unittest.TestCase):
             },
         )
         script = next(
-            item for item in manifest["subject"]["changed_files"]
+            item
+            for item in manifest["subject"]["changed_files"]
             if item["path"] == "scripts/check.sh"
         )
         self.assertEqual(script["file_type"], "executable")
@@ -755,9 +978,7 @@ class CrewChiefEnvelopeTests(unittest.TestCase):
             authorized_untracked=("notes.txt",),
         )
         manifest = read_json(Path(result["manifest_path"]))
-        entries = {
-            item["path"]: item for item in manifest["subject"]["changed_files"]
-        }
+        entries = {item["path"]: item for item in manifest["subject"]["changed_files"]}
         self.assertEqual(entries["src/example.py"]["sources"], ["staged", "unstaged"])
         self.assertEqual(entries["notes.txt"]["sources"], ["untracked"])
         self.assertNotEqual(
@@ -840,7 +1061,9 @@ class CrewChiefEnvelopeTests(unittest.TestCase):
     def test_mission_path_outside_repository_is_rejected(self):
         outside = self.fixture.inputs / "mission.md"
         outside.write_text("# outside\n", encoding="utf-8")
-        with self.assertRaisesRegex(CrewChiefError, "outside the authorized repository"):
+        with self.assertRaisesRegex(
+            CrewChiefError, "outside the authorized repository"
+        ):
             prepare_audit(
                 self.fixture.repo,
                 mission_record=outside,
@@ -871,8 +1094,7 @@ class CrewChiefEnvelopeTests(unittest.TestCase):
         source = next(
             item
             for item in manifest["subject"]["source_material"]
-            if item["repository_path"] == "src/example.py"
-            and item["state"] == "head"
+            if item["repository_path"] == "src/example.py" and item["state"] == "head"
         )
         frozen = Path(result["output_root"]) / source["frozen"]["path"]
         frozen.write_bytes(frozen.read_bytes() + b"tamper")
@@ -905,7 +1127,9 @@ class CrewChiefEnvelopeTests(unittest.TestCase):
 
     def test_standard_deep_and_exempt_profiles(self):
         standard = read_json(Path(self.fixture.prepare("standard")["envelope_path"]))
-        deep = read_json(Path(self.fixture.prepare("deep", profile="deep")["envelope_path"]))
+        deep = read_json(
+            Path(self.fixture.prepare("deep", profile="deep")["envelope_path"])
+        )
         exempt = read_json(
             Path(
                 self.fixture.prepare(
@@ -1174,9 +1398,7 @@ class CrewChiefReportTests(unittest.TestCase):
             finding("CC-0001", severity="low", blocking=False),
             finding("CC-0002", severity="advisory", blocking=False),
         ]
-        report = report_for(
-            self.envelope, findings, verdict="PASS_WITH_ADVISORIES"
-        )
+        report = report_for(self.envelope, findings, verdict="PASS_WITH_ADVISORIES")
         validate_report(self.envelope, report)
 
     def test_medium_finding_requires_rationale_and_fail_verdict(self):
@@ -1223,9 +1445,7 @@ class CrewChiefReportTests(unittest.TestCase):
             )
 
     def test_every_finding_requires_exactly_one_disposition(self):
-        report = report_for(
-            self.envelope, [finding()], verdict="FAIL"
-        )
+        report = report_for(self.envelope, [finding()], verdict="FAIL")
         with self.assertRaisesRegex(CrewChiefError, "exactly one disposition"):
             reconcile_report(self.envelope, report, [], clock=lambda: FIXED_TIME)
 
@@ -1344,13 +1564,9 @@ class CrewChiefServiceSchemaTests(unittest.TestCase):
                 yield from CrewChiefServiceSchemaTests.schema_keywords(child)
 
     def service_round_trip(self, canonical):
-        service_value = canonical_to_service_output(
-            canonical, self.canonical_report
-        )
+        service_value = canonical_to_service_output(canonical, self.canonical_report)
         validate_service_instance(self.service_report, service_value)
-        normalized = normalize_service_output(
-            service_value, self.canonical_report
-        )
+        normalized = normalize_service_output(service_value, self.canonical_report)
         self.assertEqual(normalized, canonical)
         validate_report(self.envelope, normalized)
         return service_value
@@ -1366,9 +1582,7 @@ class CrewChiefServiceSchemaTests(unittest.TestCase):
             context["properties"]["fresh_session"],
             {"type": "boolean", "const": True},
         )
-        self.assertEqual(
-            self.service_report["properties"]["verdict"]["type"], "string"
-        )
+        self.assertEqual(self.service_report["properties"]["verdict"]["type"], "string")
         scope_items = self.service_report["properties"]["audit_scope"]["items"]
         self.assertEqual(scope_items["type"], "string")
         keywords = set(self.schema_keywords(self.service_report))
@@ -1462,9 +1676,7 @@ class CrewChiefServiceSchemaTests(unittest.TestCase):
             "oneOf": {
                 **valid,
                 "properties": {
-                    "statement": {
-                        "oneOf": [{"type": "string"}, {"type": "null"}]
-                    }
+                    "statement": {"oneOf": [{"type": "string"}, {"type": "null"}]}
                 },
             },
             "uniqueItems": {
@@ -1531,9 +1743,7 @@ class CrewChiefRunnerTests(unittest.TestCase):
         return CodexCapabilities(
             executable="/fixture/codex",
             version="codex-cli fixture",
-            exec_flags=(
-                *sorted(_REQUIRED_EXEC_FLAGS),
-            ),
+            exec_flags=(*sorted(_REQUIRED_EXEC_FLAGS),),
             features=(
                 "apps",
                 "browser_use",
@@ -1562,10 +1772,7 @@ class CrewChiefRunnerTests(unittest.TestCase):
         self.assertIn('approval_policy="never"', command)
         self.assertEqual(
             command[
-                command.index(
-                    "--disable", command.index('approval_policy="never"')
-                )
-                + 1
+                command.index("--disable", command.index('approval_policy="never"')) + 1
             ],
             "apps",
         )
@@ -1581,11 +1788,14 @@ class CrewChiefRunnerTests(unittest.TestCase):
             Path("/tmp/schema.json"),
             Path("/tmp/report.json"),
         )
-        self.assertEqual(command[0:3], [
-            "/fixture/codex",
-            "exec",
-            "--skip-git-repo-check",
-        ])
+        self.assertEqual(
+            command[0:3],
+            [
+                "/fixture/codex",
+                "exec",
+                "--skip-git-repo-check",
+            ],
+        )
         self.assertNotIn("--agent", command)
 
     def test_normal_command_tampering_fails_before_process_runner(self):
@@ -1758,9 +1968,7 @@ class CrewChiefRunnerTests(unittest.TestCase):
 
     def test_oversize_payload_fails_before_model_invocation(self):
         detector = mock.Mock(return_value=self.capabilities(selector=True))
-        with mock.patch(
-            "tools.crew_chief.runner._MAX_EMBEDDED_EVIDENCE_BYTES", 64
-        ):
+        with mock.patch("tools.crew_chief.runner._MAX_EMBEDDED_EVIDENCE_BYTES", 64):
             with self.assertRaisesRegex(CrewChiefError, "16 MiB"):
                 prepare_review_workspace(
                     self.envelope_path,
@@ -1833,9 +2041,11 @@ class CrewChiefRunnerTests(unittest.TestCase):
         schema["properties"]["schema_version"].pop("type")
         write_canonical_json(schema_path, schema)
         invocation["workspace_bindings"] = [
-            bind_file(schema_path, "schemas/crew-chief-report.schema.json")
-            if item["path"] == "schemas/crew-chief-report.schema.json"
-            else item
+            (
+                bind_file(schema_path, "schemas/crew-chief-report.schema.json")
+                if item["path"] == "schemas/crew-chief-report.schema.json"
+                else item
+            )
             for item in invocation["workspace_bindings"]
         ]
         fake_runner = mock.Mock()
@@ -1849,9 +2059,7 @@ class CrewChiefRunnerTests(unittest.TestCase):
         fake_runner.assert_not_called()
 
     def test_missing_codex_is_reported_clearly(self):
-        with mock.patch(
-            "tools.crew_chief.runner.shutil.which", return_value=None
-        ):
+        with mock.patch("tools.crew_chief.runner.shutil.which", return_value=None):
             with self.assertRaisesRegex(CrewChiefError, "unavailable"):
                 detect_codex_capabilities("/missing/codex")
 
@@ -1861,7 +2069,9 @@ class CrewChiefRunnerTests(unittest.TestCase):
         def fake_runner(arguments, **_kwargs):
             calls.append(arguments)
             if arguments[-1] == "--version":
-                return subprocess.CompletedProcess(arguments, 0, "codex-cli fixture\n", "")
+                return subprocess.CompletedProcess(
+                    arguments, 0, "codex-cli fixture\n", ""
+                )
             if arguments[-2:] == ["features", "list"]:
                 return subprocess.CompletedProcess(
                     arguments,
@@ -1869,29 +2079,35 @@ class CrewChiefRunnerTests(unittest.TestCase):
                     "apps stable true\nshell_tool stable true\n",
                     "",
                 )
-            help_text = " ".join(sorted({
-                *_REQUIRED_EXEC_FLAGS,
-                "--agent",
-            }))
+            help_text = " ".join(
+                sorted(
+                    {
+                        *_REQUIRED_EXEC_FLAGS,
+                        "--agent",
+                    }
+                )
+            )
             return subprocess.CompletedProcess(arguments, 0, help_text, "")
 
         with mock.patch(
             "tools.crew_chief.runner.shutil.which", return_value="/fixture/codex"
         ):
-            capabilities = detect_codex_capabilities(
-                "codex", runner=fake_runner
-            )
+            capabilities = detect_codex_capabilities("codex", runner=fake_runner)
         self.assertTrue(capabilities.custom_agent_selector)
         self.assertEqual(
             [call[1:] for call in calls],
             [["--version"], ["exec", "--help"], ["features", "list"]],
         )
-        self.assertTrue(all("exec" not in call[1:2] or "--help" in call for call in calls))
+        self.assertTrue(
+            all("exec" not in call[1:2] or "--help" in call for call in calls)
+        )
 
     def test_missing_shell_disable_control_fails_closed(self):
         def fake_runner(arguments, **_kwargs):
             if arguments[-1] == "--version":
-                return subprocess.CompletedProcess(arguments, 0, "codex-cli fixture\n", "")
+                return subprocess.CompletedProcess(
+                    arguments, 0, "codex-cli fixture\n", ""
+                )
             if arguments[-2:] == ["features", "list"]:
                 return subprocess.CompletedProcess(
                     arguments, 0, "apps stable true\n", ""
@@ -1899,9 +2115,13 @@ class CrewChiefRunnerTests(unittest.TestCase):
             return subprocess.CompletedProcess(
                 arguments,
                 0,
-                " ".join(sorted({
-                    *_REQUIRED_EXEC_FLAGS,
-                })),
+                " ".join(
+                    sorted(
+                        {
+                            *_REQUIRED_EXEC_FLAGS,
+                        }
+                    )
+                ),
                 "",
             )
 
@@ -1929,9 +2149,7 @@ class CrewChiefRunnerTests(unittest.TestCase):
         with mock.patch(
             "tools.crew_chief.runner.shutil.which", return_value="/fixture/codex"
         ):
-            with self.assertRaisesRegex(
-                CrewChiefError, "--skip-git-repo-check"
-            ):
+            with self.assertRaisesRegex(CrewChiefError, "--skip-git-repo-check"):
                 detect_codex_capabilities("codex", runner=fake_runner)
 
     def test_trusted_directory_capability_requires_the_exact_flag(self):
@@ -1945,17 +2163,13 @@ class CrewChiefRunnerTests(unittest.TestCase):
                     arguments, 0, "shell_tool stable true\n", ""
                 )
             flags = _REQUIRED_EXEC_FLAGS - {"--skip-git-repo-check"}
-            help_text = " ".join(
-                [*sorted(flags), "--skip-git-repo-check-unsafe"]
-            )
+            help_text = " ".join([*sorted(flags), "--skip-git-repo-check-unsafe"])
             return subprocess.CompletedProcess(arguments, 0, help_text, "")
 
         with mock.patch(
             "tools.crew_chief.runner.shutil.which", return_value="/fixture/codex"
         ):
-            with self.assertRaisesRegex(
-                CrewChiefError, "--skip-git-repo-check"
-            ):
+            with self.assertRaisesRegex(CrewChiefError, "--skip-git-repo-check"):
                 detect_codex_capabilities("codex", runner=fake_runner)
 
     def test_failed_or_malformed_feature_detection_fails_closed(self):
@@ -1970,6 +2184,7 @@ class CrewChiefRunnerTests(unittest.TestCase):
             ),
         ):
             with self.subTest(case=label):
+
                 def fake_runner(arguments, **_kwargs):
                     if arguments[-1] == "--version":
                         return subprocess.CompletedProcess(
@@ -1980,9 +2195,13 @@ class CrewChiefRunnerTests(unittest.TestCase):
                     return subprocess.CompletedProcess(
                         arguments,
                         0,
-                        " ".join(sorted({
-                            *_REQUIRED_EXEC_FLAGS,
-                        })),
+                        " ".join(
+                            sorted(
+                                {
+                                    *_REQUIRED_EXEC_FLAGS,
+                                }
+                            )
+                        ),
                         "",
                     )
 
@@ -2114,9 +2333,7 @@ class CrewChiefRunnerTests(unittest.TestCase):
             canonical_schema = read_json(Path(invocation["canonical_schema_path"]))
             Path(invocation["report_path"]).write_text(
                 json.dumps(
-                    canonical_to_service_output(
-                        report_for(envelope), canonical_schema
-                    )
+                    canonical_to_service_output(report_for(envelope), canonical_schema)
                 ),
                 encoding="utf-8",
             )
@@ -2152,9 +2369,7 @@ class CrewChiefRunnerTests(unittest.TestCase):
             canonical_schema = read_json(Path(invocation["canonical_schema_path"]))
             Path(invocation["report_path"]).write_text(
                 json.dumps(
-                    canonical_to_service_output(
-                        report_for(envelope), canonical_schema
-                    )
+                    canonical_to_service_output(report_for(envelope), canonical_schema)
                 ),
                 encoding="utf-8",
             )
@@ -2182,7 +2397,9 @@ class CrewChiefRunnerTests(unittest.TestCase):
         prune.assert_not_called()
         bundle = Path(invocation["output_bundle"])
         self.assertFalse((bundle / "run-record.json").exists())
-        self.assertEqual(read_json(bundle / "retention-report.json")["state"], "running")
+        self.assertEqual(
+            read_json(bundle / "retention-report.json")["state"], "running"
+        )
 
     def test_repository_mutation_during_review_is_rejected(self):
         invocation = prepare_review_workspace(
@@ -2230,9 +2447,7 @@ class CrewChiefRunnerTests(unittest.TestCase):
             )
         workspace = Path(invocation["workspace"])
         self.assertTrue((workspace / ".crew-chief-consumed.json").is_file())
-        diagnostic = (
-            Path(invocation["output_bundle"]) / "codex-stderr.log"
-        ).read_text(
+        diagnostic = (Path(invocation["output_bundle"]) / "codex-stderr.log").read_text(
             encoding="utf-8"
         )
         self.assertNotIn("do-not-preserve", diagnostic)
@@ -2242,11 +2457,12 @@ class CrewChiefRunnerTests(unittest.TestCase):
 class CrewChiefGovernanceTests(unittest.TestCase):
     def test_schemas_and_governance_are_discoverable(self):
         self.assertEqual(governance.validate_schemas_and_first_reads(), [])
-        self.assertTrue((ROOT / "tools/crew_chief/schemas/report-v1.schema.json").is_file())
+        self.assertTrue(
+            (ROOT / "tools/crew_chief/schemas/report-v1.schema.json").is_file()
+        )
         self.assertTrue(
             (
-                ROOT
-                / "tools/crew_chief/schemas/bootstrap-report-v1.schema.json"
+                ROOT / "tools/crew_chief/schemas/bootstrap-report-v1.schema.json"
             ).is_file()
         )
         self.assertTrue((ROOT / ".codex/agents/crew-chief.toml").is_file())

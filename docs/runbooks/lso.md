@@ -48,8 +48,30 @@ receipt. Receipt creation does not execute a Git operation:
 PYTHONDONTWRITEBYTECODE=1 python -m tools.lso authorize \
   /private/tmp/wingman-lso-plan-<id>/closeout-plan.json \
   /absolute/authorization.txt \
-  --output /private/tmp/wingman-lso-plan-<id>/authorization-receipt.json
+  --output /private/tmp/wingman-lso-plan-<id>/authorization-receipt.json \
+  --authorizing-principal-id Maverick \
+  --authorization-evidence-type caller_attested_task_interaction \
+  --authorization-evidence-reference task:<external-task-id> \
+  --approval-type action_specific_explicit \
+  --execution-route direct_codex \
+  --executor-id Codex
 ```
+
+For a dispatch carrying the same externally decided Maverick scope through
+Mission Control, use `--execution-route mission_control`; do not change the
+asserted authorizing principal or executor. These CLI values are a trusted-local
+caller attestation, not independently authenticated task evidence. The
+version-2 receipt can record Mission Control only as dispatcher and derives its
+human-readable statement from the structured attestation. Missing, unknown,
+non-Maverick, internally inconsistent, authentication-only, or out-of-scope
+context fails before the receipt is written. A same-account process can still
+supply a false but internally consistent attestation.
+
+Version-1 receipts remain readable with their exact historical fields and
+wording. Never rewrite or re-render them. Every new receipt uses version 2 and
+continues to require the approval card's exact action-specific authorization
+text; authentication alone never authorizes staging, commits, publication, or
+mission completion.
 
 ## 4. Execute once
 

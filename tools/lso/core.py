@@ -31,6 +31,7 @@ SCHEMA_NAMES = (
     "closeout-evidence-v1.schema.json",
     "closeout-plan-v1.schema.json",
     "authorization-receipt-v1.schema.json",
+    "authorization-receipt-v2.schema.json",
     "execution-report-v1.schema.json",
 )
 CLOSEOUT_ACTIONS = (

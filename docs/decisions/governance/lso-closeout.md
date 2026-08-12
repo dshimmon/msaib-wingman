@@ -55,10 +55,23 @@ planning and evidence-advisory function. Maverick alone authorizes package
 transmission, repository writes, publication, mission completion, and all live
 operations.
 
-The authenticated Mission Control interaction and trusted local operating-
-system account are the v1 external authorization boundary. The receipt is
-tamper-evident after that decision; it is not independent proof of identity
-against a malicious process already operating as the trusted account. Stronger
+Every new closeout receipt records Maverick as the authorizing principal,
+binds a trusted-local caller attestation to the exact action-specific approval
+text and nine-action scope, and separately records whether Codex was invoked
+directly or dispatched through Mission Control. A valid version-2 record can
+represent Mission Control only as dispatcher/orchestration route, never as the
+authorizing principal. Authentication alone does not approve a closeout.
+
+The version-2 writer requires explicit caller-attested authority provenance at
+its trusted-local entry boundary and derives its human-readable statement from
+those structured fields. It validates internal consistency, the exact approval
+text and scope, and the permitted route/executor values; it does not verify the
+human origin of its CLI inputs. Missing, unknown, non-Maverick, internally
+inconsistent, or insufficient context fails before the receipt is written.
+Version-1 receipts retain their exact historical representation and wording
+and remain readable; they are not rewritten or re-rendered. Both versions are
+tamper-evident after creation, not independent identity proof against a
+malicious process already operating as the trusted local account. Stronger
 identity infrastructure requires a separate decision.
 
 ## Completion meaning

@@ -7,6 +7,7 @@ import json
 import sys
 from pathlib import Path
 
+from tools.authorization import AuthorizationContext
 from tools.lso.controller import (
     create_authorization_receipt,
     execute_closeout,
@@ -40,12 +41,31 @@ def _parser() -> argparse.ArgumentParser:
     verify.add_argument("plan", type=Path)
 
     authorize = commands.add_parser(
-        "authorize", help="record exact external Maverick authorization"
+        "authorize",
+        help="record a trusted-local attestation of exact Maverick authorization",
     )
     authorize.add_argument("plan", type=Path)
     authorize.add_argument("authorization_text", type=Path)
     authorize.add_argument("--output", type=Path, required=True)
     authorize.add_argument("--expires-in-seconds", type=int, default=3600)
+    authorize.add_argument("--authorizing-principal-id", required=True)
+    authorize.add_argument(
+        "--authorization-evidence-type",
+        choices=(
+            "caller_attested_task_interaction",
+            "caller_attested_explicit_approval",
+            "caller_attested_standing_delegation",
+        ),
+        required=True,
+    )
+    authorize.add_argument("--authorization-evidence-reference", required=True)
+    authorize.add_argument("--approval-type", required=True)
+    authorize.add_argument(
+        "--execution-route",
+        choices=("direct_codex", "mission_control"),
+        required=True,
+    )
+    authorize.add_argument("--executor-id", required=True)
 
     execute = commands.add_parser(
         "execute", help="execute one exact receipt-bound closeout"
@@ -87,6 +107,14 @@ def main(argv: list[str] | None = None) -> int:
                 args.authorization_text,
                 args.output,
                 expires_in_seconds=args.expires_in_seconds,
+                authority_context=AuthorizationContext(
+                    authorizing_principal_id=args.authorizing_principal_id,
+                    evidence_type=args.authorization_evidence_type,
+                    evidence_reference=args.authorization_evidence_reference,
+                    approval_type=args.approval_type,
+                    execution_route=args.execution_route,
+                    executor_id=args.executor_id,
+                ),
             )
         else:
             if not args.execute:

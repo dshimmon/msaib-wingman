@@ -18,6 +18,7 @@ AGENT_PATH = Path(".codex/agents/crew-chief.toml")
 SCHEMA_NAMES = (
     "audit-envelope-v1.schema.json",
     "authorization-receipt-v1.schema.json",
+    "authorization-receipt-v2.schema.json",
     "bootstrap-report-v1.schema.json",
     "finding-v1.schema.json",
     "pool-manifest-v1.schema.json",
@@ -261,9 +262,7 @@ def new_external_directory(
     if target.exists():
         raise CrewChiefError(f"audit output already exists: {target}")
     if not target.parent.is_dir():
-        raise CrewChiefError(
-            f"audit output parent must already exist: {target.parent}"
-        )
+        raise CrewChiefError(f"audit output parent must already exist: {target.parent}")
     target.mkdir(mode=0o700)
     return target
 
