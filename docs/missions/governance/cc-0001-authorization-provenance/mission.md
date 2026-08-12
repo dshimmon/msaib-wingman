@@ -8,10 +8,10 @@
   "title": "CC-0001 Authorization Provenance Correction",
   "call_sign": "CC-0001",
   "namespace": "governance",
-  "lifecycle": "active",
+  "lifecycle": "completed",
   "priority": "high",
   "portfolio_primary": true,
-  "authorization_gate": "open for deterministic validation, fresh Crew Chief review, reconciliation, and LSO preparation under Maverick's 2026-08-11 instruction; LSO execution remains separately gated",
+  "authorization_gate": "closed by Maverick after exact LSO conditional closeout",
   "approval_evidence": [
     {
       "date": "2026-08-11",
@@ -22,12 +22,19 @@
       "date": "2026-08-11",
       "authority": "Maverick",
       "scope": "Approved the corrected candidate after a fresh independent Crew Chief PASS and authorized Codex to complete all preparatory steps needed to initiate LSO. This does not itself approve the exact LSO plan, staging, commits, publication, merge, shared-truth completion records, or mission completion."
+    },
+    {
+      "date": "2026-08-12",
+      "authority": "Maverick",
+      "scope": "Approved exact conditional CC-0001 closeout plan: implementation commit, branch publication, fast-forward main, completion-record generation, closeout commit, remote verification, and completion declaration; no live operation."
     }
   ],
   "baseline_commit": "899370b6e3e6796acc2c1b04e4bdc9b13c58575e",
-  "implementation_commits": [],
-  "pushed": false,
-  "merged": false,
+  "implementation_commits": [
+    "c7e54f4fd94db81c4aef10499337f24e7f0064e9"
+  ],
+  "pushed": true,
+  "merged": true,
   "official_decisions": [
     "docs/decisions/governance/crew-chief-audit.md",
     "docs/decisions/governance/lso-closeout.md"
@@ -65,10 +72,10 @@
       "tools/lso/core.py",
       "tools/lso/schemas/authorization-receipt-v2.schema.json"
     ],
-    "state": "closeout preparation",
-    "next_gate": "Exact LSO plan approval by Maverick after required validation and a fresh zero-finding Crew Chief PASS."
+    "state": "completed",
+    "next_gate": "Maverick selects and authorizes a mission."
   },
-  "next_gate": "Exact LSO plan approval by Maverick after required validation and a fresh zero-finding Crew Chief PASS.",
+  "next_gate": "Maverick selects and authorizes a mission.",
   "supersedes": null,
   "superseded_by": null,
   "paused": false,
