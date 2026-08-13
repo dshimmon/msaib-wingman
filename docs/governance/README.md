@@ -20,7 +20,9 @@ PYTHONPATH=src python3 -m tools.governance generate
 ```
 
 Generated files are review aids. Their headers identify their authoritative
-inputs, and validation fails if they are stale.
+inputs, and validation fails if they are stale. `CURRENT_MISSION.md` reports
+strategic mission and mission-workstream status only; ordinary implementation
+permission comes from the operating instructions and a valid bounded task.
 
 Mission journals and other documentation may summarize current state and be
 maintained with authorized work. The canonical `mission.md` record controls if

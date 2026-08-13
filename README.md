@@ -3,9 +3,11 @@
 Wingman is a source-grounded knowledge operating system. Atlas is the
 academic product currently composed on it.
 
-Repository work begins with [`AGENTS.md`](AGENTS.md). The generated
-[`CURRENT_MISSION.md`](CURRENT_MISSION.md) then identifies current authority,
-the official mission record, last completed work, and next gate. README is not
+Repository work begins with [`AGENTS.md`](AGENTS.md), which defines operating
+authority and the bounded-task model. The generated
+[`CURRENT_MISSION.md`](CURRENT_MISSION.md) is an optional compatibility view of
+strategic mission status, active mission workstreams, and last completed work;
+it is not implementation permission or a dispatch prerequisite. README is not
 a mission-status authority.
 
 ## Runtime

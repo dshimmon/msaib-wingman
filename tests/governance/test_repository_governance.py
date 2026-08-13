@@ -24,6 +24,16 @@ class RepositoryGovernanceTests(unittest.TestCase):
             repository.validate_generated(self.missions, self.decisions), []
         )
 
+    def test_stale_generated_view_is_reported_honestly(self):
+        current = repository.ROOT / "CURRENT_MISSION.md"
+        with patch.object(
+            repository,
+            "generated_content",
+            return_value={current: "synthetic stale expectation\n"},
+        ):
+            errors = repository.validate_generated(self.missions, self.decisions)
+        self.assertEqual(errors, ["stale generated file: CURRENT_MISSION.md"])
+
     def _mission(self, mission_id):
         return next(
             record for record in self.missions if record.metadata["id"] == mission_id
@@ -462,7 +472,7 @@ _expose(__name__, "knowledge")
         self.assertEqual(repository.validate_compatibility_facades(), [])
         self.assertEqual(repository.validate_schemas_and_first_reads(), [])
 
-    def test_idle_state_is_generated_without_an_active_primary(self):
+    def test_bounded_tasks_can_proceed_between_strategic_missions(self):
         idle_missions = [
             (
                 self._with_metadata(item, lifecycle="draft", portfolio_primary=False)
@@ -478,8 +488,29 @@ _expose(__name__, "knowledge")
         index = repository.render_mission_index(idle_missions)
         self.assertIn("Mission: **none**", current)
         self.assertIn("Repository state: **between missions**", current)
-        self.assertIn("Implementation authority: **none**", current)
+        self.assertIn("Bounded tasks: **may proceed", current)
+        self.assertNotIn("Implementation authority: **none**", current)
+        self.assertIn("## Last completed recorded strategic mission", current)
+        self.assertNotIn("## Last completed work", current)
         self.assertIn("Portfolio-primary: `none`", context)
+        self.assertIn("Bounded tasks: may proceed concurrently", context)
+        self.assertIn("Last completed recorded strategic mission:", context)
+        self.assertNotIn("- Last completed:", context)
+        decision = (
+            repository.ROOT
+            / "docs"
+            / "decisions"
+            / "governance"
+            / "repository-records.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "Every active mission workstream recorded in mission metadata",
+            decision,
+        )
+        self.assertIn(
+            "not to ordinary\nbounded tasks operating without mission metadata",
+            decision,
+        )
         latest_completed = repository._latest_completed(idle_missions)
         self.assertIn(latest_completed.metadata["id"], current)
         delivery = (
@@ -489,20 +520,78 @@ _expose(__name__, "knowledge")
         )
         self.assertIn(delivery, index)
 
+    def test_multiple_active_mission_workstreams_are_rendered(self):
+        active = [item for item in self.missions if "workstream" in item.metadata][:2]
+        self.assertEqual(len(active), 2)
+        active_ids = {item.metadata["id"] for item in active}
+        missions = [
+            (
+                self._with_metadata(
+                    item,
+                    lifecycle="active",
+                    portfolio_primary=False,
+                )
+                if item.metadata["id"] in active_ids
+                else item
+            )
+            for item in self.missions
+        ]
+
+        current = repository.render_current_mission(missions)
+
+        for mission_id in active_ids:
+            self.assertIn(f"| `{mission_id}` | secondary |", current)
+
+    def test_current_mission_is_status_not_implementation_permission(self):
+        current = repository.render_current_mission(self.missions)
+        self.assertIn("compatibility view reports", current)
+        self.assertIn("not implementation permission", current)
+
+    def test_crew_chief_external_proposal_is_required_and_landing_eligible(self):
+        instructions = " ".join(
+            (repository.ROOT / "AGENTS.md").read_text(encoding="utf-8").split()
+        )
+        self.assertIn(
+            "During audit, it writes only inside the external audit package",
+            instructions,
+        )
+        self.assertIn(
+            "Crew Chief must create in that package the external proposed "
+            "task/mission journal and closeout record",
+            instructions,
+        )
+        self.assertIn(
+            "The record's external location during audit does not prevent LSO "
+            "from landing it in the repository",
+            instructions,
+        )
+
     def test_active_portfolio_primary_is_rendered(self):
         current = repository.render_current_mission(self.missions)
-        active_primary = next(
+        active_primaries = [
             item
             for item in self.missions
             if item.metadata["lifecycle"] == "active"
             and item.metadata["portfolio_primary"]
-        )
+        ]
+
+        if active_primaries:
+            active_primary = active_primaries[0]
+            self.assertIn(
+                f"Mission: **{active_primary.metadata['id']} — "
+                f"{active_primary.metadata['title']}**",
+                current,
+            )
+            self.assertIn("Lifecycle: **active**", current)
+        else:
+            self.assertIn("Mission: **none**", current)
+            self.assertIn("Repository state: **between missions**", current)
+
+        latest = repository._latest_completed(self.missions)
         self.assertIn(
-            f"Mission: **{active_primary.metadata['id']} — "
-            f"{active_primary.metadata['title']}**",
+            f"**{latest.metadata['id']} — {latest.metadata['title']}**",
             current,
         )
-        self.assertIn("Lifecycle: **active**", current)
 
 
 if __name__ == "__main__":

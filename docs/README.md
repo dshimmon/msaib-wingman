@@ -1,8 +1,10 @@
 # Wingman Documentation
 
-Read [`AGENTS.md`](../AGENTS.md) first. It defines repository operating rules
-and authority. Then use [`CURRENT_MISSION.md`](../CURRENT_MISSION.md) for the
-generated portfolio entry point.
+Read [`AGENTS.md`](../AGENTS.md) first. It defines repository operating rules,
+authority, and the bounded-task model. Use
+[`CURRENT_MISSION.md`](../CURRENT_MISSION.md) when strategic mission or active
+mission-workstream status is relevant; it is a generated compatibility view,
+not implementation permission or a required dispatch step.
 
 ## Repository map
 
@@ -16,8 +18,8 @@ details rather than duplicating those contracts here.
 ### Repository-root entry points
 
 - [`AGENTS.md`](../AGENTS.md) — operating instructions and authority order;
-- [`CURRENT_MISSION.md`](../CURRENT_MISSION.md) — generated current-mission
-  entry point;
+- [`CURRENT_MISSION.md`](../CURRENT_MISSION.md) — generated strategic mission
+  and mission-workstream status view;
 - [`WINGMAN_VAULT.md`](../WINGMAN_VAULT.md) — approved future capabilities and
   deferred obligations; and
 - [`README.md`](../README.md) — product orientation and supported commands.
@@ -111,7 +113,8 @@ Crew Chief instructions. `docs/runbooks/crew-chief.md` owns its operator
 procedure; neither location owns current mission lifecycle.
 
 `tools/lso/` is the canonical deterministic closeout controller. Its operator
-procedure is `docs/runbooks/lso.md`; the current mission record owns lifecycle.
+procedure is `docs/runbooks/lso.md`. Canonical mission records own strategic
+mission lifecycle; an ordinary bounded task need not create or match one.
 
 `WINGMAN_VAULT.md` preserves approved future capabilities, strategic ideas,
 deferred obligations, and the approval scope recorded by its entries.
