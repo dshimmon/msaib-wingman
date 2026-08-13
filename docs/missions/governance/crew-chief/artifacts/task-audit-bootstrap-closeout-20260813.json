@@ -1,0 +1,272 @@
+{
+  "audit_evidence": {
+    "audit": {
+      "audit_id": "7e4c7093182cfdeb46876ee0e4f879cbf268c668af83bc2e9b9ee603b595f317",
+      "envelope_id": "a21c36b401d0d90e92d7dc2a195aa127e030239d42be13e22416070109f49983",
+      "findings_count": 0,
+      "report_generated_at": "2026-08-13T16:16:37Z",
+      "report_sha256": "4334e16ea10238b66eca12e99028b468a524edc1499da372c12a7ea6804031c7",
+      "verdict": "PASS"
+    },
+    "authority_sources": [
+      {
+        "artifact": "task_authority",
+        "kind": "task_authority",
+        "reference": "evidence/task-authority.md",
+        "sha256": "012ced71077880e5b3927354177ca5029e5e82c5615bff6491fa4db4d0616380",
+        "size": 2704
+      }
+    ],
+    "changed_files": [
+      {
+        "file_type": "regular",
+        "path": ".codex/agents/crew-chief.toml",
+        "sources": [
+          "unstaged"
+        ]
+      },
+      {
+        "file_type": "regular",
+        "path": "docs/decisions/governance/crew-chief-audit.md",
+        "sources": [
+          "unstaged"
+        ]
+      },
+      {
+        "file_type": "regular",
+        "path": "docs/runbooks/crew-chief.md",
+        "sources": [
+          "unstaged"
+        ]
+      },
+      {
+        "file_type": "regular",
+        "path": "tests/governance/test_crew_chief.py",
+        "sources": [
+          "unstaged"
+        ]
+      },
+      {
+        "file_type": "regular",
+        "path": "tools/crew_chief/__main__.py",
+        "sources": [
+          "unstaged"
+        ]
+      },
+      {
+        "file_type": "regular",
+        "path": "tools/crew_chief/controller.py",
+        "sources": [
+          "unstaged"
+        ]
+      },
+      {
+        "file_type": "regular",
+        "path": "tools/crew_chief/core.py",
+        "sources": [
+          "unstaged"
+        ]
+      },
+      {
+        "file_type": "regular",
+        "path": "tools/crew_chief/runner.py",
+        "sources": [
+          "unstaged"
+        ]
+      },
+      {
+        "file_type": "regular",
+        "path": "tools/crew_chief/schemas/audit-envelope-v1.schema.json",
+        "sources": [
+          "unstaged"
+        ]
+      },
+      {
+        "file_type": "regular",
+        "path": "tools/crew_chief/schemas/proposed-closeout-v1.schema.json",
+        "sources": [
+          "untracked"
+        ]
+      }
+    ],
+    "deferred_work": [
+      "LSO must validate the unchanged audited candidate and proposed record through the one-time bootstrap landing route.",
+      "LSO must add actual commit hashes, remote refs, landing result, timestamps, and completion state under later Maverick authorization.",
+      "Maverick must authorize any staging, commit, push, merge, publication, shared-truth update, or completion declaration."
+    ],
+    "limitations": [
+      "The worktree is detached at origin/main and intentionally dirty with the ten audited unstaged and uncommitted paths.",
+      "Complete offline discovery retains one unrelated between-missions StopIteration baseline error in test_active_portfolio_primary_is_rendered.",
+      "The proposed closeout record, if emitted after PASS, is external and proposed only; it is not approval, landing, publication, or task completion.",
+      "Future LSO landing facts are schema-supported but LSO implementation is unchanged by this task."
+    ],
+    "objective": "Let ordinary bounded tasks be audited without a pre-existing mission record, resolve CC-0001 by requiring substantive decoded task authority at preparation and verification, and generate an external proposed closeout only after an exact-bound zero-finding Crew Chief PASS.",
+    "repository": {
+      "authorized_untracked": [
+        "tools/crew_chief/schemas/proposed-closeout-v1.schema.json"
+      ],
+      "base_commit": "a3b9a77e5b5584ad2eb1644e28c10bb4aefe2912",
+      "branch": "DETACHED",
+      "candidate_state_hash": "ded0d239aba2ffc8dade9b809b31607b30cc2cd573c74d3a73059038d3405b40",
+      "head_commit": "a3b9a77e5b5584ad2eb1644e28c10bb4aefe2912",
+      "manifest": {
+        "path": "evidence-manifest.json",
+        "sha256": "3c914940ff0192f7514a11fea9ce0a9596ec18190d45624e2b4e1e69dd6a0f86",
+        "size": 26345
+      },
+      "repository_id": "41ea3d08ff64b3900433edb8f7cb4d38667e8822c403c0b75b6d29d5b53d3f78",
+      "repository_root": "/Users/davidshimmon/.codex/worktrees/ea67/msaib-wingman",
+      "status_porcelain_v1": [
+        " M .codex/agents/crew-chief.toml",
+        " M docs/decisions/governance/crew-chief-audit.md",
+        " M docs/runbooks/crew-chief.md",
+        " M tests/governance/test_crew_chief.py",
+        " M tools/crew_chief/__main__.py",
+        " M tools/crew_chief/controller.py",
+        " M tools/crew_chief/core.py",
+        " M tools/crew_chief/runner.py",
+        " M tools/crew_chief/schemas/audit-envelope-v1.schema.json",
+        "?? tools/crew_chief/schemas/proposed-closeout-v1.schema.json"
+      ],
+      "subject_mode": "working-tree"
+    },
+    "scope": {
+      "excluded": [
+        "No LSO implementation changes.",
+        "No AGENTS.md or CURRENT_MISSION.md changes.",
+        "No product or application changes.",
+        "No legacy receipt, prior failed package, report, identifier, or historical artifact changes.",
+        "No generalized provenance or authorization framework.",
+        "No stage, commit, push, merge, publication, deployment, migration, live-data mutation, or completion declaration.",
+        "No inspection or use of abandoned LSO implementation material."
+      ],
+      "included": [
+        "Make task authority a frozen audit artifact and make mission-record binding optional but fully supported.",
+        "Reject task-authority artifacts that are invalid UTF-8 or empty or whitespace-only after decoding during both preparation and verification.",
+        "Prove a fully self-consistent envelope with whitespace-only authority still fails closed during exact-envelope verification.",
+        "Generate and validate a proposed external closeout after PASS and preserve FAIL reports without a proposal.",
+        "Preserve exact candidate/evidence drift and repository-mutation controls, ordinary-task support, and legacy mission-only compatibility."
+      ]
+    },
+    "tests_and_checks": {
+      "baseline_evidence": [
+        "The predecessor package independently reproduced test_active_portfolio_primary_is_rendered against unchanged origin/main and classified it as a between-missions baseline error, not a candidate defect.",
+        "Expected negative-path Atlas diagnostics, Flightline cancellation and time-budget messages, and bare Streamlit warnings appeared during the complete suite."
+      ],
+      "canary": "CANOPY-7C2F-ATLAS",
+      "commands": [
+        {
+          "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src /Users/davidshimmon/Developer/Wingman/msaib-wingman/.venv/flightline-py312/bin/python -m unittest -v tests.governance.test_crew_chief.CrewChiefEnvelopeTests.test_whitespace_only_task_authority_is_rejected_during_preparation tests.governance.test_crew_chief.CrewChiefEnvelopeTests.test_whitespace_only_task_authority_is_rejected_during_verification tests.governance.test_crew_chief.CrewChiefEnvelopeTests.test_ordinary_task_is_bound_without_a_mission_record tests.governance.test_crew_chief.CrewChiefEnvelopeTests.test_committed_range_is_frozen_and_verifiable",
+          "exit_code": 0,
+          "result": "PASS",
+          "scope": "CC-0001 correction, valid ordinary authority, and legacy mission workflow",
+          "summary": "4 tests passed in 4.524 seconds"
+        },
+        {
+          "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src /Users/davidshimmon/Developer/Wingman/msaib-wingman/.venv/flightline-py312/bin/python -m unittest -q tests.governance.test_crew_chief",
+          "exit_code": 0,
+          "result": "PASS",
+          "scope": "final corrected Crew Chief suite",
+          "summary": "109 tests passed in 97.452 seconds"
+        },
+        {
+          "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src /Users/davidshimmon/Developer/Wingman/msaib-wingman/.venv/flightline-py312/bin/python -m unittest -q tests.governance.test_lso",
+          "exit_code": 0,
+          "result": "PASS",
+          "scope": "unchanged LSO compatibility",
+          "summary": "15 tests passed in 60.852 seconds"
+        },
+        {
+          "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src /Users/davidshimmon/Developer/Wingman/msaib-wingman/.venv/flightline-py312/bin/python -m tools.governance validate",
+          "exit_code": 0,
+          "result": "PASS",
+          "scope": "repository governance validation",
+          "summary": "Repository governance validation passed"
+        },
+        {
+          "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src /Users/davidshimmon/Developer/Wingman/msaib-wingman/.venv/flightline-py312/bin/python -c 'from tools.crew_chief.validation import load_schemas; schemas=load_schemas(); print(f\"{len(schemas)} schemas valid\")'",
+          "exit_code": 0,
+          "result": "PASS",
+          "scope": "canonical Crew Chief schemas",
+          "summary": "12 schemas loaded and passed Draft 2020-12 checks"
+        },
+        {
+          "command": "/opt/anaconda3/bin/ruff check tools/crew_chief/__main__.py tools/crew_chief/controller.py tools/crew_chief/core.py tools/crew_chief/runner.py tests/governance/test_crew_chief.py",
+          "exit_code": 0,
+          "result": "PASS",
+          "scope": "changed Python scope",
+          "summary": "All checks passed"
+        },
+        {
+          "command": "/opt/anaconda3/bin/ruff format --check tools/crew_chief/__main__.py tools/crew_chief/controller.py tools/crew_chief/core.py tools/crew_chief/runner.py tests/governance/test_crew_chief.py",
+          "exit_code": 0,
+          "result": "PASS",
+          "scope": "changed Python formatting",
+          "summary": "5 files already formatted"
+        },
+        {
+          "command": "PYTHONPYCACHEPREFIX=/private/tmp/wingman-crew-chief-bootstrap-20260813-02-pycache PYTHONPATH=src /Users/davidshimmon/Developer/Wingman/msaib-wingman/.venv/flightline-py312/bin/python -m compileall -q tools/crew_chief tests/governance/test_crew_chief.py",
+          "exit_code": 0,
+          "result": "PASS",
+          "scope": "Crew Chief and focused-test compilation",
+          "summary": "Compilation completed without errors; bytecode was externalized"
+        },
+        {
+          "command": "git diff --check",
+          "exit_code": 0,
+          "result": "PASS",
+          "scope": "working-tree whitespace",
+          "summary": "No whitespace errors"
+        },
+        {
+          "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=src /Users/davidshimmon/Developer/Wingman/msaib-wingman/.venv/flightline-py312/bin/python -m unittest discover -s tests -t . -p 'test_*.py'",
+          "exit_code": 1,
+          "result": "BASELINE_ERROR",
+          "scope": "complete credential-free offline repository suite",
+          "summary": "514 tests ran in 281.462 seconds; 513 passed and unchanged test_active_portfolio_primary_is_rendered errored with StopIteration because canonical repository state has no active portfolio-primary mission"
+        }
+      ],
+      "limitations": [
+        "One unchanged repository-governance baseline error prevents an all-green complete discovery result.",
+        "The fresh independent audit is the next and final gate for this successor candidate."
+      ],
+      "required_checks_complete": true,
+      "schema_version": "1.0"
+    }
+  },
+  "audit_evidence_sha256": "239bd2f102e04c7c35fc3fed7f4c0440c7eac821d8b6feb8ec0dcc020fab2c69",
+  "canary": "CANOPY-7C2F-ATLAS",
+  "generated_at": "2026-08-13T16:17:40Z",
+  "lso_handoff": {
+    "approval_claimed": false,
+    "completion_claimed": false,
+    "next_action": "Validate this proposal against the unchanged audited candidate, add verified landing facts, and land both together only under Maverick's authorization.",
+    "repository_mutation_claimed": false,
+    "required_landing_facts": [
+      "implementation_commit_hashes",
+      "remote_refs",
+      "landing_result",
+      "landing_timestamps",
+      "completion_state"
+    ],
+    "responsible_role": "LSO"
+  },
+  "record_type": "crew_chief_closeout",
+  "schema_version": "1.0",
+  "status": "landed",
+  "landing_completion": {
+    "implementation_commit_hashes": [
+      "e1cf10400f8d098989c844b1424cc71994240e67"
+    ],
+    "remote_refs": [
+      "source=refs/heads/codex/crew-chief-task-audit-bootstrap-20260813;target=refs/heads/codex/crew-chief-task-audit-bootstrap-20260813",
+      "source=refs/heads/codex/crew-chief-task-audit-bootstrap-20260813;target=refs/heads/main"
+    ],
+    "landing_result": "Authorized result: one atomic non-force publication makes both named remote target refs resolve to the record-only commit whose parent is the verified implementation commit; the landing is complete only after live verification confirms that state.",
+    "landing_timestamps": {
+      "continuation_preconditions_verified_at": "2026-08-13T18:24:24Z",
+      "record_finalized_at": "2026-08-13T18:24:37Z"
+    },
+    "completion_state": "complete_only_after_atomic_publication_and_live_two_ref_verification"
+  }
+}
