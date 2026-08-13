@@ -34,18 +34,19 @@ does not imply approval, publication, or mission completion.
 
 ## Prepare and freeze evidence
 
-Start from a verified repository root. Confirm the approved mission, exact base
-and head, branch, status, scope, engineer report, evidence artifacts, and test
-claims. Inputs must be regular files and must not expose credentials, `.env`
-files, keys, tokens, or live data. Use a new external destination; the
-controller refuses repository-internal audit outputs and existing targets.
+Start from a verified repository root. Confirm the bounded task authority or
+approved mission, exact base and head, branch, status, scope, engineer report,
+evidence artifacts, and test claims. Inputs must be regular files and must not
+expose credentials, `.env` files, keys, tokens, or live data. Use a new external
+destination; the controller refuses repository-internal audit outputs and
+existing targets.
 
 For a committed range:
 
 ```text
 PYTHONDONTWRITEBYTECODE=1 python -m tools.crew_chief prepare \
   --repository /absolute/repository \
-  --mission-record /absolute/repository/docs/missions/<mission>/mission.md \
+  --task-authority /absolute/external/task-authority.md \
   --base <approved-base> \
   --head <implementation-head> \
   --engineer-report /absolute/external/engineer-report.json \
@@ -54,6 +55,21 @@ PYTHONDONTWRITEBYTECODE=1 python -m tools.crew_chief prepare \
   --profile standard \
   --output-root /private/tmp/wingman-crew-chief-envelope-<audit-id>
 ```
+
+For legacy or genuinely mission-based work, supply `--mission-record` instead
+of `--task-authority`, or supply both when both records genuinely govern the
+subject. At least one authority source is required. When no mission record is
+provided, the envelope and manifest omit `mission` entirely; they do not use a
+placeholder path, fake digest, null value, or unrelated mission. Task authority
+uses the same size-and-SHA-256 frozen evidence binding as the other inputs.
+
+For an ordinary task, the engineer report must be JSON and include a `closeout`
+object with a non-empty `objective`, a non-empty `scope` string array, and
+string arrays for `exclusions`, `limitations`, and `deferred_work`. These fields
+are verified before review so a later PASS can produce a truthful proposal
+without inferring missing facts. A legacy mission-only report may retain its
+older shape; missing objective or scope text is then recorded only as an
+explicit reference to the verified mission record, never as invented content.
 
 For staged, unstaged, or untracked work, set `--base` and `--head` to the
 intended committed range, add `--include-working-tree`, and repeat
@@ -69,9 +85,10 @@ modified or deleted files, and exact index and worktree content when those
 states are in scope. Binary bytes are bound deterministically and labeled for
 base64 presentation rather than decoded as text.
 
-The envelope binds the canonical repository identity, resolved path, mission
-hash, Git state, subject inventory, evidence, risk profile, deterministic
-manifest, identifiers, and a maximum 24-hour expiry. Hashing uses canonical
+The envelope binds the canonical repository identity, resolved path, exact
+task authority and/or mission record, Git state, subject inventory, evidence,
+risk profile, deterministic manifest, identifiers, and a maximum 24-hour
+expiry. Hashing uses canonical
 UTF-8 JSON with sorted keys and compact separators. Reverification rejects
 changed or missing evidence, Git drift, path escape, unbound files, secret or
 live-data paths, and expiry.
@@ -155,8 +172,9 @@ Because the shell tool is disabled, the controller deterministically embeds
 the complete frozen evidence set in standard input. Each block names its exact
 frozen path, size, encoding, and SHA-256 digest. UTF-8 files without NUL bytes
 remain text; other regular files are base64-labeled. The payload includes the
-frozen mission record, complete changed-source context, engineer report, test
-claims, diffs, authorized evidence artifacts, controls, envelope, and manifest.
+frozen task authority, the mission record when supplied, complete changed-source
+context, engineer report, test claims, diffs, authorized evidence artifacts,
+controls, envelope, and manifest.
 Encoded evidence is limited to 16 MiB for v1 and an oversized envelope fails
 before any model invocation. The
 external read-only artifact tree remains available for operator evidence and
@@ -325,6 +343,7 @@ canonical directory `tools/crew_chief/schemas/`:
 - `finding-v1.schema.json`
 - `pool-manifest-v1.schema.json`
 - `pool-report-v1.schema.json`
+- `proposed-closeout-v1.schema.json`
 - `reconciliation-v1.schema.json`
 - `report-v1.schema.json`
 - `retention-report-v1.schema.json`
@@ -354,7 +373,7 @@ frozen bindings verify. Source citations use an exact changed repository path
 and exact `base`, `head`, `index`, or `worktree` state. Line ranges are valid
 only for frozen regular or executable UTF-8 text and must fit its bound line
 count. Artifact citations use exact manifest identifier/reference pairs:
-`mission_record`, `engineer_report`, `test_claims`, `diff:<name>`,
+`task_authority`, optional `mission_record`, `engineer_report`, `test_claims`, `diff:<name>`,
 `evidence:<number>`, or a frozen `control:*` identifier. Unfrozen paths,
 unknown artifacts, binary line citations, and out-of-bounds lines are invalid.
 
@@ -367,6 +386,29 @@ python -m tools.crew_chief validate-report \
   /private/tmp/<review>/output/crew-chief-report.json \
   --markdown-output /private/tmp/<review>/output/crew-chief-report.md
 ```
+
+## Proposed external closeout after PASS
+
+After canonical report and evidence validation accepts a zero-finding `PASS`,
+normal execution writes `proposed-closeout-record.json` in that report's
+external bundle. `FAIL`, `BLOCKED`, and `PASS_WITH_ADVISORIES` preserve their
+reports but produce no closeout record. Manual validation of an independently
+returned report may request the same deterministic output with
+`--proposed-closeout-output /absolute/external/proposed-closeout-record.json`.
+
+The proposal binds the objective and authority source, included scope and
+exclusions, changed files, exact test/check claims, audit and envelope IDs,
+report hash and verdict, limitations, deferred work, repository and candidate
+state, and manifest. Its `audit_evidence_sha256` lets LSO preserve historical
+audit evidence while adding verified landing facts later. The initial status
+is `proposed_external_not_landed`; it contains no landing facts and explicitly
+claims no approval, repository mutation, or completion.
+
+LSO remains responsible for confirming the candidate is unchanged, adding the
+actual implementation commit hashes, remote refs, landing result, timestamps,
+and completion state, and landing the record together with the audited
+implementation only under Maverick's authorization. Crew Chief does not edit
+the implementation repository or declare the task complete.
 
 Codex must give every finding exactly one disposition: `resolved`,
 `disputed_with_evidence`, or `escalated_to_maverick`. Resolution needs
@@ -417,7 +459,7 @@ review prompt.
 
 ## Role separation and bootstrap
 
-- Crew Chief independently evaluates frozen mission implementation evidence
+- Crew Chief independently evaluates frozen task or mission implementation evidence
   and returns advisory findings.
 - Goose/Mission Control plans and audits mission evidence for Maverick; it is
   not Crew Chief and cannot transfer Maverick's authority.

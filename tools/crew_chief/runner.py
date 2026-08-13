@@ -12,7 +12,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
-from tools.crew_chief.controller import verify_envelope
+from tools.crew_chief.controller import (
+    build_proposed_closeout_record,
+    verify_envelope,
+)
 from tools.crew_chief.core import (
     CrewChiefError,
     atomic_write,
@@ -146,18 +149,19 @@ def _validate_capabilities(capabilities: CodexCapabilities) -> None:
     _validate_enabled_features(capabilities.features)
     missing = sorted(_REQUIRED_EXEC_FLAGS - set(capabilities.exec_flags))
     if missing:
-        raise CrewChiefError(
-            f"installed Codex exec lacks required controls: {missing}"
-        )
+        raise CrewChiefError(f"installed Codex exec lacks required controls: {missing}")
     if not capabilities.shell_tool_control:
         raise CrewChiefError("Codex shell-tool disable control is unavailable")
 
 
 def _help_has_flag(help_text: str, flag: str) -> bool:
-    return re.search(
-        rf"(?<![A-Za-z0-9_-]){re.escape(flag)}(?![A-Za-z0-9_-])",
-        help_text,
-    ) is not None
+    return (
+        re.search(
+            rf"(?<![A-Za-z0-9_-]){re.escape(flag)}(?![A-Za-z0-9_-])",
+            help_text,
+        )
+        is not None
+    )
 
 
 def _completed(
@@ -217,9 +221,7 @@ def detect_codex_capabilities(
     )
     if set(flags) != set(_REQUIRED_EXEC_FLAGS):
         missing = sorted(_REQUIRED_EXEC_FLAGS - set(flags))
-        raise CrewChiefError(
-            f"installed Codex exec lacks required controls: {missing}"
-        )
+        raise CrewChiefError(f"installed Codex exec lacks required controls: {missing}")
     if "shell_tool" not in available_features:
         raise CrewChiefError(
             "installed Codex CLI exposes no supported shell-tool disable control"
@@ -397,9 +399,7 @@ def _review_prompt(mode: str, frozen_root: Path) -> str:
     )
 
 
-def _verify_workspace_bindings(
-    workspace: Path, bindings: list[dict[str, Any]]
-) -> None:
+def _verify_workspace_bindings(workspace: Path, bindings: list[dict[str, Any]]) -> None:
     for binding in bindings:
         relative = normalize_repo_path(binding["path"])
         candidate = workspace.joinpath(*Path(relative).parts)
@@ -441,7 +441,9 @@ def prepare_review_workspace(
     )
     output_bundle = configured_retention_root / "reports" / report_id
     if output_bundle.exists() or output_bundle.is_symlink():
-        raise CrewChiefError(f"Crew Chief report bundle already exists: {output_bundle}")
+        raise CrewChiefError(
+            f"Crew Chief report bundle already exists: {output_bundle}"
+        )
     output_bundle.mkdir(parents=True, mode=0o700)
     created_at = clock_value(clock)
     write_report_metadata(
@@ -483,9 +485,7 @@ def prepare_review_workspace(
     )
     prompt_path = target / "audit-instructions.md"
     atomic_write(prompt_path, _review_prompt(mode, frozen_root).encode("utf-8"))
-    command = build_launch_command(
-        capabilities, target, schema_path, report_output
-    )
+    command = build_launch_command(capabilities, target, schema_path, report_output)
     invocation = {
         "schema_version": "1.0",
         "audit_id": envelope["audit_id"],
@@ -556,13 +556,16 @@ def _consume(workspace: Path, envelope: dict[str, Any]) -> Path:
         raise CrewChiefError(
             "audit envelope was already consumed in this workspace"
         ) from error
-    payload = canonical_json_bytes(
-        {
-            "audit_id": envelope["audit_id"],
-            "envelope_id": envelope["envelope_id"],
-            "consumed_at": utc_now().isoformat().replace("+00:00", "Z"),
-        }
-    ) + b"\n"
+    payload = (
+        canonical_json_bytes(
+            {
+                "audit_id": envelope["audit_id"],
+                "envelope_id": envelope["envelope_id"],
+                "consumed_at": utc_now().isoformat().replace("+00:00", "Z"),
+            }
+        )
+        + b"\n"
+    )
     with os.fdopen(descriptor, "wb") as handle:
         handle.write(payload)
         handle.flush()
@@ -588,9 +591,10 @@ def execute_prepared_review(
     workspace = Path(invocation["workspace"]).resolve()
     repository = Path(envelope["repository"]["repository_root"])
     ensure_external_path(repository, workspace, "review workspace")
-    if invocation.get("audit_id") != envelope["audit_id"] or invocation.get(
-        "envelope_id"
-    ) != envelope["envelope_id"]:
+    if (
+        invocation.get("audit_id") != envelope["audit_id"]
+        or invocation.get("envelope_id") != envelope["envelope_id"]
+    ):
         raise CrewChiefError("review invocation does not match the audit envelope")
     if invocation.get("live_audit_performed") is not False:
         raise CrewChiefError("review invocation has an invalid execution state")
@@ -618,9 +622,7 @@ def execute_prepared_review(
         workspace / "schemas" / "crew-chief-canonical-report.schema.json"
     )
     schema_path = workspace / "schemas" / "crew-chief-report.schema.json"
-    retention_root = validate_retention_root(
-        Path(invocation.get("retention_root", ""))
-    )
+    retention_root = validate_retention_root(Path(invocation.get("retention_root", "")))
     report_id = validate_report_id(invocation.get("report_id"))
     output_bundle = (retention_root / "reports" / report_id).resolve()
     if Path(invocation.get("output_bundle", "")).resolve() != output_bundle:
@@ -636,9 +638,7 @@ def execute_prepared_review(
         raise CrewChiefError("review invocation paths are invalid")
     consumption_marker = workspace / ".crew-chief-consumed.json"
     if consumption_marker.exists() or consumption_marker.is_symlink():
-        raise CrewChiefError(
-            "audit envelope was already consumed in this workspace"
-        )
+        raise CrewChiefError("audit envelope was already consumed in this workspace")
     metadata_path = output_bundle / REPORT_METADATA
     metadata = read_json(metadata_path)
     if not isinstance(metadata, dict):
@@ -664,7 +664,10 @@ def execute_prepared_review(
     if not isinstance(service_schema, dict):
         raise CrewChiefError("review service schema is invalid")
     validate_service_schema(service_schema)
-    if invocation["execution_mode"] == "fresh-session-fallback" and not allow_fresh_session_fallback:
+    if (
+        invocation["execution_mode"] == "fresh-session-fallback"
+        and not allow_fresh_session_fallback
+    ):
         raise CrewChiefError(
             "installed CLI has no custom-agent selector; fresh-session fallback "
             "requires explicit authorization"
@@ -743,6 +746,19 @@ def execute_prepared_review(
     validate_report(envelope, report)
     write_canonical_json(report_path, report)
     completed_at = clock_value(clock)
+    proposed_closeout = None
+    if report["verdict"] == "PASS":
+        proposed_path = output_bundle / "proposed-closeout-record.json"
+        proposed_record = build_proposed_closeout_record(
+            envelope,
+            report,
+            clock=lambda: completed_at,
+        )
+        write_canonical_json(proposed_path, proposed_record)
+        proposed_closeout = bind_file(
+            proposed_path,
+            "proposed-closeout-record.json",
+        )
     record = {
         "schema_version": "1.0",
         "audit_id": envelope["audit_id"],
@@ -764,6 +780,8 @@ def execute_prepared_review(
         },
         "live_audit_performed": True,
     }
+    if proposed_closeout is not None:
+        record["proposed_closeout"] = proposed_closeout
     write_canonical_json(output_bundle / "run-record.json", record)
     write_report_metadata(
         retention_root,

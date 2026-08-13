@@ -19,9 +19,9 @@
 ## Decision
 
 Crew Chief is Wingman's repository-scoped independent audit role for the
-governed Codex review loop. Codex freezes an approved mission, exact Git
-subject, engineer report, test claims, and evidence into a deterministic,
-expiring audit envelope. A fresh read-only reviewer produces canonical JSON
+governed Codex review loop. Codex freezes bounded task authority and/or an
+approved mission, the exact Git subject, engineer report, test claims, and
+evidence into a deterministic, expiring audit envelope. A fresh read-only reviewer produces canonical JSON
 findings. Codex then resolves, disputes with exact counter-evidence, or
 escalates every finding before delivering a validated decision package to
 Goose and Maverick.
@@ -40,6 +40,23 @@ The v1 controller uses external, single-workspace consumption markers rather
 than a global audit database. Model audits require authorization and suitable
 controls, but they are not restricted exclusively to formal handoffs or
 categorically excluded from CI.
+
+Ordinary bounded tasks do not require a pre-existing mission record. Their
+task-authority artifact is frozen and hashed through the existing evidence
+envelope. Mission records remain optional for legacy and genuinely
+mission-based work. Missing mission data is omitted rather than represented by
+a placeholder or unrelated record, and every envelope requires at least one
+real authority source.
+
+A canonical zero-finding `PASS` produces a proposed closeout record only in the
+external audit bundle. The proposal binds the exact candidate and verified
+implementation evidence, is marked proposed and not landed, and claims no
+approval, repository mutation, or completion. Its historical audit-evidence
+section is separately hashed so LSO can validate and preserve it while adding
+actual commit hashes, remote refs, landing result, timestamps, and completion
+state. LSO, not Crew Chief, validates and lands that record with the unchanged
+audited implementation under Maverick's later authorization. Any other verdict
+produces the report and findings but no closeout proposal.
 
 ## Authorization provenance boundary
 

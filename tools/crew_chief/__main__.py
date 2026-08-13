@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from tools.crew_chief.controller import (
+    build_proposed_closeout_record,
     prepare_audit,
     reconcile_report,
     render_reconciliation_markdown,
@@ -50,9 +51,7 @@ def _dispositions(path: Path) -> list[dict[str, Any]]:
     value = read_json(path)
     if isinstance(value, dict):
         value = value.get("dispositions")
-    if not isinstance(value, list) or not all(
-        isinstance(item, dict) for item in value
-    ):
+    if not isinstance(value, list) or not all(isinstance(item, dict) for item in value):
         raise CrewChiefError("dispositions must be a JSON array of objects")
     return value
 
@@ -63,7 +62,16 @@ def _parser() -> argparse.ArgumentParser:
 
     prepare = commands.add_parser("prepare", help="freeze an audit envelope")
     prepare.add_argument("--repository", type=Path, default=Path.cwd())
-    prepare.add_argument("--mission-record", type=Path, required=True)
+    prepare.add_argument(
+        "--task-authority",
+        type=Path,
+        help="bounded task authority to freeze for an ordinary audit",
+    )
+    prepare.add_argument(
+        "--mission-record",
+        type=Path,
+        help="optional canonical mission record for legacy or mission work",
+    )
     prepare.add_argument("--base", required=True)
     prepare.add_argument("--head", default="HEAD")
     prepare.add_argument("--engineer-report", type=Path, required=True)
@@ -112,9 +120,7 @@ def _parser() -> argparse.ArgumentParser:
         "retention", help="inspect or prune completed external report bundles"
     )
     retention.add_argument("output_root", type=Path)
-    retention.add_argument(
-        "--retention-days", type=int, default=DEFAULT_RETENTION_DAYS
-    )
+    retention.add_argument("--retention-days", type=int, default=DEFAULT_RETENTION_DAYS)
     retention.add_argument(
         "--max-retained-reports",
         type=int,
@@ -128,6 +134,7 @@ def _parser() -> argparse.ArgumentParser:
     validate.add_argument("envelope", type=Path)
     validate.add_argument("report", type=Path)
     validate.add_argument("--markdown-output", type=Path)
+    validate.add_argument("--proposed-closeout-output", type=Path)
 
     reconcile = commands.add_parser(
         "reconcile", help="validate every finding disposition"
@@ -143,6 +150,7 @@ def _parser() -> argparse.ArgumentParser:
 def _prepare(args: argparse.Namespace) -> dict[str, Any]:
     return prepare_audit(
         args.repository,
+        task_authority=args.task_authority,
         mission_record=args.mission_record,
         base=args.base,
         head=args.head,
@@ -169,19 +177,28 @@ def _validate_report(args: argparse.Namespace) -> dict[str, Any]:
             "Markdown report",
         )
         atomic_write(target, render_report_markdown(report).encode("utf-8"))
-    return {
+    result = {
         "audit_id": report["audit_id"],
         "verdict": report["verdict"],
         "valid": True,
     }
+    if args.proposed_closeout_output and report["verdict"] == "PASS":
+        repository = Path(envelope["repository"]["repository_root"])
+        target = ensure_external_path(
+            repository,
+            args.proposed_closeout_output,
+            "proposed closeout output",
+        )
+        proposed = build_proposed_closeout_record(envelope, report)
+        write_canonical_json(target, proposed)
+        result["proposed_closeout_path"] = str(target)
+    return result
 
 
 def _reconcile(args: argparse.Namespace) -> dict[str, Any]:
     envelope = verify_envelope(args.envelope, require_current_state=False)
     report = _report(args.report)
-    package = reconcile_report(
-        envelope, report, _dispositions(args.dispositions)
-    )
+    package = reconcile_report(envelope, report, _dispositions(args.dispositions))
     repository = Path(envelope["repository"]["repository_root"])
     output = ensure_external_path(repository, args.output, "reconciliation output")
     write_canonical_json(output, package)
@@ -189,9 +206,7 @@ def _reconcile(args: argparse.Namespace) -> dict[str, Any]:
         markdown = ensure_external_path(
             repository, args.markdown_output, "reconciliation Markdown"
         )
-        atomic_write(
-            markdown, render_reconciliation_markdown(package).encode("utf-8")
-        )
+        atomic_write(markdown, render_reconciliation_markdown(package).encode("utf-8"))
     return {
         "approval_ready": package["approval_ready"],
         "output": str(output),

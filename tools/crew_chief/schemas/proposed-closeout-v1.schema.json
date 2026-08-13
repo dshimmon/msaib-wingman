@@ -1,0 +1,242 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wingman.local/schemas/crew-chief/proposed-closeout-v1.schema.json",
+  "title": "Wingman Crew Chief Proposed Closeout Record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "size"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "size": {"type": "integer", "minimum": 0}
+      }
+    },
+    "stringList": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  },
+  "required": [
+    "schema_version",
+    "canary",
+    "record_type",
+    "status",
+    "generated_at",
+    "audit_evidence",
+    "audit_evidence_sha256",
+    "lso_handoff"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "canary": {"const": "CANOPY-7C2F-ATLAS"},
+    "record_type": {"const": "crew_chief_closeout"},
+    "status": {
+      "enum": ["proposed_external_not_landed", "landed"]
+    },
+    "generated_at": {"type": "string", "format": "date-time"},
+    "audit_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "objective",
+        "authority_sources",
+        "scope",
+        "changed_files",
+        "tests_and_checks",
+        "audit",
+        "limitations",
+        "deferred_work",
+        "repository"
+      ],
+      "properties": {
+        "objective": {"type": "string", "minLength": 1},
+        "authority_sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "artifact", "reference", "sha256", "size"],
+            "properties": {
+              "kind": {"enum": ["task_authority", "mission_record"]},
+              "artifact": {"enum": ["task_authority", "mission_record"]},
+              "reference": {"type": "string", "minLength": 1},
+              "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "size": {"type": "integer", "minimum": 1},
+              "repository_path": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["included", "excluded"],
+          "properties": {
+            "included": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            },
+            "excluded": {"$ref": "#/$defs/stringList"}
+          }
+        },
+        "changed_files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "sources", "file_type"],
+            "properties": {
+              "path": {"type": "string", "minLength": 1},
+              "sources": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "enum": ["committed", "staged", "unstaged", "untracked"]
+                }
+              },
+              "file_type": {
+                "enum": ["regular", "executable", "symlink", "submodule", "other"]
+              }
+            }
+          }
+        },
+        "tests_and_checks": {"type": "object", "minProperties": 1},
+        "audit": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "audit_id",
+            "envelope_id",
+            "report_sha256",
+            "verdict",
+            "findings_count",
+            "report_generated_at"
+          ],
+          "properties": {
+            "audit_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "envelope_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "report_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "verdict": {"const": "PASS"},
+            "findings_count": {"const": 0},
+            "report_generated_at": {"type": "string", "format": "date-time"}
+          }
+        },
+        "limitations": {"$ref": "#/$defs/stringList"},
+        "deferred_work": {"$ref": "#/$defs/stringList"},
+        "repository": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "repository_id",
+            "repository_root",
+            "branch",
+            "subject_mode",
+            "base_commit",
+            "head_commit",
+            "authorized_untracked",
+            "status_porcelain_v1",
+            "candidate_state_hash",
+            "manifest"
+          ],
+          "properties": {
+            "repository_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "repository_root": {"type": "string", "minLength": 1},
+            "branch": {"type": "string", "minLength": 1},
+            "subject_mode": {"enum": ["committed-range", "working-tree"]},
+            "base_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+            "head_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+            "authorized_untracked": {"$ref": "#/$defs/stringList"},
+            "status_porcelain_v1": {"$ref": "#/$defs/stringList"},
+            "candidate_state_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "manifest": {"$ref": "#/$defs/binding"}
+          }
+        }
+      }
+    },
+    "audit_evidence_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "lso_handoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "responsible_role",
+        "next_action",
+        "required_landing_facts",
+        "approval_claimed",
+        "repository_mutation_claimed",
+        "completion_claimed"
+      ],
+      "properties": {
+        "responsible_role": {"const": "LSO"},
+        "next_action": {
+          "const": "Validate this proposal against the unchanged audited candidate, add verified landing facts, and land both together only under Maverick's authorization."
+        },
+        "required_landing_facts": {
+          "const": [
+            "implementation_commit_hashes",
+            "remote_refs",
+            "landing_result",
+            "landing_timestamps",
+            "completion_state"
+          ]
+        },
+        "approval_claimed": {"const": false},
+        "repository_mutation_claimed": {"const": false},
+        "completion_claimed": {"const": false}
+      }
+    },
+    "landing_completion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "implementation_commit_hashes",
+        "remote_refs",
+        "landing_result",
+        "landing_timestamps",
+        "completion_state"
+      ],
+      "properties": {
+        "implementation_commit_hashes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "pattern": "^[0-9a-f]{40}$"}
+        },
+        "remote_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "landing_result": {"type": "string", "minLength": 1},
+        "landing_timestamps": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "completion_state": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"status": {"const": "proposed_external_not_landed"}}
+      },
+      "then": {"not": {"required": ["landing_completion"]}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "landed"}}},
+      "then": {"required": ["landing_completion"]}
+    }
+  ]
+}

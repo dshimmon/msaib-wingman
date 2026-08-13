@@ -24,8 +24,10 @@ from tools.crew_chief.bootstrap_authorization import (
     validate_authorization_receipt,
 )
 from tools.crew_chief.controller import (
+    build_proposed_closeout_record,
     prepare_audit,
     reconcile_report,
+    validate_proposed_closeout_record,
     verify_envelope,
 )
 from tools.crew_chief.core import (
@@ -133,7 +135,24 @@ class FixtureRepository:
 
         self.engineer_report = self.inputs / "engineer-report.json"
         self.engineer_report.write_text(
-            json.dumps({"outcome": "implemented", "validation": ["tests passed"]}),
+            json.dumps(
+                {
+                    "outcome": "implemented",
+                    "validation": ["tests passed"],
+                    "closeout": {
+                        "objective": "Implement the bounded fixture change.",
+                        "scope": ["Freeze and audit the changed fixture files."],
+                        "exclusions": ["Do not publish the fixture."],
+                        "limitations": ["Synthetic fixture evidence only."],
+                        "deferred_work": ["LSO landing verification."],
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        self.task_authority = self.inputs / "task-authority.md"
+        self.task_authority.write_text(
+            "Maverick authorizes this bounded synthetic task.\n",
             encoding="utf-8",
         )
         self.evidence = self.inputs / "validation.log"
@@ -188,10 +207,16 @@ class FixtureRepository:
         profile: str = "standard",
         justification: str | None = None,
         claims: dict | None = None,
+        ordinary_task: bool = False,
     ) -> dict:
         return prepare_audit(
             self.repo,
-            mission_record=self.repo / "docs/missions/example/mission.md",
+            task_authority=self.task_authority if ordinary_task else None,
+            mission_record=(
+                None
+                if ordinary_task
+                else self.repo / "docs/missions/example/mission.md"
+            ),
             base=base or self.base,
             head=head or self.head,
             engineer_report=self.engineer_report,
@@ -892,6 +917,58 @@ class CrewChiefEnvelopeTests(unittest.TestCase):
             manifest["controls"]["repository_instructions"]["path"],
             "controls/AGENTS.md",
         )
+        self.assertIn("mission", envelope)
+        self.assertNotIn("task_authority", envelope)
+
+    def test_ordinary_task_is_bound_without_a_mission_record(self):
+        result = self.fixture.prepare("ordinary", ordinary_task=True)
+        envelope = verify_envelope(
+            Path(result["envelope_path"]), clock=lambda: FIXED_TIME
+        )
+        manifest = read_json(Path(result["manifest_path"]))
+        self.assertNotIn("mission", envelope)
+        self.assertNotIn("mission", manifest)
+        self.assertIn("task_authority", envelope)
+        self.assertEqual(
+            envelope["task_authority"]["path"],
+            "evidence/task-authority.md",
+        )
+        self.assertFalse(
+            (Path(result["output_root"]) / "evidence/mission-record.md").exists()
+        )
+        artifacts = {
+            item["artifact"] for item in envelope["_verified_evidence"]["artifacts"]
+        }
+        self.assertIn("task_authority", artifacts)
+        self.assertNotIn("mission_record", artifacts)
+
+    def test_audit_requires_task_authority_or_mission_record(self):
+        with self.assertRaisesRegex(CrewChiefError, "task authority or a mission"):
+            prepare_audit(
+                self.fixture.repo,
+                base=self.fixture.base,
+                head=self.fixture.head,
+                engineer_report=self.fixture.engineer_report,
+                evidence_artifacts=[self.fixture.evidence],
+                test_claims=self.fixture.claims,
+                output_root=Path(self.temporary.name) / "missing-authority",
+                clock=lambda: FIXED_TIME,
+            )
+
+    def test_whitespace_only_task_authority_is_rejected_during_preparation(self):
+        self.fixture.task_authority.write_text(
+            " \t\n\N{EM SPACE}\n",
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(CrewChiefError, "empty or whitespace-only"):
+            self.fixture.prepare("whitespace-authority", ordinary_task=True)
+
+    def test_engineer_report_requires_closeout_context_before_freezing(self):
+        self.fixture.engineer_report.write_text(
+            '{"outcome":"implemented"}\n', encoding="utf-8"
+        )
+        with self.assertRaisesRegex(CrewChiefError, "structured closeout"):
+            self.fixture.prepare("missing-closeout", ordinary_task=True)
 
     def test_complete_changed_content_is_frozen_with_exact_state_metadata(self):
         result = self.fixture.prepare("envelope")
@@ -1106,6 +1183,122 @@ class CrewChiefEnvelopeTests(unittest.TestCase):
         (Path(result["output_root"]) / "evidence" / "mission-record.md").unlink()
         with self.assertRaisesRegex(CrewChiefError, "frozen mission record"):
             verify_envelope(Path(result["envelope_path"]), clock=lambda: FIXED_TIME)
+
+    def test_tampered_frozen_task_authority_is_rejected(self):
+        result = self.fixture.prepare("ordinary", ordinary_task=True)
+        authority = Path(result["output_root"]) / "evidence/task-authority.md"
+        authority.write_bytes(authority.read_bytes() + b"tamper")
+        with self.assertRaisesRegex(CrewChiefError, "(size|hash) changed"):
+            verify_envelope(Path(result["envelope_path"]), clock=lambda: FIXED_TIME)
+
+    def test_whitespace_only_task_authority_is_rejected_during_verification(self):
+        result = self.fixture.prepare("ordinary", ordinary_task=True)
+        root = Path(result["output_root"])
+        authority = root / "evidence/task-authority.md"
+        authority.write_text(" \t\n", encoding="utf-8")
+        authority_binding = bind_file(
+            authority,
+            "evidence/task-authority.md",
+        )
+
+        manifest_path = Path(result["manifest_path"])
+        manifest = read_json(manifest_path)
+        manifest["task_authority"] = authority_binding
+        write_canonical_json(manifest_path, manifest)
+
+        envelope_path = Path(result["envelope_path"])
+        envelope = read_json(envelope_path)
+        envelope["task_authority"] = authority_binding
+        envelope["manifest"] = bind_file(
+            manifest_path,
+            "evidence-manifest.json",
+        )
+        envelope["audit_id"] = sha256_bytes(canonical_json_bytes(manifest))
+        envelope["envelope_id"] = sha256_bytes(
+            canonical_json_bytes(
+                {
+                    "audit_id": envelope["audit_id"],
+                    "created_at": envelope["created_at"],
+                    "expires_at": envelope["expires_at"],
+                }
+            )
+        )
+        envelope.pop("envelope_hash")
+        envelope["envelope_hash"] = sha256_bytes(canonical_json_bytes(envelope))
+        write_canonical_json(envelope_path, envelope)
+
+        with self.assertRaisesRegex(CrewChiefError, "empty or whitespace-only"):
+            verify_envelope(envelope_path, clock=lambda: FIXED_TIME)
+
+    def test_zero_finding_pass_builds_proposed_external_closeout(self):
+        result = self.fixture.prepare("ordinary", ordinary_task=True)
+        envelope = verify_envelope(
+            Path(result["envelope_path"]), clock=lambda: FIXED_TIME
+        )
+        report = report_for(envelope)
+        proposed = build_proposed_closeout_record(
+            envelope, report, clock=lambda: FIXED_TIME
+        )
+        validate_instance("proposed-closeout-v1.schema.json", proposed)
+        self.assertEqual(proposed["status"], "proposed_external_not_landed")
+        self.assertNotIn("landing_completion", proposed)
+        self.assertFalse(proposed["lso_handoff"]["approval_claimed"])
+        self.assertFalse(proposed["lso_handoff"]["repository_mutation_claimed"])
+        self.assertEqual(proposed["audit_evidence"]["audit"]["verdict"], "PASS")
+        self.assertEqual(
+            proposed["audit_evidence"]["authority_sources"][0]["kind"],
+            "task_authority",
+        )
+        self.assertEqual(
+            proposed["audit_evidence_sha256"],
+            sha256_bytes(canonical_json_bytes(proposed["audit_evidence"])),
+        )
+
+    def test_fail_report_cannot_build_proposed_closeout(self):
+        result = self.fixture.prepare("ordinary", ordinary_task=True)
+        envelope = verify_envelope(
+            Path(result["envelope_path"]), clock=lambda: FIXED_TIME
+        )
+        with self.assertRaisesRegex(CrewChiefError, "zero-finding"):
+            build_proposed_closeout_record(
+                envelope,
+                report_for(envelope, [finding()], verdict="FAIL"),
+                clock=lambda: FIXED_TIME,
+            )
+
+    def test_proposed_closeout_rejects_rewritten_audit_evidence(self):
+        result = self.fixture.prepare("ordinary", ordinary_task=True)
+        envelope = verify_envelope(
+            Path(result["envelope_path"]), clock=lambda: FIXED_TIME
+        )
+        proposed = build_proposed_closeout_record(
+            envelope, report_for(envelope), clock=lambda: FIXED_TIME
+        )
+        proposed["audit_evidence"]["objective"] = "rewritten"
+        with self.assertRaisesRegex(CrewChiefError, "evidence hash"):
+            validate_proposed_closeout_record(proposed)
+
+    def test_legacy_mission_report_uses_explicit_mission_reference(self):
+        self.fixture.engineer_report.write_text(
+            '{"outcome":"implemented","scope":"legacy synthetic scope"}\n',
+            encoding="utf-8",
+        )
+        result = self.fixture.prepare("legacy")
+        envelope = verify_envelope(
+            Path(result["envelope_path"]), clock=lambda: FIXED_TIME
+        )
+        proposed = build_proposed_closeout_record(
+            envelope, report_for(envelope), clock=lambda: FIXED_TIME
+        )
+        self.assertEqual(
+            proposed["audit_evidence"]["objective"],
+            "Objective is governed by verified legacy mission record "
+            "docs/missions/example/mission.md.",
+        )
+        self.assertEqual(
+            proposed["audit_evidence"]["scope"]["included"],
+            ["legacy synthetic scope"],
+        )
 
     def test_missing_evidence_artifact_is_rejected(self):
         result = self.fixture.prepare("envelope")
@@ -2346,6 +2539,12 @@ class CrewChiefRunnerTests(unittest.TestCase):
             clock=lambda: FIXED_TIME,
         )
         self.assertTrue(record["live_audit_performed"])
+        bundle = Path(invocation["output_bundle"])
+        proposed_path = bundle / "proposed-closeout-record.json"
+        self.assertTrue(proposed_path.is_file())
+        self.assertEqual(
+            record["proposed_closeout"]["sha256"], sha256_file(proposed_path)
+        )
         with self.assertRaisesRegex(CrewChiefError, "already consumed"):
             execute_prepared_review(
                 self.envelope_path,
@@ -2353,6 +2552,41 @@ class CrewChiefRunnerTests(unittest.TestCase):
                 runner=successful,
                 clock=lambda: FIXED_TIME,
             )
+
+    def test_valid_fail_preserves_report_without_proposed_closeout(self):
+        invocation = prepare_review_workspace(
+            self.envelope_path,
+            Path(self.temporary.name) / "failed-audit-review",
+            detector=lambda _: self.capabilities(selector=True),
+            clock=lambda: FIXED_TIME,
+        )
+        envelope = read_json(self.envelope_path)
+
+        def completed_fail(arguments, **_kwargs):
+            if arguments[-2:] == ["login", "status"]:
+                return subprocess.CompletedProcess(arguments, 0, "logged in", "")
+            canonical_schema = read_json(Path(invocation["canonical_schema_path"]))
+            Path(invocation["report_path"]).write_text(
+                json.dumps(
+                    canonical_to_service_output(
+                        report_for(envelope, [finding()], verdict="FAIL"),
+                        canonical_schema,
+                    )
+                ),
+                encoding="utf-8",
+            )
+            return subprocess.CompletedProcess(arguments, 0, "{}", "")
+
+        record = execute_prepared_review(
+            self.envelope_path,
+            invocation,
+            runner=completed_fail,
+            clock=lambda: FIXED_TIME,
+        )
+        bundle = Path(invocation["output_bundle"])
+        self.assertTrue((bundle / "crew-chief-report.json").is_file())
+        self.assertFalse((bundle / "proposed-closeout-record.json").exists())
+        self.assertNotIn("proposed_closeout", record)
 
     def test_failed_run_record_write_never_triggers_retention(self):
         invocation = prepare_review_workspace(
