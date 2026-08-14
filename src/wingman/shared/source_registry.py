@@ -419,6 +419,43 @@ def register_source(source_id, metadata):
         connection.close()
 
 
+def update_active_source_metadata(source_id, metadata_updates):
+    """
+    Merge metadata into one active source without replacing registry state.
+
+    The immediate transaction serializes the read/merge/write sequence with
+    other Ledger writers. It therefore cannot overwrite a newer source
+    snapshot or reactivate a source removed before this update acquires the
+    writer lock.
+    """
+    if not isinstance(metadata_updates, dict):
+        raise ValueError(
+            "Source metadata updates must contain a JSON object."
+        )
+    validate_registry({source_id: metadata_updates})
+    connection = open_registry_database()
+    try:
+        with transaction(connection, immediate=True):
+            existing = get_source(connection, source_id)
+            if existing is None or existing.status != "active":
+                raise KeyError(f"Unknown active source: {source_id}")
+            merged_metadata = canonicalize_metadata(
+                {
+                    **existing.metadata,
+                    **metadata_updates,
+                }
+            )
+            sync_source(
+                connection,
+                source_id,
+                merged_metadata,
+                utc_now(),
+            )
+        return merged_metadata
+    finally:
+        connection.close()
+
+
 def find_source_by_content_hash(content_hash):
     """
     Find an active source with identical current file content.

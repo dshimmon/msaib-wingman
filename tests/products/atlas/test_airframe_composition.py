@@ -332,6 +332,16 @@ class AirframeCompositionTests(unittest.TestCase):
         ]
         self.assertEqual(len(values), 1)
         self.assertEqual(values[0].id, "product_metadata")
+        metadata_override_values = [
+            keyword.value
+            for keyword in preview_calls[0].keywords
+            if keyword.arg == "product_metadata_overrides"
+        ]
+        self.assertEqual(len(metadata_override_values), 1)
+        self.assertEqual(
+            metadata_override_values[0].id,
+            "product_metadata_overrides",
+        )
 
         uploader_calls = [
             node
@@ -379,6 +389,7 @@ class AirframeCompositionTests(unittest.TestCase):
         )
         self.assertIn("default_course_id.strip()", source_text)
         self.assertIn("course_overrides.items()", source_text)
+        self.assertIn("_analyze_upload(name, file_bytes)", source_text)
         self.assertLess(
             source_text.index("reset_assignment_confirmation_if_changed("),
             source_text.index("assignments_confirmed = st.checkbox"),

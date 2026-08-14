@@ -212,6 +212,7 @@ def preview_batch(
     course_overrides=None,
     display_name_overrides=None,
     product_metadata=None,
+    product_metadata_overrides=None,
     domain=None,
     assignments_confirmed=False,
     batch_id=None,
@@ -225,6 +226,7 @@ def preview_batch(
         raise ValueError("Input mode must be 'browser' or 'folder'.")
     overrides = dict(course_overrides or {})
     display_overrides = dict(display_name_overrides or {})
+    metadata_overrides = dict(product_metadata_overrides or {})
     normalized_common_metadata = normalize_source_metadata(
         product_context,
         dict(product_metadata or {}),
@@ -300,7 +302,32 @@ def preview_batch(
         override_assignment = normalize_course_assignment(
             product_context, raw_override
         ) if raw_override is not None else None
-        assignment = override_assignment or default_assignment
+        raw_file_metadata = metadata_overrides.get(relative_path, {})
+        if not isinstance(raw_file_metadata, dict):
+            raise BatchValidationError(
+                f"Product metadata override must be a mapping for: {relative_path}"
+            )
+        normalized_file_metadata = normalize_source_metadata(
+            product_context,
+            {
+                **normalized_common_metadata,
+                **raw_file_metadata,
+            },
+        )
+        file_metadata_assignment = normalized_file_metadata.get("course_id")
+        if (
+            override_assignment is not None
+            and file_metadata_assignment is not None
+            and override_assignment != file_metadata_assignment
+        ):
+            raise BatchValidationError(
+                f"Course assignment conflicts with product metadata for: {relative_path}"
+            )
+        assignment = (
+            override_assignment
+            or file_metadata_assignment
+            or default_assignment
+        )
         ready = rejection_code is None and assignment is not None
         reason_code = rejection_code
         message = rejection_message
@@ -323,7 +350,7 @@ def preview_batch(
                 "content_hash": content_hash,
                 "course_id": assignment,
                 "product_metadata": {
-                    **normalized_common_metadata,
+                    **normalized_file_metadata,
                     "course_id": assignment,
                 },
                 "supported": extension in SUPPORTED_EXTENSIONS,

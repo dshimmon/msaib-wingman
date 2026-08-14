@@ -200,16 +200,21 @@ def atomic_repository_write(function):
 
 
 @contextmanager
-def transaction(connection):
+def transaction(connection, *, immediate=False):
     """
-    Commit a transaction on success and roll it back on failure.
+    Commit on success and roll back on failure.
+
+    Immediate mode acquires SQLite's writer reservation before a caller reads
+    state that it will merge and write inside the same transaction.
     """
     if connection.in_transaction:
         raise RuntimeError(
             "A Ledger transaction is already active."
         )
 
-    connection.execute("BEGIN")
+    connection.execute(
+        "BEGIN IMMEDIATE" if immediate else "BEGIN"
+    )
 
     try:
         yield connection

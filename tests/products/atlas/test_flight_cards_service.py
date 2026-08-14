@@ -1,0 +1,233 @@
+"""Tests for the source-backed Atlas course catalog service."""
+
+import tempfile
+import unittest
+import sys
+import os
+from pathlib import Path
+from unittest.mock import patch
+
+
+ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "src"))
+
+from products.atlas import flight_cards_service
+from wingman.shared import source_registry
+
+
+def source_entry(**overrides):
+    entry = {
+        "source_id": "syllabus-source",
+        "display_name": "Course Syllabus",
+        "file_name": "syllabus.pdf",
+        "file_type": "pdf",
+        "mime_type": "application/pdf",
+        "course_id": "FINA 7310",
+        "course_name": "Corporate Financial Strategy",
+        "material_type": "syllabus",
+        "status": "Ready",
+        "original_available": True,
+        "knowledge_object_count": 4,
+        "concept_count": 3,
+        "record_count": 1,
+        "embedding_count": 4,
+        "can_reprocess": True,
+        "can_remove": True,
+    }
+    entry.update(overrides)
+    return entry
+
+
+class FlightCardsServiceTests(unittest.TestCase):
+    def test_course_filters_use_course_name_and_keep_unassigned_visible(self):
+        sources = [
+            source_entry(),
+            source_entry(
+                source_id="lecture-source",
+                display_name="Lecture 1",
+                material_type="lectures",
+            ),
+            source_entry(
+                source_id="unassigned-source",
+                course_id=None,
+                course_name=None,
+                material_type="other",
+            ),
+        ]
+        with patch.object(
+            flight_cards_service,
+            "list_library_sources",
+            return_value=sources,
+        ):
+            filters = flight_cards_service.list_course_filters()
+
+        self.assertEqual(filters[0]["document_count"], 3)
+        self.assertEqual(filters[1]["course_id"], "FINA 7310")
+        self.assertEqual(filters[1]["label"], "Corporate Financial Strategy")
+        self.assertEqual(filters[1]["document_count"], 2)
+        self.assertEqual(filters[2]["kind"], "unassigned")
+
+    def test_course_folder_keeps_readable_name_over_later_id_fallbacks(self):
+        sources = [
+            source_entry(),
+            source_entry(
+                source_id="notes-source",
+                course_name="FINA 7310",
+                material_type="notes",
+            ),
+            source_entry(
+                source_id="homework-source",
+                course_name="FINA 7310",
+                material_type="homework",
+            ),
+        ]
+        with patch.object(
+            flight_cards_service,
+            "list_library_sources",
+            return_value=sources,
+        ):
+            filters = flight_cards_service.list_course_filters()
+
+        self.assertEqual(filters[1]["label"], "Corporate Financial Strategy")
+
+    def test_flight_cards_expose_material_folder_and_source_access(self):
+        with patch.object(
+            flight_cards_service,
+            "list_library_sources",
+            return_value=[source_entry()],
+        ):
+            cards = flight_cards_service.list_flight_cards(course_id="FINA 7310")
+
+        self.assertEqual(len(cards), 1)
+        self.assertEqual(cards[0]["material_type"], "syllabus")
+        self.assertEqual(cards[0]["source_link"]["kind"], "download")
+        self.assertEqual(cards[0]["summary_status"], "missing")
+        self.assertFalse(
+            cards[0]["allowed_actions"]["request_source_summary"]
+        )
+
+    def test_legacy_material_category_remains_visible_as_other(self):
+        with patch.object(
+            flight_cards_service,
+            "list_library_sources",
+            return_value=[source_entry(material_type="exam")],
+        ):
+            cards = flight_cards_service.list_flight_cards()
+
+        self.assertEqual(cards[0]["material_type"], "other")
+
+    def test_source_download_preserves_registered_original(self):
+        with tempfile.TemporaryDirectory() as directory:
+            original = Path(directory) / "syllabus.pdf"
+            original.write_bytes(b"source bytes")
+            with patch.object(
+                flight_cards_service,
+                "load_source_registry",
+                return_value={
+                    "syllabus-source": {
+                        "original_path": str(original),
+                        "file_name": "original-syllabus.pdf",
+                        "mime_type": "application/pdf",
+                    }
+                },
+            ):
+                download = flight_cards_service.get_source_download(
+                    "syllabus-source"
+                )
+
+        self.assertEqual(download["data"], b"source bytes")
+        self.assertEqual(download["file_name"], "original-syllabus.pdf")
+
+    def test_course_reassignment_reuses_existing_folder_name(self):
+        registry = {
+            "notes-source": {
+                "display_name": "Notes",
+                "course_id": None,
+                "course_name": None,
+            },
+            "syllabus-source": {
+                "display_name": "Syllabus",
+                "course_id": "FINA 7310",
+                "course_name": "Corporate Financial Strategy",
+            },
+        }
+        updates = []
+        with (
+            patch.object(
+                flight_cards_service,
+                "load_source_registry",
+                return_value=registry,
+            ),
+            patch.object(
+                flight_cards_service,
+                "update_active_source_metadata",
+                side_effect=lambda source_id, value: updates.append(
+                    (source_id, value)
+                ),
+            ),
+        ):
+            result = flight_cards_service.set_source_course(
+                "notes-source", " FINA 7310 "
+            )
+
+        self.assertEqual(result["status"], "assigned")
+        self.assertEqual(
+            updates[0][1]["course_name"],
+            "Corporate Financial Strategy",
+        )
+
+    def test_course_reassignment_preserves_source_registered_after_read(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory_path = Path(directory)
+            environment = {
+                "WINGMAN_LEDGER_PATH": str(directory_path / "ledger.sqlite3")
+            }
+            with (
+                patch.dict(os.environ, environment),
+                patch.object(
+                    source_registry,
+                    "SOURCE_REGISTRY_PATH",
+                    directory_path / "missing-legacy.json",
+                ),
+            ):
+                source_registry.register_source(
+                    "notes-source",
+                    {"display_name": "Notes", "course_id": None},
+                )
+                source_registry.register_source(
+                    "syllabus-source",
+                    {
+                        "display_name": "Syllabus",
+                        "course_id": "FINA 7310",
+                        "course_name": "Corporate Financial Strategy",
+                    },
+                )
+
+                def load_then_register_concurrent_source():
+                    stale_snapshot = source_registry.load_source_registry()
+                    source_registry.register_source(
+                        "lecture-source",
+                        {"display_name": "Lecture 1"},
+                    )
+                    return stale_snapshot
+
+                with patch.object(
+                    flight_cards_service,
+                    "load_source_registry",
+                    side_effect=load_then_register_concurrent_source,
+                ):
+                    flight_cards_service.set_source_course(
+                        "notes-source", "FINA 7310"
+                    )
+
+                registry = source_registry.load_source_registry()
+
+        self.assertIn("lecture-source", registry)
+        self.assertEqual(
+            registry["notes-source"]["course_name"],
+            "Corporate Financial Strategy",
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

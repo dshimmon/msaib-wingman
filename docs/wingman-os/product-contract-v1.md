@@ -24,8 +24,9 @@ closed production registry are in `src/products/atlas/product_config.py`.
 
 Atlas implements the current Chat, ingestion, retrieval, Briefing, and Library
 capabilities. Prompt Optimizer remains a neutral shell utility outside the
-product capability list. Bulk ingestion uses Atlas's existing `course_id`
-metadata declaration without changing the contract version.
+product capability list. Atlas batch and website intake use the product-owned
+`course_id`, `course_name`, and `material_type` metadata declarations without
+changing the contract version; the course-folder meaning remains outside Core.
 
 The [product-attachment runbook](../runbooks/product-attachment.md) explains
 the approved composition pattern. Compatibility is governed by

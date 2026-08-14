@@ -143,6 +143,50 @@ class SourceRegistryTests(unittest.TestCase):
             },
         )
 
+    def test_single_source_metadata_update_preserves_unrelated_new_source(self):
+        source_registry.register_source(
+            "source-one",
+            {"display_name": "Source One", "course_id": None},
+        )
+        stale_snapshot = source_registry.load_source_registry()
+        source_registry.register_source(
+            "source-two",
+            {"display_name": "Source Two"},
+        )
+
+        result = source_registry.update_active_source_metadata(
+            "source-one",
+            {"course_id": "FINA 7310"},
+        )
+
+        self.assertNotIn("source-two", stale_snapshot)
+        self.assertEqual(result["display_name"], "Source One")
+        self.assertEqual(
+            source_registry.load_source_registry(),
+            {
+                "source-one": {
+                    "display_name": "Source One",
+                    "course_id": "FINA 7310",
+                },
+                "source-two": {"display_name": "Source Two"},
+            },
+        )
+
+    def test_single_source_metadata_update_does_not_reactivate_removed_source(self):
+        source_registry.register_source(
+            "source-one",
+            {"display_name": "Source One"},
+        )
+        source_registry.save_source_registry({})
+
+        with self.assertRaisesRegex(KeyError, "Unknown active source"):
+            source_registry.update_active_source_metadata(
+                "source-one",
+                {"course_id": "FINA 7310"},
+            )
+
+        self.assertEqual(source_registry.load_source_registry(), {})
+
     def test_find_source_by_content_hash(self):
         self.write_registry(
             {

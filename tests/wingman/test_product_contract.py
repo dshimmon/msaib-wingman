@@ -165,7 +165,13 @@ class ProductContractTests(unittest.TestCase):
                     ATLAS_PRODUCT.source_metadata_fields
                 )
             },
-            {"course_id", "program", "academic_year"},
+            {
+                "course_id",
+                "course_name",
+                "material_type",
+                "program",
+                "academic_year",
+            },
         )
         self.assertTrue(
             callable(

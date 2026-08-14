@@ -19,6 +19,7 @@ from wingman.core.prompt_optimizer import (  # noqa: E402
 )
 from wingman.shared.airframe_manifest import CORE, MODULE_OWNERS  # noqa: E402
 from products.atlas.product_config import ATLAS_PRODUCT  # noqa: E402
+from products.atlas.ui.flight_cards import FlightCardsGateway  # noqa: E402
 from wingman.shared.product_contract import ProductCapability  # noqa: E402
 
 
@@ -107,10 +108,16 @@ class PromptOptimizerUITests(unittest.TestCase):
         )
 
     def open_prompt_optimizer(self):
-        app = AppTest.from_file(
-            APP_PATH,
-            default_timeout=10,
-        ).run()
+        with patch(
+            "products.atlas.ui.app.load_flight_cards_gateway",
+            return_value=FlightCardsGateway(
+                unavailable_reason="Test catalog is isolated."
+            ),
+        ):
+            app = AppTest.from_file(
+                APP_PATH,
+                default_timeout=10,
+            ).run()
         self.assert_no_app_exception(app)
         self.assertEqual(
             app.radio[0].options,

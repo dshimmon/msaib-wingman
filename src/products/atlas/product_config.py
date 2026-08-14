@@ -2,6 +2,11 @@
 
 import re
 
+from products.atlas.syllabus_intake import (
+    MATERIAL_TYPE_LABELS,
+    normalize_course_name,
+    normalize_material_type,
+)
 from wingman.shared.product_contract import (
     PRODUCT_CONTRACT_VERSION,
     BriefingComposition,
@@ -155,6 +160,18 @@ ATLAS_PRODUCT = ProductContract(
             label="Course ID",
             placeholder="Required for batch imports",
             normalizer=normalize_course_id,
+        ),
+        SourceMetadataField(
+            key="course_name",
+            label="Course folder name",
+            placeholder="Inferred from a syllabus when available",
+            normalizer=normalize_course_name,
+        ),
+        SourceMetadataField(
+            key="material_type",
+            label="Material type",
+            placeholder=", ".join(MATERIAL_TYPE_LABELS),
+            normalizer=normalize_material_type,
         ),
         SourceMetadataField(
             key="program",

@@ -2,6 +2,7 @@
 
 import streamlit as st
 
+from products.atlas.syllabus_intake import MATERIAL_TYPE_LABELS
 from products.atlas.ui.components import (
     render_dependency_unavailable,
     render_hero,
@@ -86,9 +87,9 @@ def render_course_page(gateway, course_id):
     selected_course_id, course_state = _course_selection(course_id)
     label = _course_label(gateway, selected_course_id, course_state)
     render_hero(
-        "Course workspace",
+        "Course catalog",
         label,
-        "Materials and source-grounded summaries live together here. Chat and Briefings open with course context, but their owning services do not prove course-only retrieval.",
+        "Syllabus, notes, lectures, homework, and other materials stay organized inside this course folder. Chat and Briefings open with course context, but their owning services do not prove course-only retrieval.",
     )
 
     if st.button("← Back to Course Cockpit"):
@@ -139,11 +140,28 @@ def render_course_page(gateway, course_id):
             icon="⚠️",
         )
 
-    materials_tab, summaries_tab = st.tabs(["Materials", "Summaries"])
-    with materials_tab:
-        for card in cards:
-            _render_material(card)
-    with summaries_tab:
+    cards_by_material_type = {
+        material_type: [
+            card for card in cards if card.material_type == material_type
+        ]
+        for material_type in MATERIAL_TYPE_LABELS
+    }
+    tab_labels = [
+        f"{label} ({len(cards_by_material_type[material_type])})"
+        for material_type, label in MATERIAL_TYPE_LABELS.items()
+    ]
+    folder_tabs = st.tabs([*tab_labels, "Summaries"])
+    for folder_tab, (material_type, label) in zip(
+        folder_tabs,
+        MATERIAL_TYPE_LABELS.items(),
+    ):
+        with folder_tab:
+            folder_cards = cards_by_material_type[material_type]
+            if not folder_cards:
+                st.caption(f"No {label.lower()} have been added yet.")
+            for card in folder_cards:
+                _render_material(card)
+    with folder_tabs[-1]:
         st.caption(
             "Summaries are AI-generated and grounded in the cited source evidence."
         )

@@ -20,6 +20,7 @@ def flight_card_payload(**overrides):
         "course_state": "assigned",
         "course_id": "AI-101",
         "course_label": "AI Foundations",
+        "material_type": "syllabus",
         "source_status": "ready",
         "summary_status": "ready",
         "summary_points": [
@@ -48,6 +49,7 @@ class FlightCardsAdapterTests(unittest.TestCase):
         card = normalize_flight_card(flight_card_payload())
         self.assertEqual(card.source_id, "orientation-2026")
         self.assertEqual(card.course_label, "AI Foundations")
+        self.assertEqual(card.material_type, "syllabus")
         self.assertEqual(card.summary_points[0].evidence_refs, ("E1",))
         self.assertEqual(card.evidence_map["E1"]["location"], "Page 4")
         self.assertTrue(card.can_set_course)
@@ -68,6 +70,10 @@ class FlightCardsAdapterTests(unittest.TestCase):
                 self.assertEqual(card.source_link.kind, "download")
                 self.assertEqual(card.summary_status, status)
                 self.assertEqual(card.safe_failure_message, "Summary unavailable.")
+
+    def test_legacy_material_category_is_presented_as_other(self):
+        card = normalize_flight_card(flight_card_payload(material_type="exam"))
+        self.assertEqual(card.material_type, "other")
 
     def test_accepts_attribute_objects_and_nested_summary(self):
         card = normalize_flight_card(

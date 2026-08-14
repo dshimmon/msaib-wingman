@@ -5,6 +5,8 @@ import importlib
 from types import MappingProxyType
 from typing import Any, Mapping
 
+from products.atlas.syllabus_intake import material_type_for_catalog
+
 
 FLIGHT_CARDS_SERVICE_MODULE = "products.atlas.flight_cards_service"
 COURSE_KINDS = frozenset({"all", "assigned", "unassigned"})
@@ -63,6 +65,7 @@ class FlightCardView:
     course_label: str
     source_status: str
     summary_status: str
+    material_type: str
     summary_points: tuple[SummaryPoint, ...] = ()
     safe_failure_title: str | None = None
     safe_failure_message: str | None = None
@@ -234,6 +237,7 @@ def normalize_flight_card(value):
             SUMMARY_STATUSES,
             "missing",
         ),
+        material_type=material_type_for_catalog(_read(value, "material_type")),
         summary_points=_normalize_summary_points(summary_points),
         safe_failure_title=_text(
             _read(value, "safe_failure_title"), _text(_read(failure, "title"))

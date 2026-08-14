@@ -22,6 +22,7 @@ def card_payload(**overrides):
         "course_state": "assigned",
         "course_id": "AI-101",
         "course_label": "AI Foundations",
+        "material_type": "syllabus",
         "source_status": "ready",
         "summary_status": "ready",
         "summary_points": [
@@ -112,8 +113,12 @@ class AtlasStreamlitAppTests(unittest.TestCase):
     def markdown_text(self, app):
         return "\n".join(element.value for element in app.markdown)
 
-    def test_default_shell_has_navigation_and_honest_dependency_state(self):
-        app = AppTest.from_file(APP_PATH, default_timeout=10).run()
+    def test_default_shell_has_navigation_and_connected_course_catalog(self):
+        with patch(
+            "products.atlas.ui.app.load_flight_cards_gateway",
+            return_value=FlightCardsGateway(EmptyFlightCardsService()),
+        ):
+            app = AppTest.from_file(APP_PATH, default_timeout=10).run()
         self.assert_no_exception(app)
         self.assertEqual(
             app.radio[0].options,
@@ -128,10 +133,7 @@ class AtlasStreamlitAppTests(unittest.TestCase):
         )
         self.assertIn("Your courses, ready for takeoff.", self.markdown_text(app))
         self.assertTrue(
-            any(
-                "waiting for the Flight Cards" in warning.value
-                for warning in app.warning
-            )
+            any("Flight Cards connected" in success.value for success in app.success)
         )
 
     def test_cockpit_course_and_unassigned_success_states(self):
@@ -155,6 +157,17 @@ class AtlasStreamlitAppTests(unittest.TestCase):
             self.assertEqual(app.query_params["page"], ["course"])
             self.assertEqual(app.query_params["course"], ["AI-101"])
             self.assertIn("AI Foundations", self.markdown_text(app))
+            self.assertEqual(
+                [tab.label for tab in app.tabs],
+                [
+                    "Syllabus (1)",
+                    "Class notes (0)",
+                    "Class lectures (0)",
+                    "Homework (0)",
+                    "Other (0)",
+                    "Summaries",
+                ],
+            )
 
     def test_cockpit_empty_and_error_states_are_actionable_and_safe(self):
         with patch(
@@ -227,9 +240,13 @@ class AtlasStreamlitAppTests(unittest.TestCase):
             )
 
     def test_invalid_deep_link_recovers_to_cockpit(self):
-        app = AppTest.from_file(APP_PATH, default_timeout=10)
-        app.query_params["page"] = "document"
-        app.run()
+        with patch(
+            "products.atlas.ui.app.load_flight_cards_gateway",
+            return_value=FlightCardsGateway(EmptyFlightCardsService()),
+        ):
+            app = AppTest.from_file(APP_PATH, default_timeout=10)
+            app.query_params["page"] = "document"
+            app.run()
         self.assert_no_exception(app)
         self.assertTrue(
             any("document link is incomplete" in info.value for info in app.info)

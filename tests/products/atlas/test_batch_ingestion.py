@@ -79,6 +79,16 @@ class BatchIngestionTests(unittest.TestCase):
                 "program": "MSAIB",
                 "academic_year": "2026-2027",
             },
+            product_metadata_overrides={
+                "alpha.md": {
+                    "course_name": "AI Foundations",
+                    "material_type": "syllabus",
+                },
+                "zeta.txt": {
+                    "course_name": "Advanced AI",
+                    "material_type": "notes",
+                },
+            },
             assignments_confirmed=True,
             batch_id="batch-preview",
             clock=self.clock,
@@ -91,6 +101,14 @@ class BatchIngestionTests(unittest.TestCase):
         self.assertEqual(records[0]["course_id"], "AI-101")
         self.assertEqual(records[-1]["course_id"], "AI-202")
         self.assertEqual(records[0]["product_metadata"]["program"], "MSAIB")
+        self.assertEqual(
+            records[0]["product_metadata"]["course_name"],
+            "AI Foundations",
+        )
+        self.assertEqual(
+            records[0]["product_metadata"]["material_type"],
+            "syllabus",
+        )
         self.assertEqual(records[1]["terminal_result"], "skipped")
         self.assertEqual(records[1]["reason_code"], "empty_file")
         self.assertEqual(records[2]["reason_code"], "unsupported_format")
@@ -140,6 +158,38 @@ class BatchIngestionTests(unittest.TestCase):
             )
         self.assertFalse(manifest_path.exists())
         ingestor.assert_not_called()
+
+    def test_per_file_course_folder_metadata_reaches_intake(self):
+        plan = self.plan(
+            [browser_file_input("syllabus.txt", b"Course syllabus")],
+            product_metadata_overrides={
+                "syllabus.txt": {
+                    "course_name": "AI Foundations",
+                    "material_type": "syllabus",
+                }
+            },
+        )
+        ingestor = Mock(
+            return_value={
+                "status": "ingested",
+                "source_id": "syllabus-source",
+                "knowledge_object_count": 1,
+            }
+        )
+
+        execute_batch(
+            plan,
+            product_context=self.context,
+            manifest_path=self.root / "syllabus.json",
+            ingestor=ingestor,
+            registry_loader=lambda: {},
+            clock=self.clock,
+        )
+
+        metadata = ingestor.call_args.kwargs["product_metadata"]
+        self.assertEqual(metadata["course_id"], "AI-101")
+        self.assertEqual(metadata["course_name"], "AI Foundations")
+        self.assertEqual(metadata["material_type"], "syllabus")
 
     def test_changed_course_assignment_resets_browser_confirmation(self):
         state = {
