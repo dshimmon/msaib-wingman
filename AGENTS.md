@@ -32,7 +32,7 @@ when it defines:
 6. permitted delegation and working boundaries;
 7. known dependencies and coordination;
 8. reserved stop conditions;
-9. Crew Chief and LSO route; and
+9. independent-audit and exact-landing route; and
 10. expected evidence and result.
 
 A short, direct Maverick request for a feature or outcome is a valid bounded
@@ -139,7 +139,8 @@ Do not repeat Canary checks as ceremony during a healthy workflow.
 
 Codex may delegate only a bounded slice of its task. Specialists and sub-agents
 inherit that slice, its exclusions, and its safety limits; they cannot expand
-scope, change product intent, land work, or bypass Codex, Crew Chief, or LSO.
+scope, change product intent, land work, or bypass Codex, independent audit,
+or exact landing controls.
 Codex remains responsible for integration, validation, and the final evidence
 package. Artist is planned for later governed work and is not assumed or
 implemented here.
@@ -153,17 +154,18 @@ another, or the tasks require competing behavior or contracts.
 
 ## Ordinary fast lane and reserved stops
 
-Use one ordinary repository workflow rather than approval risk tiers. A Crew
-Chief audit profile may narrow or deepen review focus as required by the landed
-audit tooling; it does not change task authority or add an approval lane.
+Use one ordinary repository workflow rather than approval risk tiers. An
+external audit profile may narrow or deepen review focus; it does not change
+task authority or add an approval lane.
 
 1. preflight the repository and task boundaries;
 2. implement the smallest coherent change;
 3. run proportionate validation and reconcile the diff;
 4. freeze the candidate and evidence;
-5. obtain independent Crew Chief audit and reconcile every finding; and
-6. pass the unchanged audited candidate and record to LSO for deterministic
-   landing validation and execution when that route is authorized.
+5. obtain an independent audit from an external review capability and
+   reconcile every finding; and
+6. pass the unchanged audited candidate and evidence to a separate external
+   landing capability for exact validation and execution when authorized.
 
 Do not ask Maverick for separate approval for inspection, planning, edits,
 tests, worktree creation, delegation, or other reversible implementation
@@ -181,7 +183,7 @@ Stop and return evidence or options to Goose before any:
 - destructive or hard-to-reverse action;
 - weakening of safety, provenance, evidence, or tests;
 - force-push, history rewrite, or protection override;
-- LSO partial landing or automatic retry after one;
+- partial landing or automatic retry after one;
 - unresolved material conflict; or
 - expansion of an agent's standing authority.
 
@@ -201,38 +203,34 @@ Stop and return evidence or options to Goose before any:
 - Run relevant tests and report exact commands, results, failures, skips, and
   limitations. Do not rely on frozen historical test counts.
 
-## Crew Chief and LSO handoff
+## External audit and landing handoff
 
-Crew Chief is independent and read-only with respect to the implementation
-repository. During audit, it writes only inside the external audit package and
-must not change repository files, expand scope, or land work. Codex must
-resolve, dispute with evidence, or escalate every finding; self-review is never
-independent audit.
+The repository owns the required outcomes and evidence boundaries in the
+[external closeout contract](docs/governance/external-closeout-contract.md).
+It does not own or execute an auditor or landing agent. Those capabilities are
+supplied outside Wingman and are neither Wingman OS features nor product
+runtime components.
 
-After a validated zero-finding `PASS` and complete reconciliation, Crew Chief
-must create in that package the external proposed task/mission journal and
-closeout record. LSO later validates the unchanged audited candidate and that
-proposed record, adds machine-owned landing facts, and is the only role
-authorized to stage and land the completed record with the unchanged audited
-implementation. The record's external location during audit does not prevent
-LSO from landing it in the repository under the authorized route.
+An independent reviewer is read-only with respect to the implementation
+repository. During audit, it writes only inside an external audit package and
+must not change repository files, expand scope, approve, or land work. Codex
+must resolve, dispute with evidence, or escalate every finding; self-review is
+never independent audit.
 
-Under the target ordinary standing route, LSO may stage exact audited paths,
-commit implementation and record together, publish the authorized branch,
-perform the authorized non-destructive main update, verify remote state, and
-declare bounded repository/task closeout complete.
+Only an unchanged candidate with a zero-finding independent `PASS`, complete
+reconciliation, and current validation may proceed to landing preparation.
+The separate landing operator must revalidate the exact candidate, audit,
+authorized path set, repository state, and action-specific authority before
+any mutation. Commit, push, merge, deployment, migration, live-data mutation,
+and completion are distinct gates; authority for one does not imply another.
 
-The missionless Crew Chief audit and external-proposal flow is implemented. The
-ordinary standing landing route remains target policy until its LSO support is
-separately landed. Follow the current canonical LSO contract for executable
-actions, including any package-bound authorization it still requires, without
-inventing extra per-stage approval gates. These instructions do not create
-missing executor capability or waive an executable control.
-
-LSO has no product or architecture judgment and cannot waive gates,
-force-push, rewrite history, override protection, retry a partial landing,
-deploy, mutate live data, authorize a reserved action, or declare strategic
-mission completion merely because a bounded task landed.
+If a conforming external audit or landing capability is unavailable, disclose
+that fact and report the affected gate as `BLOCKED`. Never substitute
+self-certification, manual mutation, or a weaker local process. External
+capabilities cannot waive gates, force-push, rewrite history, override
+protection, retry a partial landing, deploy, mutate live data, authorize a
+reserved action, or declare strategic mission completion merely because a
+bounded task landed.
 
 ## Reporting and completion states
 
@@ -250,4 +248,4 @@ Provide, as applicable:
 - unresolved risks, limitations, and contradictions;
 - documentation, generated-view, or journal effects;
 - final Git status; and
-- the exact next Crew Chief, LSO, Goose, or Maverick gate.
+- the exact next independent-audit, landing-operator, Goose, or Maverick gate.

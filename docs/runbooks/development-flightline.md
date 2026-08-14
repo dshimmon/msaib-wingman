@@ -1,9 +1,10 @@
 # Development Flightline
 
 > **Capability health: maintenance pending.** The historical setup delivery is
-> preserved at commit `ea9f3e0`, but its bounded correction remains uncommitted
-> in the protected foreground checkout as of 2026-08-07. Do not launch a new
-> Engineer or Auditor from this runbook until that correction is committed and
+> preserved at commit `ea9f3e0`. Its bounded unpublished correction was placed
+> in a verified recovery capsule and cleared from the foreground checkout on
+> 2026-08-14. Do not launch a new Engineer or Auditor from this runbook until a
+> separately authorized correction is reconstructed or replaced and
 > independently verified. Current status is authoritative in
 > [`operations/flightline/setup`](../missions/operations/flightline/setup/mission.md).
 
@@ -15,7 +16,8 @@ The Development Flightline is a deterministic development-plane control system
 for launching one mutable Codex Development Engineer in an isolated worktree,
 freezing its evidence, and handing the result to a fresh read-only Independent
 Auditor. Neither role is a Wingman OS agent. The Independent Auditor may audit
-Mission 028 but is not Crew Chief and must not be represented as Crew Chief.
+Mission 028 but is not the external repository closeout reviewer defined by
+GOV-006 and must not be represented as satisfying that separate gate.
 
 ## Authority boundary
 

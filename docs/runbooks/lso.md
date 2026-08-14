@@ -1,111 +1,17 @@
-# Landing Signal Officer v1
+# LSO Repository Runbook — Superseded
 
-LSO converts a final, unchanged Crew Chief `PASS` into one exact conditional
-closeout gate. It does not run Crew Chief and does not infer authorization.
+> **Historical pointer; not an active runbook.** Repository-owned LSO
+> execution was removed on 2026-08-14 under [GOV-006](../decisions/governance/external-closeout.md).
 
-## 1. Freeze the engineering evidence
+The historical mission and evidence remain under
+[`docs/missions/governance/lso/`](../missions/governance/lso/). The superseded
+design decision remains in [GOV-005](../decisions/governance/lso-closeout.md).
+Historical source and procedure bytes remain recoverable from Git before the
+GOV-006 extraction.
 
-Run all required validation and encode the exact successful commands in a
-`closeout-evidence-v1.schema.json` document. Prepare and execute Crew Chief
-under its own runbook and authorization. Resolve every finding. LSO requires
-the final report to be `PASS` with zero findings and reconciliation to be both
-complete and approval-ready.
-
-## 2. Prepare the closeout plan
-
-Preparation is non-mutating. Supply the working-tree Crew Chief envelope,
-report, reconciliation, active mission record, two commit messages, final
-record text, and a new external output directory:
-
-```text
-PYTHONDONTWRITEBYTECODE=1 python -m tools.lso prepare \
-  --repository /absolute/repository \
-  --mission-record /absolute/repository/docs/missions/<mission>/mission.md \
-  --envelope /absolute/audit-envelope.json \
-  --report /absolute/crew-chief-report.json \
-  --reconciliation /absolute/reconciliation.json \
-  --implementation-commit-message "Implement bounded mission" \
-  --closeout-commit-message "Complete bounded mission records" \
-  --final-authorization-gate "closed by Maverick" \
-  --next-gate "Maverick selects and authorizes a mission." \
-  --final-approval-scope "Approved exact conditional closeout plan ..." \
-  --output-root /private/tmp/wingman-lso-plan-<id>
-```
-
-LSO returns `closeout-plan.json` and a human-readable `approval-card.md`. Any
-subsequent byte, Git, audit, test, mission, remote, or target change invalidates
-the plan. Before issuing either artifact, preparation stages the exact audited
-paths in a temporary index and runs Git's staged-byte whitespace check there,
-including for files that are still untracked in the real working tree.
-
-## 3. Record exact authorization
-
-Maverick must approve the complete text printed in the approval card. Preserve
-that exact UTF-8 text in an external file, then record the package-bound
-receipt. Receipt creation does not execute a Git operation:
-
-```text
-PYTHONDONTWRITEBYTECODE=1 python -m tools.lso authorize \
-  /private/tmp/wingman-lso-plan-<id>/closeout-plan.json \
-  /absolute/authorization.txt \
-  --output /private/tmp/wingman-lso-plan-<id>/authorization-receipt.json \
-  --authorizing-principal-id Maverick \
-  --authorization-evidence-type caller_attested_task_interaction \
-  --authorization-evidence-reference task:<external-task-id> \
-  --approval-type action_specific_explicit \
-  --execution-route direct_codex \
-  --executor-id Codex
-```
-
-For a dispatch carrying the same externally decided Maverick scope through
-Mission Control, use `--execution-route mission_control`; do not change the
-asserted authorizing principal or executor. These CLI values are a trusted-local
-caller attestation, not independently authenticated task evidence. The
-version-2 receipt can record Mission Control only as dispatcher and derives its
-human-readable statement from the structured attestation. Missing, unknown,
-non-Maverick, internally inconsistent, authentication-only, or out-of-scope
-context fails before the receipt is written. A same-account process can still
-supply a false but internally consistent attestation.
-
-Version-1 receipts remain readable with their exact historical fields and
-wording. Never rewrite or re-render them. Every new receipt uses version 2 and
-continues to require the approval card's exact action-specific authorization
-text; authentication alone never authorizes staging, commits, publication, or
-mission completion.
-
-## 4. Execute once
-
-Execution requires both the receipt and the explicit CLI acknowledgement:
-
-```text
-PYTHONDONTWRITEBYTECODE=1 python -m tools.lso execute \
-  /private/tmp/wingman-lso-plan-<id>/closeout-plan.json \
-  /private/tmp/wingman-lso-plan-<id>/authorization-receipt.json \
-  --execute
-```
-
-The receipt is consumed before the first repository mutation. The marker is
-stored under the repository's Git common directory, scoped by repository and
-receipt identity, so every linked worktree observes the same consumption state
-and copying the external plan package cannot reset it. There is no automatic
-retry. LSO uses ordinary non-force atomic pushes, first publishing the exact
-audited implementation and then its generated completion record. Every action
-is recorded in an external execution report.
-
-Immediately before real staging, LSO snapshots the exact worktree index. A
-staging or pre-commit verification failure restores and verifies that index
-before LSO reports `FAILED`. If exact restoration also fails, LSO reports
-`PARTIAL` with both errors and stops with the receipt consumed.
-
-`COMPLETE` is the only success state. `FAILED` and `PARTIAL` stop the workflow;
-preserve the report, diagnose the exact state, and obtain a new plan and
-authorization. Never manually edit a receipt, reuse a consumed plan, weaken a
-check, or represent partial publication as completion.
-
-## Codex stop integration
-
-LSO v1 deliberately does not install a global Stop hook. The deterministic
-execution report is the enforcement source: an agent may say `MISSION
-COMPLETE` only when a validated report says `COMPLETE`. A later hook deployment
-may enforce that rule automatically after its exact configuration and trust
-boundary are separately reviewed and approved.
+Current work must use a conforming external landing capability under the
+[External Development-Operations Closeout Contract](../governance/external-closeout-contract.md).
+This repository provides no LSO executable, schema, receipt writer, staging
+controller, or publication controller. If an external exact landing operator
+is unavailable, report the landing gate as `BLOCKED`; do not substitute manual
+Git mutation.

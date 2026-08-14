@@ -11,8 +11,8 @@ receipt.
 1. Repeat `CANOPY-7C2F-ATLAS` and verify Maverick's exact authority.
 2. Verify the exact published code commit, reviewed commit range, any proposed
    post-publication candidate diff, Migration 4 plan digest, test evidence,
-   and Crew Chief disposition. A dirty or substituted code state requires a
-   new package.
+   and independent-audit disposition under the external closeout contract. A
+   dirty or substituted code state requires a new package.
 3. Verify Assurance v1 and every DATA-001 live prerequisite.
 4. Resolve the target to one absolute canonical regular file. Reject relative
    ambiguity, target symlinks, symlink aliases, an active recovery journal,

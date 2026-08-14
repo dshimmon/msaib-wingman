@@ -6,17 +6,22 @@
   "id": "GOV-004",
   "title": "Crew Chief Independent Audit Workflow",
   "namespaces": ["governance", "operations"],
-  "status": "accepted",
+  "status": "superseded",
   "date": "2026-08-09",
   "authority": "Maverick",
   "scope": "Repository-scoped Crew Chief v1 audit envelopes, fresh read-only review, structured findings, and finding-by-finding reconciliation",
   "approval_evidence": "Maverick's 2026-08-09 CANOPY-7C2F-ATLAS Crew Chief implementation and single-local-commit authorization",
   "supersedes": [],
-  "superseded_by": null
+  "superseded_by": "GOV-006"
 }
 -->
 
 ## Decision
+
+> **Superseded on 2026-08-14 by GOV-006.** This record preserves the
+> repository-scoped implementation decision as history. It is not an active
+> runbook or a claim that Crew Chief is a Wingman OS capability or runtime
+> component.
 
 Crew Chief is Wingman's repository-scoped independent audit role for the
 governed Codex review loop. Codex freezes bounded task authority and/or an

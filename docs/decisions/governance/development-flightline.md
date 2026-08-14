@@ -25,7 +25,9 @@ formally partitioned writable scopes and separate authorizations are not
 universal requirements. Roles receive no default network, credentials, commit,
 push, merge, or destructive authority.
 
-The Development Flightline Independent Auditor is not Crew Chief. Flightline
-setup delivery is historically completed at `ea9f3e0`; its capability health
-is currently maintenance-pending while the protected foreground correction is
-uncommitted.
+The Development Flightline Independent Auditor is not the external repository
+closeout reviewer defined by GOV-006. Flightline remains a separate Engineer
+isolation/controller capability whose unique controls are not superseded by
+external audit or landing skills. Setup delivery is historically completed at
+`ea9f3e0`; the unpublished maintenance correction was recovered and cleared on
+2026-08-14, so any new maintenance requires separate Maverick authority.

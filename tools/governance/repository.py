@@ -9,7 +9,6 @@ import json
 import re
 import subprocess
 import sys
-import tomllib
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -33,8 +32,6 @@ FOREGROUND_PRESERVATION_MANIFEST = (
 )
 REPOSITORY_MAP = ROOT / "docs" / "README.md"
 REPOSITORY_MAP_LOCATIONS = (
-    (".codex/", "directory"),
-    (".codex/agents/", "directory"),
     ("AGENTS.md", "file"),
     ("CURRENT_MISSION.md", "file"),
     ("WINGMAN_VAULT.md", "file"),
@@ -54,6 +51,7 @@ REPOSITORY_MAP_LOCATIONS = (
     ("docs/products/atlas/", "directory"),
     ("docs/products/radar/", "directory"),
     ("docs/governance/", "directory"),
+    ("docs/governance/external-closeout-contract.md", "file"),
     ("docs/missions/", "directory"),
     ("docs/missions/wingman-os/", "directory"),
     ("docs/missions/atlas/", "directory"),
@@ -73,8 +71,6 @@ REPOSITORY_MAP_LOCATIONS = (
     ("tests/products/radar/", "directory"),
     ("tests/governance/", "directory"),
     ("tools/", "directory"),
-    ("tools/crew_chief/", "directory"),
-    ("tools/lso/", "directory"),
     ("tools/flightline/", "directory"),
     ("tools/governance/", "directory"),
     ("data/", "directory"),
@@ -1074,32 +1070,6 @@ def validate_schemas_and_first_reads() -> list[str]:
             Draft202012Validator.check_schema(schema)
         except (json.JSONDecodeError, SchemaError) as error:
             errors.append(f"{_relative(path)}: invalid JSON schema: {error}")
-    agent_path = ROOT / ".codex" / "agents" / "crew-chief.toml"
-    try:
-        with agent_path.open("rb") as handle:
-            agent = tomllib.load(handle)
-    except (OSError, tomllib.TOMLDecodeError) as error:
-        errors.append(f"{_relative(agent_path)}: invalid Crew Chief agent: {error}")
-    else:
-        required_agent = {
-            "name": "crew_chief",
-            "sandbox_mode": "read-only",
-            "approval_policy": "never",
-            "model_reasoning_effort": "high",
-        }
-        for field, expected in required_agent.items():
-            if agent.get(field) != expected:
-                errors.append(
-                    f"{_relative(agent_path)}: {field} must be {expected!r}"
-                )
-        if "model" in agent:
-            errors.append(
-                f"{_relative(agent_path)}: model must be inherited, not pinned"
-            )
-        if not agent.get("description") or not agent.get("developer_instructions"):
-            errors.append(
-                f"{_relative(agent_path)}: description and instructions are required"
-            )
     first_reads = {
         ROOT / "README.md": ("AGENTS.md",),
         ROOT / "docs" / "README.md": ("AGENTS.md",),
@@ -1109,7 +1079,6 @@ def validate_schemas_and_first_reads() -> list[str]:
         ROOT / "tools" / "flightline" / "roles" / "independent-auditor.md": (
             "first repository read", "AGENTS.md"
         ),
-        agent_path: ("first repository read", "AGENTS.md"),
     }
     for path, needles in first_reads.items():
         text = path.read_text(encoding="utf-8") if path.is_file() else ""

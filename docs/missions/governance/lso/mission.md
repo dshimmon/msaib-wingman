@@ -68,18 +68,21 @@
 }
 -->
 
-Lifecycle: **active implementation**. Call sign: **LSO**.
+Lifecycle: **completed**. Call sign: **LSO**.
 
-LSO is Wingman's deterministic closeout controller. Crew Chief decides whether
-the frozen engineering evidence passes review; LSO verifies that result and
-the unchanged subject, prepares the exact approval card, and executes only the
-actions named in a later single-use Maverick authorization receipt.
+The repository-owned LSO v1 implementation historically served as Wingman's
+deterministic closeout controller. It verified the historical Crew Chief audit
+result and unchanged subject, prepared an exact approval card, and executed
+only the actions named in a later single-use Maverick authorization receipt.
 
-The approved scope and exclusions are in [`approved-brief.md`](approved-brief.md).
-Build and validation evidence belongs in [`evidence.md`](evidence.md). The
-operator procedure is [`docs/runbooks/lso.md`](../../../runbooks/lso.md), and
-[GOV-005](../../../decisions/governance/lso-closeout.md) owns the enduring
-authority and failure-boundary decision.
+The approved scope and exclusions remain in
+[`approved-brief.md`](approved-brief.md), and the preserved build and validation
+evidence remains in [`evidence.md`](evidence.md). The former operator procedure
+is retained as a historical pointer at
+[`docs/runbooks/lso.md`](../../../runbooks/lso.md). [GOV-005](../../../decisions/governance/lso-closeout.md)
+preserves the superseded repository implementation decision; [GOV-006](../../../decisions/governance/external-closeout.md)
+now governs the repository-neutral external closeout contract.
 
-No real repository closeout and no live operation is authorized by this active
-mission record.
+This completed mission record preserves the prior implementation and landing
+facts. Repository-owned LSO execution is superseded and supplies no current
+repository mutation or live-operation authority.

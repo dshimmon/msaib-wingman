@@ -195,17 +195,19 @@ gates.
 
 ### 3.5 Assurance extensions
 
-#### Crew Chief
+#### Repository-owned Crew Chief (historical)
 
-**Status:** Completed by Maverick with accepted limitations; v1 implementation
-locally committed and not independently certified
+**Status:** Superseded as a repository capability by GOV-006 on August 14,
+2026; historical mission completed with accepted limitations and not
+independently certified
 **Priority:** High priority  
 **Requirement:** Required
 
 **Canonical mission record:**
 [`governance/crew-chief`](docs/missions/governance/crew-chief/mission.md)
 
-Crew Chief is the repository audit agent in the Codex review loop:
+The repository-owned Crew Chief implementation historically served this audit
+loop:
 
 1. Codex completes its bounded work and produces an evidence-based report.
 2. The system automatically sends that report and the required review evidence
@@ -226,10 +228,10 @@ Self-review must be labeled as self-review; independent certification requires
 a genuinely separate reviewer. Maverick may approve defined blocking rules
 through Rules of Engagement or constitutional assurance.
 
-**Sequencing:** Crew Chief remains required, but it was not a prerequisite for
-Mission 028. The Development Flightline Independent Auditor may audit Mission
-028, but it is not Crew Chief and may not claim that a Crew Chief audit
-occurred. On 2026-08-08 Maverick promoted Crew Chief as the successor
+**Historical sequencing:** Crew Chief was required, but it was not a
+prerequisite for Mission 028. The Development Flightline Independent Auditor
+could audit Mission 028, but it was not Crew Chief and could not claim that a
+Crew Chief audit occurred. On 2026-08-08 Maverick promoted Crew Chief as the successor
 portfolio-primary planning mission after Repository Architecture and before
 the relevant Assurance mission. On 2026-08-09 Maverick separately authorized
 the v1 implementation and local correction commits. On 2026-08-10 Maverick
@@ -238,7 +240,11 @@ the frozen-workspace launcher limitation. Deterministic tests passed. The full
 bootstrap review failed, and the focused re-audit and fixture audits did not
 complete. No independent certification is claimed.
 
-Crew Chief should measure mixed responsibilities, duplication, dependency
+Current independent audit remains mandatory under GOV-006 and is supplied by
+an external capability. The repository does not provide the former executable,
+schemas, agent configuration, pool, or retention service. At the time of the
+historical implementation, Crew Chief was expected to measure mixed
+responsibilities, duplication, dependency
 complexity, circular imports, repeated navigation, excessive context or tool
 output, dead code, compatibility layers, slow or flaky tests, high-churn failure
 hotspots, and likely refactor return. Its target is high cohesion, clear
@@ -337,22 +343,27 @@ tamper-evident after creation, but a same-account process can create an
 internally consistent false attestation until stronger identity controls are
 separately authorized and implemented.
 
-### Landing Signal Officer — LSO
+### Repository-owned Landing Signal Officer — LSO (historical)
 
-**Status:** Implemented and deterministically validated. Authoritative audit,
-lifecycle, and publication state remain in the canonical mission and closeout
-records.
+**Status:** Superseded as a repository capability by GOV-006 on August 14,
+2026. Historical audit, lifecycle, and publication state remain in the
+canonical mission and closeout records.
 **Canonical mission record:**
 [`governance/lso`](docs/missions/governance/lso/mission.md)
 
-LSO is the deterministic closeout controller between independent review and a
-final repository landing. It verifies a zero-finding Crew Chief `PASS`,
+The repository-owned LSO historically served as the deterministic closeout
+controller between independent review and a final repository landing. It
+verified a zero-finding Crew Chief `PASS`,
 approval-ready reconciliation, unchanged audited bytes, passing validation,
 and an unchanged fast-forward target; then it prepares one exact conditional
 approval card. Only a later package-bound Maverick receipt may authorize the
 named commit, publication, record-generation, remote-verification, and
-completion sequence. LSO cannot audit itself, infer approval, force-push,
+completion sequence. It could not audit itself, infer approval, force-push,
 retry automatically, or authorize a live operation.
+
+Exact landing remains mandatory under GOV-006 and is supplied by an external
+capability. The repository does not provide the former executable, schemas,
+receipt writer, staging controller, or publication controller.
 
 ### Canary System
 
@@ -395,8 +406,8 @@ approval scope associated with each promoted entry controls.
 
 | Capability | Destination | State |
 |---|---|---|
-| Crew Chief | `governance/crew-chief` | Completed by Maverick with accepted limitations; not independently certified |
-| Landing Signal Officer | `governance/lso` | Implementation deterministically validated; audit, lifecycle, and publication state follow the canonical mission and closeout records |
+| Repository-owned Crew Chief | `governance/crew-chief` | Historical mission completed with accepted limitations; repository execution superseded by GOV-006 |
+| Repository-owned Landing Signal Officer | `governance/lso` | Historical implementation and evidence retained; repository execution superseded by GOV-006 |
 | Wingman Assurance v1 | Mission 029 — Rangefinder | Planned direction |
 | Retrieval Test Range | Mission 029 — Rangefinder | Planned component |
 | Flight Recorder | Mission 029 — Rangefinder | Planned component |
@@ -428,14 +439,14 @@ mission at `51fb750d2364a4e137ba7e42963a11b10fe4cdc0`:
 - semantic and byte-preservation validation;
 - disposable dry runs;
 - tested rollback procedures;
-- Crew Chief review and finding reconciliation; and
+- independent review and finding reconciliation; and
 - a separate Maverick approval gate for live execution.
 
 Implementation does not authorize operation. The default/live Ledger remains
-at version 3, and the published candidate's Crew Chief `PASS` does not transfer
+at version 3, and the published candidate's historical audit `PASS` does not transfer
 to a future target-specific package. Before any live transition, Assurance v1,
 every DATA-001 prerequisite, a fresh exact-target package, a single-use
-receipt, target-bound Crew Chief review, rollback/recovery readiness, and
+receipt, target-bound independent review, rollback/recovery readiness, and
 Maverick's explicit live-execution approval remain mandatory.
 
 Additional deferred Airframe obligations:
@@ -517,15 +528,15 @@ Maverick approved the Vault on August 1, 2026, and it was committed as
 committed as `7518bf717ce9974dcbb9d24fefe6a1b91bfee7b3`.
 
 This document owns approved future capabilities, strategic ideas, deferred
-obligations, and the approval scope recorded in its entries. Use
+obligations, and the approval scope recorded in its entries. Historical
+approval of Crew Chief as required is preserved above; GOV-006 now satisfies
+that assurance intent through an external independent-audit contract rather
+than a Wingman capability. Use
 [`CURRENT_MISSION.md`](CURRENT_MISSION.md) for the generated entry point and
-[`docs/roadmap.md`](docs/roadmap.md) for approved sequence. Crew Chief v1 is
-implemented, deterministically tested, locally committed, and completed by
-Maverick with accepted limitations. The full bootstrap failed; the focused
-re-audit and fixture audits did not complete; no independent certification is
-claimed. Landing Signal Officer v1 has a deterministically validated
-implementation. Its authoritative audit, lifecycle, publication status, and
-next gate live in
-[`governance/lso`](docs/missions/governance/lso/mission.md) and the generated
-[`CURRENT_MISSION.md`](CURRENT_MISSION.md); this Vault does not duplicate those
-volatile fields.
+[`docs/roadmap.md`](docs/roadmap.md) for approved sequence. The former Crew
+Chief and Landing Signal Officer implementations, their limitations, and their
+mission states remain historical records under `docs/missions/governance/`.
+Their active repository execution machinery was superseded by GOV-006; current
+audit and landing capabilities are personal/external development operations,
+not Wingman OS or product capabilities. This Vault does not duplicate their
+external operational state.

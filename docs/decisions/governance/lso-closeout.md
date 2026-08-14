@@ -6,17 +6,21 @@
   "id": "GOV-005",
   "title": "Landing Signal Officer Closeout Workflow",
   "namespaces": ["governance", "operations"],
-  "status": "accepted",
+  "status": "superseded",
   "date": "2026-08-11",
   "authority": "Maverick",
   "scope": "Deterministic exact-package closeout preparation and separately authorized conditional commit, publication, record generation, remote verification, and completion reporting",
   "approval_evidence": "Maverick's August 11, 2026 instruction to build LSO v1 in an isolated worktree after selecting the LSO closeout design",
   "supersedes": [],
-  "superseded_by": null
+  "superseded_by": "GOV-006"
 }
 -->
 
 ## Decision
+
+> **Superseded on 2026-08-14 by GOV-006.** This record preserves the
+> repository-scoped implementation decision as history. It is not an active
+> runbook or a claim that LSO is a Wingman OS capability or runtime component.
 
 Landing Signal Officer (LSO) is a deterministic closeout controller, not an
 auditor, approver, Mission Control replacement, or live-execution agent. It

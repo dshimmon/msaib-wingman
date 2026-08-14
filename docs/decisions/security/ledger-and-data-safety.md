@@ -36,7 +36,7 @@ safety boundary.
 A live transition still requires Assurance v1, every target-specific DATA-001
 check, a fresh exact target and code package, an immutable backup destination,
 a single-use no-retry receipt bound to Maverick's approval, disposable dry-run
-evidence, Crew Chief review and reconciliation of the exact package, explicit
-rollback and recovery readiness, and Maverick's separate live-execution
-authorization. Any changed target, code, schema, inventory, checksum, command,
+evidence, independent review and reconciliation of the exact package under
+GOV-006, explicit rollback and recovery readiness, and Maverick's separate
+live-execution authorization. Any changed target, code, schema, inventory, checksum, command,
 expiry, or operation invalidates the package.

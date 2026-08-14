@@ -129,9 +129,8 @@ class RepositoryGovernanceTests(unittest.TestCase):
     def test_repository_map_matches_canonical_locations(self):
         self.assertEqual(repository.validate_repository_map(), [])
         mapped = dict(repository.REPOSITORY_MAP_LOCATIONS)
-        self.assertEqual(mapped[".codex/agents/"], "directory")
-        self.assertEqual(mapped["tools/crew_chief/"], "directory")
-        self.assertEqual(mapped["tools/lso/"], "directory")
+        self.assertEqual(mapped["tools/flightline/"], "directory")
+        self.assertEqual(mapped["docs/governance/"], "directory")
 
     def test_repository_map_rejects_missing_canonical_location(self):
         text = repository.REPOSITORY_MAP.read_text(encoding="utf-8").replace(
@@ -219,9 +218,9 @@ _expose(__name__, "knowledge")
                 if target is None:
                     self.assertIsNone(entry["target_path_sha256"])
                     continue
-                digest = hashlib.sha256(
-                    (repository.ROOT / target).read_bytes()
-                ).hexdigest()
+                digest = repository._git_blob_sha256(
+                    manifest["correction_comparison_head"], target
+                )
                 self.assertEqual(digest, entry["target_path_sha256"])
 
     def test_wrong_existing_foreground_rename_target_is_rejected(self):
@@ -286,6 +285,24 @@ _expose(__name__, "knowledge")
             "implementation commit",
             errors,
         )
+
+    def test_completed_lso_mission_narrative_is_historical(self):
+        record = self._mission("governance/lso")
+        text = record.path.read_text(encoding="utf-8")
+
+        self.assertEqual(record.metadata["lifecycle"], "completed")
+        self.assertIn("Lifecycle: **completed**", text)
+        self.assertIn("historically served", text)
+        self.assertIn("Repository-owned LSO execution is superseded", text)
+        self.assertIn("GOV-006", text)
+        for stale_claim in (
+            "Lifecycle: **active implementation**",
+            "LSO is Wingman's deterministic closeout controller",
+            "GOV-005](../../../decisions/governance/lso-closeout.md) owns the enduring",
+            "this active mission record",
+        ):
+            with self.subTest(stale_claim=stale_claim):
+                self.assertNotIn(stale_claim, text)
 
     def test_latest_completed_uses_final_recorded_commit_time(self):
         latest = repository._latest_completed(self.missions)
@@ -547,24 +564,53 @@ _expose(__name__, "knowledge")
         self.assertIn("compatibility view reports", current)
         self.assertIn("not implementation permission", current)
 
-    def test_crew_chief_external_proposal_is_required_and_landing_eligible(self):
+    def test_external_closeout_contract_is_required_and_fail_closed(self):
         instructions = " ".join(
             (repository.ROOT / "AGENTS.md").read_text(encoding="utf-8").split()
         )
         self.assertIn(
-            "During audit, it writes only inside the external audit package",
+            "During audit, it writes only inside an external audit package",
             instructions,
         )
         self.assertIn(
-            "Crew Chief must create in that package the external proposed "
-            "task/mission journal and closeout record",
+            "Only an unchanged candidate with a zero-finding independent "
+            "`PASS`",
             instructions,
         )
         self.assertIn(
-            "The record's external location during audit does not prevent LSO "
-            "from landing it in the repository",
+            "report the affected gate as `BLOCKED`",
             instructions,
         )
+        contract = (
+            repository.ROOT
+            / "docs/governance/external-closeout-contract.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("Self-review", contract)
+        self.assertIn("partial persistent mutation", contract)
+        self.assertIn("neither Wingman OS features nor product", instructions)
+
+    def test_repository_owned_audit_and_landing_machinery_is_absent(self):
+        for path in (
+            repository.ROOT / ".codex/agents/crew-chief.toml",
+            repository.ROOT / "tools/authorization.py",
+            repository.ROOT / "tests/governance/test_crew_chief.py",
+            repository.ROOT / "tests/governance/test_crew_chief_pool.py",
+            repository.ROOT / "tests/governance/test_crew_chief_retention.py",
+            repository.ROOT / "tests/governance/test_lso.py",
+        ):
+            with self.subTest(path=path):
+                self.assertFalse(path.exists())
+        for path in (
+            repository.ROOT / "tools/crew_chief",
+            repository.ROOT / "tools/lso",
+        ):
+            with self.subTest(path=path):
+                self.assertFalse(any(item.is_file() for item in path.rglob("*")))
+        workflow = (
+            repository.ROOT / ".github/workflows/governance.yml"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn("test_crew_chief", workflow)
+        self.assertNotIn("test_lso", workflow)
 
     def test_active_portfolio_primary_is_rendered(self):
         current = repository.render_current_mission(self.missions)

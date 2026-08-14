@@ -27,9 +27,6 @@ details rather than duplicating those contracts here.
 ### Annotated tree
 
 ```text
-.codex/                                   # `.codex/` — repository-scoped Codex configuration
-  agents/                                 # `.codex/agents/` — canonical project-scoped custom-agent definitions
-
 src/                                      # `src/` — production source and historical import surfaces
   wingman/                                # `src/wingman/` — Wingman-owned production namespace
     core/                                 # `src/wingman/core/` — product-neutral Wingman mechanisms
@@ -68,8 +65,6 @@ tests/                                    # `tests/` — tests mirror production
   governance/                             # `tests/governance/` — architecture and filing-policy enforcement
 
 tools/                                    # `tools/` — repository operations and governance tooling
-  crew_chief/                             # `tools/crew_chief/` — deterministic independent-audit controller and schemas
-  lso/                                    # `tools/lso/` — deterministic exact closeout controller and schemas
   flightline/                             # `tools/flightline/` — Development Flightline tooling
   governance/                             # `tools/governance/` — canonical-record and filing-policy enforcement
 
@@ -90,10 +85,11 @@ only; no new implementation belongs there.
 7. Enduring decisions → `docs/decisions/`.
 8. Operational procedures → `docs/runbooks/`.
 9. Superseded historical material → `docs/archive/`.
-10. Project-scoped custom-agent definitions → `.codex/agents/`.
-11. Crew Chief controller logic and schemas → `tools/crew_chief/`.
-12. LSO closeout controller logic and schemas → `tools/lso/`.
-13. New logic must never be added to compatibility façades.
+10. External audit and exact-landing requirements →
+    `docs/governance/external-closeout-contract.md`; the executing capability
+    remains outside this repository.
+11. Development Flightline controls → `tools/flightline/`.
+12. New logic must never be added to compatibility façades.
 
 ## Canonical homes
 
@@ -108,13 +104,12 @@ only; no new implementation belongs there.
 - [`archive/`](archive/) — superseded or noncanonical historical material; and
 - [`roadmap.md`](roadmap.md) — approved future sequence and dependencies.
 
-`.codex/agents/crew-chief.toml` is the single canonical model-facing home for
-Crew Chief instructions. `docs/runbooks/crew-chief.md` owns its operator
-procedure; neither location owns current mission lifecycle.
-
-`tools/lso/` is the canonical deterministic closeout controller. Its operator
-procedure is `docs/runbooks/lso.md`. Canonical mission records own strategic
-mission lifecycle; an ordinary bounded task need not create or match one.
+The [external closeout contract](governance/external-closeout-contract.md) is
+the canonical repository-owned boundary for independent audit and exact
+landing. The executing capabilities, configuration, schemas, and operational
+state remain external to Wingman. The Crew Chief and LSO runbook paths are
+historical pointers only; canonical mission records retain their historical
+lifecycle and evidence.
 
 `WINGMAN_VAULT.md` preserves approved future capabilities, strategic ideas,
 deferred obligations, and the approval scope recorded by its entries.

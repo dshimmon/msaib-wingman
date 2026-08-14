@@ -12,6 +12,7 @@
 | `GOV-001` | governance | accepted | 2026-08-07 | [Repository Records and Lifecycle](governance/repository-records.md) |
 | `GOV-002` | governance, wingman-os, radar | accepted | 2026-08-01 | [Approved Roadmap Sequencing](governance/roadmap-sequencing.md) |
 | `GOV-003` | governance | accepted | 2026-08-07 | [Historical Mission Ratification and Record Authority](governance/historical-mission-ratification.md) |
-| `GOV-004` | governance, operations | accepted | 2026-08-09 | [Crew Chief Independent Audit Workflow](governance/crew-chief-audit.md) |
-| `GOV-005` | governance, operations | accepted | 2026-08-11 | [Landing Signal Officer Closeout Workflow](governance/lso-closeout.md) |
+| `GOV-004` | governance, operations | superseded | 2026-08-09 | [Crew Chief Independent Audit Workflow](governance/crew-chief-audit.md) |
+| `GOV-005` | governance, operations | superseded | 2026-08-11 | [Landing Signal Officer Closeout Workflow](governance/lso-closeout.md) |
+| `GOV-006` | governance, operations | accepted | 2026-08-14 | [External Development-Operations Closeout](governance/external-closeout.md) |
 | `OPS-001` | operations, governance | accepted | 2026-08-01 | [Development Flightline Operating Model](governance/development-flightline.md) |
