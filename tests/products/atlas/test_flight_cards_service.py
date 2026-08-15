@@ -4,6 +4,7 @@ import tempfile
 import unittest
 import sys
 import os
+import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -33,6 +34,7 @@ def source_entry(**overrides):
         "embedding_count": 4,
         "can_reprocess": True,
         "can_remove": True,
+        "source_kind": "upload",
     }
     entry.update(overrides)
     return entry
@@ -105,6 +107,154 @@ class FlightCardsServiceTests(unittest.TestCase):
         self.assertFalse(
             cards[0]["allowed_actions"]["request_source_summary"]
         )
+
+    def test_flight_card_loads_persisted_summary_into_course_folder(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source_directory = Path(directory) / "syllabus-source"
+            source_directory.mkdir()
+            original = source_directory / "syllabus.pdf"
+            original.write_bytes(b"source bytes")
+            summary_path = (
+                source_directory
+                / flight_cards_service.source_summary_service.SUMMARY_FILE_NAME
+            )
+            knowledge = [
+                {
+                    "id": "syllabus-source_001",
+                    "document": "syllabus-source",
+                    "text": "Evidence",
+                }
+            ]
+            summary_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "source_id": "syllabus-source",
+                        "source_hash": "source-hash",
+                        "knowledge_hash": (
+                            flight_cards_service.source_summary_service.processed_knowledge_hash(
+                                knowledge
+                            )
+                        ),
+                        "status": "ready",
+                        "title": "Course Syllabus Summary",
+                        "points": [
+                            {"text": "Grounded summary.", "evidence_refs": ["E1"]}
+                        ],
+                        "evidence_map": {
+                            "E1": {"location": "Page 1", "excerpt": "Evidence"}
+                        },
+                        "generator_version": "generator-v1",
+                        "prompt_version": "prompt-v1",
+                        "generated_at": "2026-08-14T12:00:00+00:00",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            source = source_entry(
+                original_path=str(original),
+                content_hash="source-hash",
+                knowledge_path=str(source_directory / "syllabus-source.json"),
+            )
+            (source_directory / "syllabus-source.json").write_text(
+                json.dumps(knowledge), encoding="utf-8"
+            )
+            with (
+                patch.object(
+                    flight_cards_service,
+                    "list_library_sources",
+                    return_value=[source],
+                ),
+                patch.object(
+                    flight_cards_service.intake_service,
+                    "UPLOADS_DIRECTORY",
+                    Path(directory),
+                ),
+            ):
+                card = flight_cards_service.get_flight_card("syllabus-source")
+
+        self.assertEqual(card["summary_status"], "ready")
+        self.assertEqual(card["summary_title"], "Course Syllabus Summary")
+        self.assertEqual(card["summary_points"][0]["evidence_refs"], ["E1"])
+        self.assertTrue(card["allowed_actions"]["request_source_summary"])
+
+    def test_summary_refresh_uses_registered_upload_and_processed_knowledge(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source_directory = Path(directory) / "notes-source"
+            source_directory.mkdir()
+            original = source_directory / "notes.txt"
+            original.write_text("source", encoding="utf-8")
+            knowledge_path = source_directory / "notes-source.json"
+            knowledge = [{"id": "notes-source_001", "text": "Source evidence"}]
+            knowledge_path.write_text(json.dumps(knowledge), encoding="utf-8")
+            source = source_entry(
+                source_id="notes-source",
+                original_path=str(original),
+                knowledge_path=str(knowledge_path),
+                content_hash="source-hash",
+            )
+            with (
+                patch.object(
+                    flight_cards_service,
+                    "list_library_sources",
+                    return_value=[source],
+                ),
+                patch.object(
+                    flight_cards_service.intake_service,
+                    "UPLOADS_DIRECTORY",
+                    Path(directory),
+                ),
+                patch.object(
+                    flight_cards_service.source_summary_service,
+                    "generate_and_persist_summary",
+                    return_value={"status": "ready"},
+                ) as generate,
+            ):
+                result = flight_cards_service.request_source_summary("notes-source")
+
+        self.assertEqual(result["status"], "ready")
+        generate.assert_called_once_with(
+            source_id="notes-source",
+            source_hash="source-hash",
+            original_path=original,
+            knowledge_objects=knowledge,
+        )
+
+    def test_summary_refresh_rejects_paths_outside_source_upload_directory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            outside = root / "outside"
+            outside.mkdir()
+            original = outside / "notes.txt"
+            original.write_text("source", encoding="utf-8")
+            knowledge_path = outside / "notes-source.json"
+            knowledge_path.write_text("[]", encoding="utf-8")
+            source = source_entry(
+                source_id="notes-source",
+                original_path=str(original),
+                knowledge_path=str(knowledge_path),
+                content_hash="source-hash",
+            )
+            with (
+                patch.object(
+                    flight_cards_service,
+                    "list_library_sources",
+                    return_value=[source],
+                ),
+                patch.object(
+                    flight_cards_service.intake_service,
+                    "UPLOADS_DIRECTORY",
+                    root / "uploads",
+                ),
+                patch.object(
+                    flight_cards_service.source_summary_service,
+                    "generate_and_persist_summary",
+                ) as generate,
+            ):
+                with self.assertRaises(FileNotFoundError):
+                    flight_cards_service.request_source_summary("notes-source")
+
+        generate.assert_not_called()
 
     def test_legacy_material_category_remains_visible_as_other(self):
         with patch.object(

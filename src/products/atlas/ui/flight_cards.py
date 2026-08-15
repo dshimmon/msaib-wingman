@@ -66,11 +66,13 @@ class FlightCardView:
     source_status: str
     summary_status: str
     material_type: str
+    summary_title: str | None = None
     summary_points: tuple[SummaryPoint, ...] = ()
     safe_failure_title: str | None = None
     safe_failure_message: str | None = None
     source_hash: str | None = None
     summary_source_hash: str | None = None
+    summary_knowledge_hash: str | None = None
     generator_version: str | None = None
     prompt_version: str | None = None
     generated_at: str | None = None
@@ -238,6 +240,9 @@ def normalize_flight_card(value):
             "missing",
         ),
         material_type=material_type_for_catalog(_read(value, "material_type")),
+        summary_title=_text(
+            _read(value, "summary_title"), _text(_read(summary, "title"))
+        ),
         summary_points=_normalize_summary_points(summary_points),
         safe_failure_title=_text(
             _read(value, "safe_failure_title"), _text(_read(failure, "title"))
@@ -247,6 +252,7 @@ def normalize_flight_card(value):
         ),
         source_hash=_text(_read(value, "source_hash")),
         summary_source_hash=_text(_read(value, "summary_source_hash")),
+        summary_knowledge_hash=_text(_read(value, "summary_knowledge_hash")),
         generator_version=_text(
             _read(value, "generator_version"),
             _text(

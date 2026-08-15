@@ -11,7 +11,8 @@ from wingman.core import embedding_storage
 from wingman.core.document_errors import NoReadableContentError
 from products.atlas.document_ingestion import ingest_document
 from wingman.core.document_router import SUPPORTED_EXTENSIONS
-from products.atlas.product_config import create_atlas_context
+from products.atlas import source_summary_service
+from products.atlas.product_config import ATLAS_PRODUCT, create_atlas_context
 from wingman.shared.product_runtime import normalize_source_metadata
 from wingman.shared.source_registry import (
     find_source_by_content_hash,
@@ -550,6 +551,20 @@ def ingest_uploaded_document(
                 source_directory.rmdir()
         raise
 
+    summary_status = None
+    if context.product_id == ATLAS_PRODUCT.product_id:
+        try:
+            summary_artifact = source_summary_service.generate_and_persist_summary(
+                source_id=source_id,
+                source_hash=content_hash,
+                original_path=original_path,
+                knowledge_objects=knowledge_objects,
+            )
+            summary_status = summary_artifact.get("status", "failed")
+        except Exception:
+            # Derived-summary failure must never remove a valid uploaded source.
+            summary_status = "failed"
+
     return {
         "status": "ingested",
         "source_id": source_id,
@@ -557,4 +572,5 @@ def ingest_uploaded_document(
         "knowledge_object_count": len(
             knowledge_objects
         ),
+        "summary_status": summary_status,
     }

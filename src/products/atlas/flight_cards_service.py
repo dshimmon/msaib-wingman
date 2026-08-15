@@ -3,9 +3,13 @@
 from collections import Counter, defaultdict
 from pathlib import Path
 
+from products.atlas import intake_service, source_summary_service
 from products.atlas.product_config import normalize_course_id
 from products.atlas.syllabus_intake import material_type_for_catalog
-from wingman.shared.library_service import list_library_sources
+from wingman.shared.library_service import (
+    list_library_sources,
+    load_source_knowledge,
+)
 from wingman.shared.source_registry import (
     load_source_registry,
     update_active_source_metadata,
@@ -52,8 +56,55 @@ def _source_link(source):
     return {"kind": "unavailable"}
 
 
+def _validated_upload_paths(source):
+    if source.get("source_kind") != "upload":
+        return None, None
+    try:
+        source_id = source["source_id"]
+        source_directory = intake_service.validated_source_directory(
+            source_id
+        ).resolve()
+        original = Path(source.get("original_path") or "")
+        knowledge = Path(source.get("knowledge_path") or "")
+        if (
+            original.is_symlink()
+            or not original.is_file()
+            or original.resolve().parent != source_directory
+        ):
+            original = None
+        if (
+            knowledge.is_symlink()
+            or not knowledge.is_file()
+            or knowledge.resolve().parent != source_directory
+            or knowledge.name != f"{source_id}.json"
+        ):
+            knowledge = None
+        return original, knowledge
+    except (KeyError, OSError, ValueError):
+        return None, None
+
+
 def _flight_card(source):
     course_id = source.get("course_id")
+    summary_original, summary_knowledge = _validated_upload_paths(source)
+    knowledge_objects = None
+    if summary_knowledge is not None:
+        try:
+            knowledge_objects = load_source_knowledge(summary_knowledge)
+        except (OSError, TypeError, ValueError):
+            pass
+    summary = source_summary_service.load_persisted_summary(
+        source_id=source["source_id"],
+        source_hash=source.get("content_hash"),
+        original_path=summary_original,
+        knowledge_objects=knowledge_objects,
+    )
+    can_request_summary = bool(
+        summary_original
+        and summary_knowledge
+        and knowledge_objects
+        and source.get("knowledge_object_count", 0)
+    )
     return {
         "source_id": source["source_id"],
         "display_name": source.get("display_name") or source["source_id"],
@@ -66,10 +117,8 @@ def _flight_card(source):
         "source_status": _SOURCE_STATUS.get(
             source.get("status"), "needs_processing"
         ),
-        "summary_status": "missing",
-        "summary_points": (),
+        **summary,
         "source_hash": source.get("content_hash"),
-        "evidence_map": {},
         "source_link": _source_link(source),
         "knowledge_object_count": source.get("knowledge_object_count", 0),
         "concept_count": source.get("concept_count", 0),
@@ -77,7 +126,7 @@ def _flight_card(source):
         "embedding_count": source.get("embedding_count", 0),
         "allowed_actions": {
             "set_source_course": True,
-            "request_source_summary": False,
+            "request_source_summary": can_request_summary,
             "reprocess_library_source": bool(source.get("can_reprocess")),
             "remove_library_source": bool(source.get("can_remove")),
         },
@@ -196,3 +245,32 @@ def set_source_course(source_id, course_id):
         "course_id": normalized_course_id,
         "course_name": course_name,
     }
+
+
+def request_source_summary(source_id):
+    """Refresh one uploaded source summary from its processed knowledge."""
+    source = next(
+        (
+            item
+            for item in list_library_sources()
+            if item["source_id"] == source_id
+        ),
+        None,
+    )
+    if source is None:
+        raise KeyError(f"Unknown course material: {source_id}")
+    if source.get("source_kind") != "upload":
+        raise PermissionError(
+            "Only uploaded course materials can receive stored summaries."
+        )
+    original, knowledge = _validated_upload_paths(source)
+    if original is None or knowledge is None:
+        raise FileNotFoundError(
+            "The source or its processed knowledge is unavailable."
+        )
+    return source_summary_service.generate_and_persist_summary(
+        source_id=source_id,
+        source_hash=source.get("content_hash"),
+        original_path=original,
+        knowledge_objects=load_source_knowledge(knowledge),
+    )
