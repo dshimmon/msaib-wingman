@@ -1,0 +1,114 @@
+{
+  "schema_version": "1.0",
+  "record_type": "crew_chief_closeout",
+  "status": "landed_only_after_external_lso_live_verification",
+  "generated_at": "2026-08-24T20:19:15Z",
+  "objective": "Uploading a syllabus detects course identity, requires review and confirmation, persists source-backed course metadata, and creates the corresponding virtual Course Catalog grouping while preserving original-source traceback.",
+  "authority": {
+    "principal": "Maverick",
+    "authorization": "LSO actions 1-8 authorized for candidate c009005f, including the two-commit record treatment and atomic non-force publication to the named candidate branch and main.",
+    "excluded": [
+      "437d4e6",
+      "deployment or private Streamlit publication",
+      "credential access",
+      "OpenAI API requests or spending",
+      "migration",
+      "live-data mutation",
+      "force-push or history rewrite",
+      "cleanup",
+      "local main checkout update",
+      "strategic-mission completion"
+    ]
+  },
+  "repository": {
+    "implementation_root": "/private/tmp/atlas-syllabus-course-audit-fixes-20260824-01",
+    "branch": "codex/syllabus-course-audit-fixes-20260824",
+    "audited_base_commit": "c066caa49c2fcb33a4a1c80723d2113768881080",
+    "audited_binary_diff_sha256": "c009005fe9a49e3266c531a4bd267976fcfad4e59f83101d1dfb9e9a05bd4c15",
+    "audited_staged_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "implementation_commit": "bd4dd71880a09531f249121565c3dec8475b88af",
+    "implementation_parent": "c066caa49c2fcb33a4a1c80723d2113768881080",
+    "changed_files": [
+      "docs/products/atlas/README.md",
+      "src/products/atlas/batch_ingestion.py",
+      "src/products/atlas/ui/pages/upload.py",
+      "src/wingman/shared/source_registry.py",
+      "tests/products/atlas/test_batch_ingestion.py",
+      "tests/products/atlas/test_streamlit_app.py",
+      "tests/wingman/test_source_registry.py"
+    ]
+  },
+  "audit_evidence": {
+    "review_mode": "INDEPENDENT",
+    "verdict": "PASS",
+    "findings_count": 0,
+    "report_generated_at": "2026-08-24T18:45:44Z",
+    "report_sha256": "b6c034567f595d014b16a5de8b55b4ed215913524d2ad7311228acb81cd35f9c",
+    "audit_package": "/private/tmp/wingman-c066-final-reaudit-20260824-9PWPbv",
+    "proposed_task_journal_sha256": "00801fa845044798cbb8ecf1e9dfa58cfc8eed7b76da26efa12bb59007ae77e0",
+    "proposed_closeout_sha256": "55b687fad021725c6a8ebb858ae28fc1cc4affcb7bba0efb1d1d6eef3cc490b0"
+  },
+  "reconciliation": [
+    {
+      "finding_id": "CC-C066-001",
+      "disposition": "resolved",
+      "evidence": "Per-file multi-course folder names are visible, editable, previewed, and confirmation-bound."
+    },
+    {
+      "finding_id": "CC-C066-002",
+      "disposition": "resolved",
+      "evidence": "Initial registry, interrupted cleanup, and ingestor already_exists paths share compatible, conflict, and failure reconciliation."
+    }
+  ],
+  "tests_and_checks": {
+    "independent_duplicate_matrix": "PASS: 9 cases",
+    "independent_multicourse_ui_probe": "PASS",
+    "independent_disposable_ledger_probe": "PASS",
+    "focused_suite_audit": "PASS: 73 tests",
+    "focused_suite_lso_pre_mutation": "PASS: 73 tests",
+    "complete_suite_final_audit_run": "PASS: 398 tests",
+    "compilation": "PASS",
+    "governance_validation": "PASS",
+    "changed_scope_ruff": "PASS",
+    "git_diff_check": "PASS",
+    "audit_package_checksums": "PASS: 9 of 9"
+  },
+  "records": {
+    "task_journal": "docs/missions/governance/crew-chief/artifacts/atlas-syllabus-course-intake-task-journal-20260824.md",
+    "closeout_record": "docs/missions/governance/crew-chief/artifacts/atlas-syllabus-course-intake-closeout-20260824.json"
+  },
+  "landing_completion": {
+    "implementation_commit_hashes": [
+      "bd4dd71880a09531f249121565c3dec8475b88af"
+    ],
+    "source_and_destination_refs": [
+      "source=refs/heads/codex/syllabus-course-audit-fixes-20260824;target=refs/heads/codex/syllabus-course-audit-fixes-20260824",
+      "source=refs/heads/codex/syllabus-course-audit-fixes-20260824;target=refs/heads/main"
+    ],
+    "landing_result": "Authorized result: one atomic ordinary non-force publication makes both named remote target refs resolve to the record-only commit whose parent is the exact verified implementation commit.",
+    "landing_timestamps": {
+      "continuation_preconditions_verified_at": "2026-08-24T20:19:15Z",
+      "record_finalized_at": "2026-08-24T20:19:15Z"
+    },
+    "record_commit_hash_location": "External LSO completion report; a commit cannot contain its own final object ID.",
+    "post_landing_candidate_verification_location": "External LSO completion report created after live publication verification.",
+    "completion_state": "complete_only_after_atomic_publication_and_live_two_ref_verification"
+  },
+  "lso_handoff": {
+    "responsible_role": "external LSO landing operator",
+    "approval_claimed": true,
+    "repository_mutation_claimed": true,
+    "completion_claimed_by_record_alone": false,
+    "next_action": "Atomically publish the record commit, verify both live remote refs and the unchanged audited implementation, and report the record commit hash externally.",
+    "external_machine_reported_facts": [
+      "record_commit_hash",
+      "post_landing_candidate_verification"
+    ]
+  },
+  "limitations": [
+    "This repository closeout does not authorize or claim deployment, private hosting, credential use, API spend, migration, live-data mutation, force operations, cleanup, or strategic-mission completion.",
+    "Private access and the hard $50 monthly project limit remain separate deployment controls.",
+    "Syllabus detection is heuristic and opening-bounded; image-only PDFs require OCR.",
+    "The complete audit suite disclosed one unrelated transient multiprocess Ledger-transition failure before isolated and complete reruns passed."
+  ]
+}
