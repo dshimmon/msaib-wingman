@@ -39,6 +39,12 @@ SOURCE_REGISTRY_PATH = Path(
     "data/sources/source-registry.json"
 )
 LEGACY_IMPORT_KEY = "source-registry-json-v1"
+
+
+class SourceMetadataConflictError(RuntimeError):
+    """The active source changed after a metadata update was prepared."""
+
+
 def utc_now():
     return datetime.now(timezone.utc).isoformat()
 
@@ -419,7 +425,12 @@ def register_source(source_id, metadata):
         connection.close()
 
 
-def update_active_source_metadata(source_id, metadata_updates):
+def update_active_source_metadata(
+    source_id,
+    metadata_updates,
+    *,
+    expected_metadata=None,
+):
     """
     Merge metadata into one active source without replacing registry state.
 
@@ -432,16 +443,30 @@ def update_active_source_metadata(source_id, metadata_updates):
         raise ValueError(
             "Source metadata updates must contain a JSON object."
         )
+    if expected_metadata is not None and not isinstance(expected_metadata, dict):
+        raise ValueError(
+            "Expected source metadata must contain a JSON object."
+        )
     validate_registry({source_id: metadata_updates})
+    expectations = dict(expected_metadata or {})
+    validate_registry({source_id: expectations})
     connection = open_registry_database()
     try:
         with transaction(connection, immediate=True):
             existing = get_source(connection, source_id)
             if existing is None or existing.status != "active":
                 raise KeyError(f"Unknown active source: {source_id}")
+            current_metadata = dict(existing.metadata)
+            if any(
+                current_metadata.get(key) != expected
+                for key, expected in expectations.items()
+            ):
+                raise SourceMetadataConflictError(
+                    f"Active source metadata changed before update: {source_id}"
+                )
             merged_metadata = canonicalize_metadata(
                 {
-                    **existing.metadata,
+                    **current_metadata,
                     **metadata_updates,
                 }
             )

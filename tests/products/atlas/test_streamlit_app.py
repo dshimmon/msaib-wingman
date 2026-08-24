@@ -136,6 +136,92 @@ class AtlasStreamlitAppTests(unittest.TestCase):
             any("Flight Cards connected" in success.value for success in app.success)
         )
 
+    def test_multi_course_upload_exposes_editable_folder_names_before_confirmation(self):
+        app = AppTest.from_file(APP_PATH, default_timeout=10)
+        app.query_params["page"] = "upload"
+        app.run()
+        uploader = app.get("file_uploader")[0]
+        uploader.upload(
+            "FINA-7310-syllabus.txt",
+            (
+                b"Course Syllabus\nCourse Number: FINA 7310\n"
+                b"Course Title: Corporate Financial Strategy\n"
+                b"Learning Objectives\n"
+            ),
+            "text/plain",
+        )
+        uploader.upload(
+            "MGMT-6400-syllabus.txt",
+            (
+                b"Course Syllabus\nCourse Number: MGMT 6400\n"
+                b"Course Title: Strategic Innovation\n"
+                b"Learning Objectives\n"
+            ),
+            "text/plain",
+        )
+        uploader.run()
+        self.assert_no_exception(app)
+
+        folder_inputs = {
+            element.label: element.value
+            for element in app.text_input
+            if element.label.startswith("Course folder name —")
+        }
+        self.assertEqual(
+            folder_inputs,
+            {
+                "Course folder name — FINA-7310-syllabus.txt": (
+                    "Corporate Financial Strategy"
+                ),
+                "Course folder name — MGMT-6400-syllabus.txt": (
+                    "Strategic Innovation"
+                ),
+            },
+        )
+        preview = {
+            row["Course ID"]: row["Course folder"]
+            for row in app.dataframe[0].value.to_dict(orient="records")
+        }
+        self.assertEqual(
+            preview,
+            {
+                "FINA 7310": "Corporate Financial Strategy",
+                "MGMT 6400": "Strategic Innovation",
+            },
+        )
+
+        confirmation = next(
+            item
+            for item in app.checkbox
+            if item.label.startswith("I confirm the course assignment")
+        )
+        confirmation.set_value(True).run()
+        self.assertTrue(
+            next(
+                item
+                for item in app.checkbox
+                if item.label.startswith("I confirm the course assignment")
+            ).value
+        )
+        course_name_input = next(
+            item
+            for item in app.text_input
+            if item.label == "Course folder name — FINA-7310-syllabus.txt"
+        )
+        course_name_input.set_value("Corporate Strategy").run()
+        self.assertFalse(
+            next(
+                item
+                for item in app.checkbox
+                if item.label.startswith("I confirm the course assignment")
+            ).value
+        )
+        updated_preview = {
+            row["Course ID"]: row["Course folder"]
+            for row in app.dataframe[0].value.to_dict(orient="records")
+        }
+        self.assertEqual(updated_preview["FINA 7310"], "Corporate Strategy")
+
     def test_cockpit_course_and_unassigned_success_states(self):
         gateway = FlightCardsGateway(DemoFlightCardsService())
         with patch(

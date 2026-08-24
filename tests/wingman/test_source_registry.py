@@ -187,6 +187,38 @@ class SourceRegistryTests(unittest.TestCase):
 
         self.assertEqual(source_registry.load_source_registry(), {})
 
+    def test_single_source_metadata_update_rejects_stale_expectation(self):
+        source_registry.register_source(
+            "source-one",
+            {
+                "display_name": "Source One",
+                "course_id": "AI-202",
+                "course_name": "Advanced AI",
+            },
+        )
+
+        with self.assertRaisesRegex(
+            source_registry.SourceMetadataConflictError,
+            "changed before update",
+        ):
+            source_registry.update_active_source_metadata(
+                "source-one",
+                {
+                    "course_id": "AI-101",
+                    "course_name": "AI Foundations",
+                },
+                expected_metadata={"course_id": None},
+            )
+
+        self.assertEqual(
+            source_registry.load_source_registry()["source-one"],
+            {
+                "display_name": "Source One",
+                "course_id": "AI-202",
+                "course_name": "Advanced AI",
+            },
+        )
+
     def test_find_source_by_content_hash(self):
         self.write_registry(
             {

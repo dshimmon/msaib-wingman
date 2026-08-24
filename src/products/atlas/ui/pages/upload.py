@@ -129,7 +129,8 @@ def render_upload_page(product_context):
         )
     elif len(detected_courses) > 1:
         st.warning(
-            "More than one course was detected. Review the course override for each syllabus before importing.",
+            "More than one course was detected. Review the course ID and folder "
+            "name for every file before importing.",
             icon="⚠️",
         )
     elif any(analysis.is_syllabus for analysis in analyses.values()):
@@ -194,6 +195,17 @@ def render_upload_page(product_context):
                 ),
                 placeholder="Uses batch course ID",
             )
+            entered_course_name = None
+            if len(detected_courses) > 1:
+                entered_course_name = st.text_input(
+                    f"Course folder name — {uploaded_file.name}",
+                    value=analysis.course_name or analysis.course_id or "",
+                    key=(
+                        f"course_name_{selection_key}_{file_index}_"
+                        f"{uploaded_file.name}"
+                    ),
+                    placeholder="Uses the Course ID when blank",
+                )
             display_name_overrides.setdefault(uploaded_file.name, entered_display_name)
             course_overrides.setdefault(uploaded_file.name, entered_course_override)
             entered_material_type = next(
@@ -202,7 +214,13 @@ def render_upload_page(product_context):
                 if label == entered_material_label
             )
             normalized_override = entered_course_override.strip()
-            if normalized_override:
+            if entered_course_name is not None:
+                per_file_course_name = (
+                    entered_course_name.strip()
+                    or normalized_override
+                    or None
+                )
+            elif normalized_override:
                 per_file_course_name = (
                     analysis.course_name
                     if analysis.course_id == normalized_override
@@ -285,6 +303,11 @@ def render_upload_page(product_context):
                     "Format": Path(record["visible_name"]).suffix.lower(),
                     "Size": record["file_size"],
                     "Course ID": record["course_id"] or "Required",
+                    "Course folder": (
+                        record["product_metadata"].get("course_name")
+                        or record["course_id"]
+                        or "Required"
+                    ),
                     "Status": record["reason_code"] or "ready",
                 }
                 for record in batch_plan.manifest["files"]

@@ -24,3 +24,11 @@ Atlas-owned `syllabus`, `notes`, `lectures`, `homework`, and `other` folders.
 These are metadata-backed virtual folders: uploaded originals remain in their
 source-identified storage so traceback and source-management protections are
 preserved.
+
+When one batch identifies multiple courses, the preview exposes an editable
+course ID and folder name for every file and invalidates confirmation whenever
+either value changes. Re-uploading identical bytes never creates a second
+source: Atlas applies compatible confirmed course metadata to the existing
+active source instead. It fails visibly without reassignment when that source
+already belongs to a different course, so conflicting course ownership must be
+reviewed from the existing source before another import attempt.

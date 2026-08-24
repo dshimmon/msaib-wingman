@@ -23,7 +23,11 @@ from products.atlas.intake_service import (
 )
 from wingman.shared.product_contract import ProductCapability, ProductContext
 from wingman.shared.product_runtime import normalize_source_metadata
-from wingman.shared.source_registry import load_source_registry
+from wingman.shared.source_registry import (
+    SourceMetadataConflictError,
+    load_source_registry,
+    update_active_source_metadata,
+)
 
 
 MANIFEST_VERSION = 1
@@ -33,6 +37,11 @@ TERMINAL_RESULTS = frozenset(
 )
 PROGRESS_STAGES = frozenset(
     {"pending", "validating", "extracting", "saving", "indexing", "registering"}
+)
+COURSE_DUPLICATE_METADATA_FIELDS = (
+    "course_id",
+    "course_name",
+    "material_type",
 )
 MANIFEST_FIELDS = frozenset(
     {
@@ -617,6 +626,106 @@ def find_matching_registered_source(registry, content_hash):
     return None
 
 
+def reconcile_duplicate_course_metadata(
+    record,
+    source_id,
+    existing_metadata,
+    metadata_updater,
+):
+    """Apply confirmed Atlas course metadata without reassigning a conflict."""
+    desired_metadata = record.get("product_metadata") or {}
+    existing_course_id = existing_metadata.get("course_id")
+    desired_course_id = desired_metadata.get("course_id")
+    if (
+        existing_course_id
+        and desired_course_id
+        and existing_course_id != desired_course_id
+    ):
+        return "conflict"
+
+    metadata_updates = {
+        key: desired_metadata[key]
+        for key in COURSE_DUPLICATE_METADATA_FIELDS
+        if desired_metadata.get(key) is not None
+        and existing_metadata.get(key) != desired_metadata[key]
+    }
+    if not metadata_updates:
+        return "unchanged"
+
+    metadata_updater(
+        source_id,
+        metadata_updates,
+        expected_metadata={"course_id": existing_course_id},
+    )
+    return "updated"
+
+
+def record_duplicate_outcome(
+    record,
+    source_id,
+    existing_metadata,
+    metadata_updater,
+    *,
+    unchanged_reason,
+):
+    """Reconcile confirmed metadata before recording any duplicate outcome."""
+    try:
+        metadata_state = reconcile_duplicate_course_metadata(
+            record,
+            source_id,
+            existing_metadata,
+            metadata_updater,
+        )
+    except SourceMetadataConflictError:
+        metadata_state = "conflict"
+    except Exception as error:
+        record.update(
+            terminal_result="failed",
+            reason_code="duplicate_metadata_update_failed",
+            message=(
+                "Matching content is already registered, but its confirmed "
+                "course metadata could not be updated "
+                f"({error.__class__.__name__})."
+            ),
+            duplicate_source_id=source_id,
+            cleanup_verified=True,
+            retryable=True,
+        )
+        return
+
+    if metadata_state == "conflict":
+        record.update(
+            terminal_result="failed",
+            reason_code="duplicate_course_conflict",
+            message=(
+                "Matching content is already assigned to a different "
+                "course; review the existing source before reassigning it."
+            ),
+            duplicate_source_id=source_id,
+            cleanup_verified=True,
+            retryable=False,
+        )
+        return
+
+    record.update(
+        terminal_result="duplicate",
+        reason_code=(
+            "exact_duplicate_metadata_updated"
+            if metadata_state == "updated"
+            else unchanged_reason
+        ),
+        message=(
+            "Matching content is already registered; its confirmed course "
+            "metadata was updated without ingesting it again."
+            if metadata_state == "updated"
+            else "Matching content is already registered; it was not ingested again."
+        ),
+        duplicate_source_id=source_id,
+        cleanup_verified=True,
+        retryable=False,
+    )
+
+
 def possible_revisions(registry, visible_name, content_hash):
     return sorted(
         source_id
@@ -679,6 +788,7 @@ def execute_batch(
     ingestor=ingest_uploaded_document,
     interrupted_cleanup=cleanup_interrupted_upload,
     registry_loader=load_source_registry,
+    metadata_updater=update_active_source_metadata,
     progress_callback=None,
     clock=utc_now,
 ):
@@ -761,15 +871,16 @@ def execute_batch(
             or record.get("attempt_count", 0) > 0
         )
         if registered:
-            record.update(
-                terminal_result="duplicate",
-                reason_code=(
-                    "registered_during_interruption" if interrupted else "exact_duplicate"
+            record_duplicate_outcome(
+                record,
+                registered,
+                registry.get(registered) or {},
+                metadata_updater,
+                unchanged_reason=(
+                    "registered_during_interruption"
+                    if interrupted
+                    else "exact_duplicate"
                 ),
-                message="Matching content is already registered; it was not ingested again.",
-                duplicate_source_id=registered,
-                cleanup_verified=True,
-                retryable=False,
             )
             write_manifest(manifest, manifest_path, clock=clock)
             notify_progress(progress_callback, manifest, record)
@@ -799,13 +910,14 @@ def execute_batch(
                 notify_progress(progress_callback, manifest, record)
                 break
             if cleanup_result.get("registered"):
-                record.update(
-                    terminal_result="duplicate",
-                    reason_code="registered_during_interruption",
-                    message="Matching content is already registered.",
-                    duplicate_source_id=cleanup_result.get("source_id"),
-                    cleanup_verified=True,
-                    retryable=False,
+                duplicate_source_id = cleanup_result.get("source_id")
+                current_registry = registry_loader()
+                record_duplicate_outcome(
+                    record,
+                    duplicate_source_id,
+                    current_registry.get(duplicate_source_id) or {},
+                    metadata_updater,
+                    unchanged_reason="registered_during_interruption",
                 )
                 write_manifest(manifest, manifest_path, clock=clock)
                 notify_progress(progress_callback, manifest, record)
@@ -842,13 +954,14 @@ def execute_batch(
                 progress_callback=update_stage,
             )
             if result["status"] == "already_exists":
-                record.update(
-                    terminal_result="duplicate",
-                    reason_code="exact_duplicate",
-                    message="Matching content is already registered; it was not ingested again.",
-                    duplicate_source_id=result["source_id"],
-                    cleanup_verified=True,
-                    retryable=False,
+                duplicate_source_id = result["source_id"]
+                current_registry = registry_loader()
+                record_duplicate_outcome(
+                    record,
+                    duplicate_source_id,
+                    current_registry.get(duplicate_source_id) or {},
+                    metadata_updater,
+                    unchanged_reason="exact_duplicate",
                 )
             else:
                 record.update(

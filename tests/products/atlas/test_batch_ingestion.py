@@ -63,6 +63,67 @@ class BatchIngestionTests(unittest.TestCase):
             **kwargs,
         )
 
+    def execute_late_duplicate(
+        self,
+        discovery,
+        *,
+        existing_metadata,
+        metadata_updater,
+    ):
+        file_name = f"{discovery}-syllabus.txt"
+        plan = self.plan(
+            [browser_file_input(file_name, b"identical syllabus")],
+            product_metadata_overrides={
+                file_name: {
+                    "course_name": "AI Foundations",
+                    "material_type": "syllabus",
+                }
+            },
+        )
+        source_id = f"{discovery}-source"
+        content_hash = plan.manifest["files"][0]["content_hash"]
+        registry_snapshots = iter(
+            [
+                {},
+                {
+                    source_id: {
+                        "content_hash": content_hash,
+                        **existing_metadata,
+                    }
+                },
+            ]
+        )
+        registry_loader = Mock(side_effect=lambda: next(registry_snapshots))
+        ingestor = Mock(
+            return_value={
+                "status": "already_exists",
+                "source_id": source_id,
+            }
+        )
+        cleanup = Mock(
+            return_value={
+                "registered": True,
+                "source_id": source_id,
+            }
+        )
+        if discovery == "cleanup":
+            plan.manifest["files"][0].update(
+                attempt_count=1,
+                progress_stage="indexing",
+            )
+
+        result = execute_batch(
+            plan,
+            product_context=self.context,
+            manifest_path=self.root / f"{discovery}-duplicate.json",
+            ingestor=ingestor,
+            interrupted_cleanup=cleanup,
+            registry_loader=registry_loader,
+            metadata_updater=metadata_updater,
+            clock=self.clock,
+        )
+        return result["manifest"]["files"][0], source_id, ingestor, cleanup
+
     def test_preview_is_deterministic_and_requires_explicit_assignments(self):
         plan = preview_batch(
             [
@@ -321,7 +382,13 @@ class BatchIngestionTests(unittest.TestCase):
             [
                 browser_file_input("renamed.txt", duplicate_bytes),
                 browser_file_input("same-name.txt", revision_bytes),
-            ]
+            ],
+            product_metadata_overrides={
+                "renamed.txt": {
+                    "course_name": "AI Foundations",
+                    "material_type": "syllabus",
+                }
+            },
         )
         duplicate_hash = plan.manifest["files"][0]["content_hash"]
         registry = {
@@ -342,20 +409,175 @@ class BatchIngestionTests(unittest.TestCase):
                 "knowledge_object_count": 2,
             }
 
+        metadata_updater = Mock()
         result = execute_batch(
             plan,
             product_context=self.context,
             manifest_path=self.root / "duplicates.json",
             ingestor=ingestor,
             registry_loader=lambda: registry,
+            metadata_updater=metadata_updater,
             clock=self.clock,
         )
         records = result["manifest"]["files"]
         self.assertEqual(records[0]["terminal_result"], "duplicate")
+        self.assertEqual(
+            records[0]["reason_code"],
+            "exact_duplicate_metadata_updated",
+        )
         self.assertEqual(records[0]["duplicate_source_id"], "existing-duplicate")
+        metadata_updater.assert_called_once_with(
+            "existing-duplicate",
+            {
+                "course_id": "AI-101",
+                "course_name": "AI Foundations",
+                "material_type": "syllabus",
+            },
+            expected_metadata={"course_id": None},
+        )
         self.assertEqual(records[1]["terminal_result"], "succeeded")
         self.assertEqual(records[1]["possible_revision_of"], ["existing-revision"])
         self.assertIn("No lineage was inferred or changed", result["report"])
+
+    def test_exact_duplicate_does_not_overwrite_a_different_course(self):
+        duplicate_bytes = b"identical syllabus"
+        plan = self.plan(
+            [browser_file_input("syllabus.txt", duplicate_bytes)],
+            product_metadata_overrides={
+                "syllabus.txt": {
+                    "course_name": "AI Foundations",
+                    "material_type": "syllabus",
+                }
+            },
+        )
+        duplicate_hash = plan.manifest["files"][0]["content_hash"]
+        registry = {
+            "existing-duplicate": {
+                "content_hash": duplicate_hash,
+                "course_id": "AI-202",
+                "course_name": "Advanced AI",
+            }
+        }
+        metadata_updater = Mock()
+        ingestor = Mock()
+
+        result = execute_batch(
+            plan,
+            product_context=self.context,
+            manifest_path=self.root / "duplicate-conflict.json",
+            ingestor=ingestor,
+            registry_loader=lambda: registry,
+            metadata_updater=metadata_updater,
+            clock=self.clock,
+        )
+
+        record = result["manifest"]["files"][0]
+        self.assertEqual(record["terminal_result"], "failed")
+        self.assertEqual(record["reason_code"], "duplicate_course_conflict")
+        self.assertEqual(record["duplicate_source_id"], "existing-duplicate")
+        metadata_updater.assert_not_called()
+        ingestor.assert_not_called()
+
+    def test_duplicate_metadata_update_failure_is_retryable_without_ingestion(self):
+        duplicate_bytes = b"identical syllabus"
+        plan = self.plan([browser_file_input("syllabus.txt", duplicate_bytes)])
+        duplicate_hash = plan.manifest["files"][0]["content_hash"]
+        metadata_updater = Mock(side_effect=OSError("database unavailable"))
+        ingestor = Mock()
+
+        result = execute_batch(
+            plan,
+            product_context=self.context,
+            manifest_path=self.root / "duplicate-update-failed.json",
+            ingestor=ingestor,
+            registry_loader=lambda: {
+                "existing-duplicate": {
+                    "content_hash": duplicate_hash,
+                    "course_id": None,
+                }
+            },
+            metadata_updater=metadata_updater,
+            clock=self.clock,
+        )
+
+        record = result["manifest"]["files"][0]
+        self.assertEqual(record["terminal_result"], "failed")
+        self.assertEqual(
+            record["reason_code"],
+            "duplicate_metadata_update_failed",
+        )
+        self.assertTrue(record["retryable"])
+        ingestor.assert_not_called()
+
+    def test_late_duplicate_paths_apply_confirmed_course_metadata(self):
+        for discovery in ("cleanup", "ingestor"):
+            with self.subTest(discovery=discovery):
+                metadata_updater = Mock()
+                record, source_id, ingestor, cleanup = self.execute_late_duplicate(
+                    discovery,
+                    existing_metadata={"course_id": None},
+                    metadata_updater=metadata_updater,
+                )
+
+                self.assertEqual(record["terminal_result"], "duplicate")
+                self.assertEqual(
+                    record["reason_code"],
+                    "exact_duplicate_metadata_updated",
+                )
+                metadata_updater.assert_called_once_with(
+                    source_id,
+                    {
+                        "course_id": "AI-101",
+                        "course_name": "AI Foundations",
+                        "material_type": "syllabus",
+                    },
+                    expected_metadata={"course_id": None},
+                )
+                if discovery == "cleanup":
+                    ingestor.assert_not_called()
+                    cleanup.assert_called_once()
+                else:
+                    ingestor.assert_called_once()
+                    cleanup.assert_not_called()
+
+    def test_late_duplicate_paths_reject_a_different_course(self):
+        for discovery in ("cleanup", "ingestor"):
+            with self.subTest(discovery=discovery):
+                metadata_updater = Mock()
+                record, source_id, _ingestor, _cleanup = self.execute_late_duplicate(
+                    discovery,
+                    existing_metadata={
+                        "course_id": "AI-202",
+                        "course_name": "Advanced AI",
+                    },
+                    metadata_updater=metadata_updater,
+                )
+
+                self.assertEqual(record["terminal_result"], "failed")
+                self.assertEqual(record["reason_code"], "duplicate_course_conflict")
+                self.assertEqual(record["duplicate_source_id"], source_id)
+                self.assertFalse(record["retryable"])
+                metadata_updater.assert_not_called()
+
+    def test_late_duplicate_metadata_update_failures_are_retryable(self):
+        for discovery in ("cleanup", "ingestor"):
+            with self.subTest(discovery=discovery):
+                metadata_updater = Mock(
+                    side_effect=OSError("database unavailable")
+                )
+                record, source_id, _ingestor, _cleanup = self.execute_late_duplicate(
+                    discovery,
+                    existing_metadata={"course_id": None},
+                    metadata_updater=metadata_updater,
+                )
+
+                self.assertEqual(record["terminal_result"], "failed")
+                self.assertEqual(
+                    record["reason_code"],
+                    "duplicate_metadata_update_failed",
+                )
+                self.assertEqual(record["duplicate_source_id"], source_id)
+                self.assertTrue(record["retryable"])
 
     def test_resume_hash_validation_registered_recovery_and_explicit_retry(self):
         original = browser_file_input("resume.txt", b"stable")
