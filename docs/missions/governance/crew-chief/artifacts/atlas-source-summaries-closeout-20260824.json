@@ -1,0 +1,142 @@
+{
+  "schema_version": "1.0",
+  "record_type": "crew_chief_closeout",
+  "status": "landed_only_after_external_lso_live_verification",
+  "generated_at": "2026-08-25T00:31:00Z",
+  "objective": "After each successful new Atlas upload, create and persist a proportional source-grounded summary with structured evidence and source traceback; preserve durable safe retryable failure and freshness across intake, batch, Flight Cards, Course Cockpit, and document contracts without weakening current-main syllabus or exact-duplicate safeguards.",
+  "authority": {
+    "principal": "Maverick",
+    "authorization": "Ship the accepted Atlas source-summary result end to end, including implementation, tests and documentation, independent Crew Chief audit and reconciliation, authorized LSO/GitHub landing, production website deployment, and live verification, stopping only for a reserved safety decision or missing access.",
+    "audit_exclusions": [
+      "implementation repository mutation",
+      "staging, unstaging, commit, landing, publication, or cleanup",
+      "production deployment or live-experience verification",
+      "credential or secret access",
+      "network or OpenAI API access",
+      "spending",
+      "migration or live-data mutation",
+      "force-push, history rewrite, or protection override",
+      "strategic-mission completion"
+    ]
+  },
+  "repository": {
+    "implementation_root": "/private/tmp/atlas-source-summaries-20260824-01",
+    "branch": "codex/atlas-source-summaries-20260824",
+    "upstream": "origin/main",
+    "audited_base_commit": "20f696bb695991bfd7b058a76072ca66e82d176d",
+    "audited_upstream_commit": "20f696bb695991bfd7b058a76072ca66e82d176d",
+    "audited_staged_binary_diff_sha256": "0ba4d60015f65fc2af993b127d1f4adf1b237beec26ef7a62762d6685d34c7d3",
+    "audited_unstaged_binary_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "candidate_remote_ref_state": "absent_at_landing_preflight",
+    "implementation_commit": "efa024b8d16350d2bc115b12e0af22ef27310507",
+    "implementation_parent": "20f696bb695991bfd7b058a76072ca66e82d176d",
+    "changed_files": [
+      "docs/products/atlas/README.md",
+      "src/products/atlas/batch_ingestion.py",
+      "src/products/atlas/flight_cards_service.py",
+      "src/products/atlas/intake_service.py",
+      "src/products/atlas/source_summary_service.py",
+      "src/products/atlas/ui/flight_cards.py",
+      "src/products/atlas/ui/pages/course.py",
+      "src/products/atlas/ui/pages/document.py",
+      "src/wingman/shared/airframe_manifest.py",
+      "tests/products/atlas/test_batch_ingestion.py",
+      "tests/products/atlas/test_flight_cards_service.py",
+      "tests/products/atlas/test_intake_service.py",
+      "tests/products/atlas/test_source_summary_service.py",
+      "tests/products/atlas/test_streamlit_app.py",
+      "tools/bulk_ingestion_soak.py"
+    ]
+  },
+  "audit_evidence": {
+    "review_mode": "INDEPENDENT",
+    "verdict": "PASS",
+    "findings_count": 0,
+    "report_generated_at": "2026-08-25T00:25:30Z",
+    "report_sha256": "6c283eff23c8e3ad87e0c79c5b2c4b362fca17c664e5e558e7bbbc1120af674d",
+    "candidate_binding_sha256": "43b8433a0d1b5f4db8630263d70b360cba1af0390f0667457c02d89dcf97135d",
+    "independent_probe_sha256": "deab80c032cf7d5bee55643c6de5c9629dc58a67d5e13e8099190eae86e7502d",
+    "independent_probe_output_sha256": "b7c5f38dec333fd3d2518da866b05f30683e5549c92fc73083560bcff5c46b55",
+    "validation_summary_sha256": "e031c8ca34fc77595f006ed6ed8875cba9024428cbe3a4946498a86d6c7d4113",
+    "audit_package": "/private/tmp/atlas-source-summaries-ccas004-reaudit-20260824-XJVBbJ"
+  },
+  "reconciliation": [
+    {
+      "finding_id": "CC-AS-001",
+      "disposition": "resolved",
+      "evidence": "A 20-word source plus a 900-word response persisted and returned failed; no padded ready summary was accepted."
+    },
+    {
+      "finding_id": "CC-AS-002",
+      "disposition": "resolved",
+      "evidence": "Current-original hashing blocked mismatch generation without a model call; source mutation made service and Flight Card stale; registry, artifact-binding, and processed-knowledge mismatches were not ready."
+    },
+    {
+      "finding_id": "CC-AS-003",
+      "disposition": "resolved",
+      "evidence": "Automatic pending was durable before generation; outer artifact failure preserved source success, failed registry/card state, exact original access and retry, and failed summary evidence in manifest/report; legacy version-1 manifest validated without summary_status."
+    },
+    {
+      "finding_id": "CC-AS-004",
+      "disposition": "resolved",
+      "evidence": "A real disposable pre-feature Ledger source recorded pending before manual model entry; outer failure persisted failed and reloaded failed with original download/retry; pending-write failure produced zero model calls."
+    }
+  ],
+  "tests_and_checks": {
+    "independent_adversarial_probe": "PASS: CC-AS-001 through CC-AS-004",
+    "focused_suite": "PASS: 90 tests",
+    "complete_suite_first_run": "418 passed, 1 known unrelated Ledger subprocess timing failure out of 419",
+    "known_flake_isolated": "PASS: 1 test",
+    "complete_suite_clean_rerun": "PASS: 419 tests",
+    "compilation": "PASS",
+    "governance_validation": "PASS",
+    "changed_scope_ruff": "PASS",
+    "staged_whitespace": "PASS",
+    "unstaged_whitespace": "PASS",
+    "candidate_reverification": "PASS: unchanged"
+  },
+  "records": {
+    "task_journal": "docs/missions/governance/crew-chief/artifacts/atlas-source-summaries-task-journal-20260824.md",
+    "task_journal_proposed_sha256": "f50008dde622b6a1c98d593f205bfa91c4f23988a93a8be39e1c3688242cbaf4",
+    "closeout_record": "docs/missions/governance/crew-chief/artifacts/atlas-source-summaries-closeout-20260824.json"
+  },
+  "landing_completion": {
+    "implementation_commit_hashes": [
+      "efa024b8d16350d2bc115b12e0af22ef27310507"
+    ],
+    "source_and_destination_refs": [
+      "source=refs/heads/codex/atlas-source-summaries-20260824;target=refs/heads/codex/atlas-source-summaries-20260824",
+      "source=refs/heads/codex/atlas-source-summaries-20260824;target=refs/heads/main"
+    ],
+    "landing_result": "Authorized result: one atomic ordinary non-force publication makes both named remote target refs resolve to the record-only commit whose parent is the exact verified implementation commit.",
+    "landing_timestamps": {
+      "continuation_preconditions_verified_at": "2026-08-25T00:30:42Z",
+      "record_finalized_at": "2026-08-25T00:31:00Z"
+    },
+    "record_commit_hash_location": "External LSO completion report; a commit cannot contain its own final object ID.",
+    "post_landing_candidate_verification_location": "External LSO completion report created after live publication verification.",
+    "completion_state": "complete_only_after_atomic_publication_and_live_two_ref_verification"
+  },
+  "lso_handoff": {
+    "responsible_role": "external LSO landing operator",
+    "approval_claimed": true,
+    "repository_mutation_claimed": true,
+    "completion_claimed_by_record_alone": false,
+    "next_action": "Atomically publish the record commit, verify both live remote refs and the unchanged audited implementation, and report the record commit hash externally.",
+    "external_machine_reported_facts": [
+      "record_commit_hash",
+      "post_landing_candidate_verification"
+    ]
+  },
+  "post_landing_operations": {
+    "production_deployment_authority_reported": true,
+    "deployment_performed_or_verified_by_record": false,
+    "next_gate": "After verified repository landing, use the separately controlled private production deployment route and verify one synthetic Atlas syllabus import and its source-grounded summary."
+  },
+  "limitations": [
+    "This repository closeout does not itself claim deployment, private hosting, credential use, API spend, migration, live-data mutation, force operations, cleanup, or strategic-mission completion.",
+    "Private access and the hard $50 monthly OpenAI project limit remain separate deployment controls.",
+    "Live model quality and semantic faithfulness beyond structural evidence binding were not exercised by audit; the authorized post-landing synthetic import is the next check.",
+    "The first complete audit suite reproduced one known unrelated transient Ledger subprocess timing failure before the exact isolated test and a clean 419-test rerun passed."
+  ]
+}
