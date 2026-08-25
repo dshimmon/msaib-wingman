@@ -229,6 +229,15 @@ def run_offline_batch(document_count=500, *, include_edge_cases=False):
                 "create_embedding",
                 side_effect=deterministic_embedding,
             ),
+            patch.object(
+                intake_service.source_summary_service,
+                "_response_client",
+                side_effect=(
+                    intake_service.source_summary_service.SummaryGenerationError(
+                        "Offline soak does not call a model service."
+                    )
+                ),
+            ),
             chdir(root),
         ):
             before = timed_retrieval(

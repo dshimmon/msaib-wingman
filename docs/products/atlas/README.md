@@ -32,3 +32,19 @@ source: Atlas applies compatible confirmed course metadata to the existing
 active source instead. It fails visibly without reassignment when that source
 already belongs to a different course, so conflicting course ownership must be
 reviewed from the existing source before another import attempt.
+
+Every successful Atlas upload also attempts an automatic, source-grounded
+summary. For documents with enough source material, Atlas targets roughly
+450–900 words (about one to two pages); short documents receive a proportional
+summary rather than padded or invented content. The derived artifact is stored
+beside the source-identified processed knowledge, and each course's virtual
+`Summaries` folder gathers the saved summary for every assigned document.
+Summary generation is deliberately non-destructive: a missing API
+configuration, model failure, or invalid response leaves the uploaded original
+and searchable knowledge intact, displays a safe failed state, and permits a
+later retry from the document page. For both automatic generation and a manual
+retry, Atlas records that an attempt began before calling the model, so even an
+artifact-write failure remains a durable failed state in batch evidence and
+the later Course Cockpit. Registry, current-file, and processed-knowledge
+hashes mark summaries stale when either the underlying document or its
+extracted evidence changes.

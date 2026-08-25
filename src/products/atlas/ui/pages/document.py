@@ -66,6 +66,8 @@ def _render_summary(card):
         unsafe_allow_html=True,
     )
     render_status(card.summary_status, summary=True)
+    if card.summary_title:
+        st.markdown(f"### {card.summary_title}")
     if card.summary_status in {"failed", "stale"}:
         st.warning(
             card.safe_failure_message
@@ -78,9 +80,9 @@ def _render_summary(card):
         )
     if not card.summary_points:
         st.info("No summary points are available yet.", icon="ℹ️")
-    for point_index, point in enumerate(card.summary_points, start=1):
+    for point in card.summary_points:
         with st.container(border=True):
-            st.markdown(f"**{point_index}. {point.text}**")
+            st.write(point.text)
             if point.evidence_refs:
                 st.caption("Evidence: " + ", ".join(point.evidence_refs))
 
@@ -112,6 +114,7 @@ def _render_provenance(card):
     values = (
         ("Source hash", card.source_hash),
         ("Summary source hash", card.summary_source_hash),
+        ("Summary knowledge hash", card.summary_knowledge_hash),
         ("Generator", card.generator_version),
         ("Prompt", card.prompt_version),
         ("Generated", card.generated_at),

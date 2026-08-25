@@ -80,11 +80,13 @@ FILE_RECORD_FIELDS = frozenset(
         "source_id",
         "duplicate_source_id",
         "knowledge_object_count",
+        "summary_status",
         "possible_revision_of",
         "cleanup_verified",
         "retryable",
     }
 )
+OPTIONAL_FILE_RECORD_FIELDS = frozenset({"summary_status"})
 
 
 class BatchValidationError(ValueError):
@@ -372,6 +374,7 @@ def preview_batch(
                 "source_id": None,
                 "duplicate_source_id": None,
                 "knowledge_object_count": None,
+                "summary_status": None,
                 "possible_revision_of": [],
                 "cleanup_verified": None,
                 "retryable": False,
@@ -433,7 +436,9 @@ def validate_manifest(manifest):
     for record in manifest["files"]:
         if not isinstance(record, dict):
             raise BatchValidationError("Each batch file record must be an object.")
-        missing = sorted(FILE_RECORD_FIELDS - set(record))
+        missing = sorted(
+            FILE_RECORD_FIELDS - OPTIONAL_FILE_RECORD_FIELDS - set(record)
+        )
         unknown = sorted(set(record) - FILE_RECORD_FIELDS)
         if missing or unknown:
             raise BatchValidationError(
@@ -450,6 +455,10 @@ def validate_manifest(manifest):
             or record["attempt_count"] < 0
         ):
             raise BatchValidationError("Batch attempt count must be non-negative.")
+        if record.get("summary_status") not in {None, "ready", "failed"}:
+            raise BatchValidationError(
+                "Batch summary status must be ready, failed, or null."
+            )
         content_hash = record.get("content_hash")
         if content_hash is not None and (
             not isinstance(content_hash, str)
@@ -593,6 +602,8 @@ def render_import_report(manifest):
             detail += f" Source: `{record['source_id']}`."
         elif record.get("duplicate_source_id"):
             detail += f" Existing source: `{record['duplicate_source_id']}`."
+        if record.get("summary_status"):
+            detail += f" Summary: **{record['summary_status']}**."
         lines.append(detail)
         revisions = record.get("possible_revision_of") or []
         if revisions:
@@ -929,6 +940,7 @@ def execute_batch(
         record["message"] = None
         record["retryable"] = False
         record["cleanup_verified"] = None
+        record["summary_status"] = None
         record["possible_revision_of"] = possible_revisions(
             registry, record["visible_name"], current_hash
         )
@@ -970,9 +982,16 @@ def execute_batch(
                     message="The source was ingested and registered successfully.",
                     source_id=result["source_id"],
                     knowledge_object_count=result["knowledge_object_count"],
+                    summary_status=result.get("summary_status"),
                     cleanup_verified=True,
                     retryable=False,
                 )
+                if result.get("summary_status") == "failed":
+                    record["message"] = (
+                        "The source was ingested and registered successfully, "
+                        "but its summary could not be created. Retry from the "
+                        "document page."
+                    )
         except NoExtractableTextError as error:
             cleanup_verified = bool(getattr(error, "cleanup_verified", False))
             record.update(

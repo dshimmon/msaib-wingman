@@ -375,6 +375,31 @@ class BatchIngestionTests(unittest.TestCase):
         self.assertTrue(result["manifest"]["cleanup_failure_stopped_batch"])
         self.assertEqual(result["manifest"]["stopped_file"], "02-stop.txt")
 
+    def test_successful_source_keeps_failed_summary_status_in_batch_evidence(self):
+        plan = self.plan([browser_file_input("notes.txt", b"source notes")])
+
+        result = execute_batch(
+            plan,
+            product_context=self.context,
+            manifest_path=self.root / "summary-failure.json",
+            ingestor=lambda **_kwargs: {
+                "status": "ingested",
+                "source_id": "notes-source",
+                "knowledge_object_count": 1,
+                "summary_status": "failed",
+            },
+            registry_loader=lambda: {},
+            clock=self.clock,
+        )
+
+        record = result["manifest"]["files"][0]
+        persisted = load_manifest(self.root / "summary-failure.json")
+        self.assertEqual(record["terminal_result"], "succeeded")
+        self.assertEqual(record["summary_status"], "failed")
+        self.assertEqual(persisted["files"][0]["summary_status"], "failed")
+        self.assertIn("Retry from the document page", record["message"])
+        self.assertIn("Summary: **failed**", result["report"])
+
     def test_exact_duplicate_and_possible_revision_are_distinct(self):
         duplicate_bytes = b"identical"
         revision_bytes = b"new revision"
@@ -725,6 +750,14 @@ class BatchIngestionTests(unittest.TestCase):
         report = render_import_report(loaded)
         self.assertNotIn("secret document body", report)
         self.assertNotIn(str(self.root), report)
+
+        legacy_manifest = json.loads(json.dumps(loaded))
+        legacy_manifest["files"][0].pop("summary_status")
+        manifest_path.write_text(json.dumps(legacy_manifest), encoding="utf-8")
+        self.assertNotIn(
+            "summary_status",
+            load_manifest(manifest_path)["files"][0],
+        )
 
         loaded["manifest_version"] = 999
         manifest_path.write_text(json.dumps(loaded), encoding="utf-8")

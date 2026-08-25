@@ -64,13 +64,24 @@ class IntakeServiceTests(unittest.TestCase):
             file_bytes
         ).hexdigest()
 
-        result = intake_service.ingest_uploaded_document(
-            "mission_notes.docx",
-            file_bytes,
-            domain="Academics",
-            program="MSAIB",
-            academic_year="2026-2027",
-        )
+        with (
+            patch.object(
+                intake_service.source_summary_service,
+                "generate_and_persist_summary",
+                return_value={"status": "ready"},
+            ) as generate_summary,
+            patch.object(
+                intake_service,
+                "update_active_source_metadata",
+            ) as update_metadata,
+        ):
+            result = intake_service.ingest_uploaded_document(
+                "mission_notes.docx",
+                file_bytes,
+                domain="Academics",
+                program="MSAIB",
+                academic_year="2026-2027",
+            )
 
         expected_source_id = (
             f"mission-notes-{content_hash[:12]}"
@@ -89,6 +100,7 @@ class IntakeServiceTests(unittest.TestCase):
         )
 
         self.assertEqual(result["status"], "ingested")
+        self.assertEqual(result["summary_status"], "ready")
         self.assertEqual(
             result["source_id"],
             expected_source_id,
@@ -143,6 +155,70 @@ class IntakeServiceTests(unittest.TestCase):
             },
         )
         self.assertTrue(metadata["uploaded_at"])
+        self.assertEqual(metadata["atlas_summary_status"], "pending")
+        generate_summary.assert_called_once_with(
+            source_id=expected_source_id,
+            source_hash=content_hash,
+            original_path=original_path,
+            knowledge_objects=[{"id": "knowledge-1"}],
+        )
+        update_metadata.assert_called_once_with(
+            expected_source_id,
+            {"atlas_summary_status": "ready"},
+            expected_metadata={"content_hash": content_hash},
+        )
+
+    @patch.object(
+        intake_service,
+        "register_source",
+    )
+    @patch.object(
+        intake_service,
+        "ingest_document",
+        return_value=[{"id": "knowledge-1"}],
+    )
+    @patch.object(
+        intake_service,
+        "find_source_by_content_hash",
+        return_value=(None, None),
+    )
+    def test_summary_failure_preserves_successfully_ingested_source(
+        self,
+        find_source,
+        ingest_document,
+        register_source,
+    ):
+        with (
+            patch.object(
+                intake_service.source_summary_service,
+                "generate_and_persist_summary",
+                side_effect=OSError("private model failure"),
+            ),
+            patch.object(
+                intake_service,
+                "update_active_source_metadata",
+            ) as update_metadata,
+        ):
+            result = intake_service.ingest_uploaded_document(
+                "course-notes.txt",
+                b"Source-backed notes",
+            )
+
+        source_directory = self.uploads_directory / result["source_id"]
+        self.assertEqual(result["status"], "ingested")
+        self.assertEqual(result["summary_status"], "failed")
+        self.assertTrue((source_directory / "course-notes.txt").is_file())
+        ingest_document.assert_called_once()
+        register_source.assert_called_once()
+        registered_metadata = register_source.call_args.args[1]
+        self.assertEqual(registered_metadata["atlas_summary_status"], "pending")
+        update_metadata.assert_called_once_with(
+            result["source_id"],
+            {"atlas_summary_status": "failed"},
+            expected_metadata={
+                "content_hash": hashlib.sha256(b"Source-backed notes").hexdigest()
+            },
+        )
 
     @patch.object(
         intake_service,

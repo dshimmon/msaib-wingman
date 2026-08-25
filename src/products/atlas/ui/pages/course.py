@@ -71,16 +71,28 @@ def _render_material(card):
 
 def _render_summary(card):
     with st.container(border=True):
-        st.markdown(f"#### {card.display_name}")
+        st.markdown(f"#### {card.summary_title or card.display_name}")
+        if card.summary_title and card.summary_title != card.display_name:
+            st.caption(f"Source: {card.display_name}")
         render_status(card.summary_status, summary=True)
         if card.summary_status in {"failed", "stale"} and card.safe_failure_message:
             st.warning(card.safe_failure_message)
         if not card.summary_points:
             st.caption("No summary points are available yet.")
-        for point in card.summary_points[:3]:
-            st.write(f"• {point.text}")
+        for point in card.summary_points:
+            st.write(point.text)
             if point.evidence_refs:
                 st.caption("Evidence: " + ", ".join(point.evidence_refs))
+        if st.button(
+            "Open source and summary details",
+            key=f"course_summary_{card.source_id}",
+            use_container_width=True,
+        ):
+            navigate(
+                AtlasPage.DOCUMENT,
+                course_id=card.course_id or UNASSIGNED_COURSE_ID,
+                source_id=card.source_id,
+            )
 
 
 def render_course_page(gateway, course_id):
@@ -150,7 +162,7 @@ def render_course_page(gateway, course_id):
         f"{label} ({len(cards_by_material_type[material_type])})"
         for material_type, label in MATERIAL_TYPE_LABELS.items()
     ]
-    folder_tabs = st.tabs([*tab_labels, "Summaries"])
+    folder_tabs = st.tabs([*tab_labels, f"Summaries ({len(cards)})"])
     for folder_tab, (material_type, label) in zip(
         folder_tabs,
         MATERIAL_TYPE_LABELS.items(),

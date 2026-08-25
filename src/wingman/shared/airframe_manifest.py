@@ -94,6 +94,7 @@ MODULE_OWNERS = {
     "products.atlas.reasoning": ATLAS,
     "products.atlas.record_extractor": ATLAS,
     "products.atlas.retrieval_pipeline": ATLAS,
+    "products.atlas.source_summary_service": ATLAS,
     "products.atlas.streamlit_app": ATLAS,
     "products.atlas.syllabus_intake": ATLAS,
     "products.atlas.ui": ATLAS,

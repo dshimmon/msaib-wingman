@@ -251,7 +251,7 @@ class AtlasStreamlitAppTests(unittest.TestCase):
                     "Class lectures (0)",
                     "Homework (0)",
                     "Other (0)",
-                    "Summaries",
+                    "Summaries (1)",
                 ],
             )
 
